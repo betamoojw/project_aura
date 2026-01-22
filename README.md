@@ -9,6 +9,8 @@
 Support this project: back the crowdfunding to get detailed build instructions and 3D-printable enclosure models at
 https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
 
+![Crowdfunding poster](docs/assets/crowdfunding-poster.jpg)
+
 Compact ESP32-S3 air-quality station with LVGL UI, local web setup, and MQTT + Home Assistant discovery.
 
 ![Project Aura device](docs/assets/device-hero.jpg)
