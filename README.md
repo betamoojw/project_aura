@@ -4,7 +4,7 @@
 [![PlatformIO](https://img.shields.io/badge/platform-PlatformIO-ff7f2a?logo=platformio&logoColor=white)](https://platformio.org/)
 [![ESP32-S3](https://img.shields.io/badge/target-ESP32--S3-323330)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![LVGL](https://img.shields.io/badge/ui-LVGL-00b0f0)](https://lvgl.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 Support this project: back the crowdfunding to get detailed build instructions and 3D-printable enclosure models at
 https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
@@ -15,6 +15,12 @@ Project Aura is an open-source ESP32-S3 air-quality station built for makers who
 reliable device rather than a bare sensor board. It combines a touch-friendly LVGL UI, a local web
 setup portal, and MQTT with Home Assistant discovery, all wrapped in a 3D-printable enclosure.
 This repository contains the firmware and configuration needed to flash and customize the device.
+
+## What you get
+- Firmware source code (GPL-3.0-or-later).
+- A ready-to-build PlatformIO project for ESP32-S3.
+- Access to enclosure models and a PDF build guide via the MakerWorld backer tier (not in this repository).
+- A Commercial License option for businesses (see `COMMERCIAL_LICENSE_SUMMARY.md`).
 
 ![Project Aura device](docs/assets/device-hero.jpg)
 
@@ -139,6 +145,13 @@ MQTT stays idle until configured and enabled.
 
 ![Home Assistant dashboard](docs/assets/ha-dashboard.jpg)
 
+## License & Commercial Use
+- Firmware in this repository is licensed under GPL-3.0-or-later (see `LICENSE`).
+- Commercial use is allowed under GPL. If you distribute firmware (including in devices), you must provide the Corresponding Source under GPL.
+- If you need to sell devices while keeping firmware modifications proprietary, obtain a Commercial License (see `COMMERCIAL_LICENSE_SUMMARY.md`).
+- Enclosure models and the PDF build guide are not in this repository; they are available to backers on MakerWorld under separate terms.
+- Trademark and branding use is covered by `TRADEMARKS.md`.
+
 ## Tests
 See `TESTING.md` for native host tests and `scripts/run_tests.ps1`.
 
@@ -152,5 +165,3 @@ See `TESTING.md` for native host tests and `scripts/run_tests.ps1`.
 - `src/web/` HTML templates and handlers
 - `test/` native tests and mocks
 
-## License
-MIT. See `LICENSE`.
