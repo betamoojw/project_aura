@@ -72,9 +72,9 @@ graph TD
     LCD --> LVGL
     SM -->|Data| LVGL
     SM -->|Data| History
-    History --> Storage
-    Storage --> NM
-    Storage --> MM
+    History <-->|save/load| Storage
+    Storage <-->|config| NM
+    Storage <-->|config| MM
     NM --> Web
     NM --> MM
     MM -->|Publish| HA[Home Assistant]
