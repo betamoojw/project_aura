@@ -128,15 +128,18 @@ void PressureHistory::saveIfDue(StorageManager &storage, uint32_t now_ms) {
 }
 
 void PressureHistory::append(float pressure, SensorData &data) {
+    const int prev_count = count_;
     history_[index_] = pressure;
     index_ = (index_ + 1) % Config::PRESSURE_HISTORY_24H_SAMPLES;
     if (count_ < Config::PRESSURE_HISTORY_24H_SAMPLES) {
         count_++;
     }
-    if (count_ == Config::PRESSURE_HISTORY_3H_STEPS + 1) {
+    if (prev_count < Config::PRESSURE_HISTORY_3H_STEPS + 1 &&
+        count_ == Config::PRESSURE_HISTORY_3H_STEPS + 1) {
         LOGI("PressureHistory", "3h delta ready");
     }
-    if (count_ == Config::PRESSURE_HISTORY_24H_SAMPLES) {
+    if (prev_count < Config::PRESSURE_HISTORY_24H_SAMPLES &&
+        count_ == Config::PRESSURE_HISTORY_24H_SAMPLES) {
         LOGI("PressureHistory", "24h delta ready");
     }
 
