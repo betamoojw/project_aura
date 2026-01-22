@@ -1,7 +1,7 @@
 # Commercial License Summary
 
 This summary is provided for convenience and does not replace the full Commercial License.
-The Commercial License is a separate agreement offered by OWNER_NAME (BRAND_NAME).
+The Commercial License is a separate agreement offered by Volodymyr Papush (21CNCStudio).
 
 Why it exists
 - The firmware in this repository is GPL-3.0-or-later. GPL allows commercial use, but distributing
@@ -21,5 +21,5 @@ What it does not allow
 - Transfer or sublicense the license to third parties, unless the license explicitly allows it.
 
 How to obtain
-- Purchase the Commercial Tier on MakerWorld: MAKERWORLD_URL
+- Purchase the Commercial Tier on MakerWorld: https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
 - You will receive a license certificate and the full Commercial License text.

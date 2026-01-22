@@ -2,7 +2,7 @@
 
 By submitting a contribution to this repository, you agree:
 
-1. You grant OWNER_NAME (BRAND_NAME) a perpetual, worldwide, non-exclusive, royalty-free,
+1. You grant Volodymyr Papush (21CNCStudio) a perpetual, worldwide, non-exclusive, royalty-free,
    irrevocable, transferable license to use, reproduce, modify, prepare derivative works,
    distribute, publicly perform, publicly display, and sublicense your contribution under any
    license terms, including proprietary licenses.

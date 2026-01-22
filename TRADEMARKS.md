@@ -1,7 +1,7 @@
 # Project Aura Trademark Policy
 
-The names "Project Aura", "Aura", BRAND_NAME, and related logos are trademarks of OWNER_NAME
-(BRAND_NAME).
+The names "Project Aura", "Aura", 21CNCStudio, and related logos are trademarks of Volodymyr Papush
+(21CNCStudio).
 
 You may
 - Refer to the project in a descriptive way (for example, "compatible with Project Aura").
@@ -17,4 +17,4 @@ Commercial use
   License or separate written permission.
 
 Contact
-- OWNER_EMAIL
+- 21cncstudio@gmail.com
