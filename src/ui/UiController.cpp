@@ -2811,12 +2811,9 @@ void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
         if (currentData.voc_index >= 250) {
             voc_sev = STATUS_RED;
             voc_msg = "VOC Very High! Find source - vent";
-        } else if (currentData.voc_index >= 150) {
+        } else if (currentData.voc_index >= 151) {
             voc_sev = STATUS_ORANGE;
             voc_msg = "VOC High - Increase ventilation";
-        } else if (currentData.voc_index >= 100) {
-            voc_sev = STATUS_YELLOW;
-            voc_msg = "VOC Elevated - Ventilate room";
         }
     }
 
@@ -2939,9 +2936,15 @@ void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
         add_msg(sev, dp_sev, STATUS_SENSOR_DP, dp_msg);
     };
 
-    add_by_severity(STATUS_RED);
-    add_by_severity(STATUS_ORANGE);
-    add_by_severity(STATUS_YELLOW);
+    const bool has_red = (co2_sev == STATUS_RED) || (voc_sev == STATUS_RED) || (hcho_sev == STATUS_RED) ||
+                         (temp_sev == STATUS_RED) || (pm25_sev == STATUS_RED) || (pm10_sev == STATUS_RED) ||
+                         (nox_sev == STATUS_RED) || (hum_sev == STATUS_RED) || (dp_sev == STATUS_RED);
+    if (has_red) {
+        add_by_severity(STATUS_RED);
+    } else {
+        add_by_severity(STATUS_ORANGE);
+        add_by_severity(STATUS_YELLOW);
+    }
 
     uint32_t signature = static_cast<uint32_t>(count);
     for (size_t i = 0; i < count; ++i) {
