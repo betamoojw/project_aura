@@ -5,6 +5,7 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #include "ui/StatusMessages.h"
+#include "core/MathUtils.h"
 
 #include <math.h>
 
@@ -13,17 +14,6 @@ namespace StatusMessages {
 namespace {
 
 constexpr size_t kMaxMessages = 12;
-
-float compute_dew_point_c(float temp_c, float rh) {
-    if (!isfinite(temp_c) || !isfinite(rh) || rh <= 0.0f) {
-        return NAN;
-    }
-    float rh_clamped = fminf(fmaxf(rh, 1.0f), 100.0f);
-    constexpr float kA = 17.62f;
-    constexpr float kB = 243.12f;
-    float gamma = logf(rh_clamped / 100.0f) + (kA * temp_c) / (kB + temp_c);
-    return (kB * gamma) / (kA - gamma);
-}
 
 } // namespace
 
@@ -159,7 +149,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     bool dp_low = false;
     bool dp_high = false;
     if (data.temp_valid && data.hum_valid) {
-        dew_c = compute_dew_point_c(data.temperature, data.humidity);
+        dew_c = MathUtils::compute_dew_point_c(data.temperature, data.humidity);
         if (isfinite(dew_c)) {
             if (dew_c < 5.0f) {
                 dp_sev = STATUS_RED;

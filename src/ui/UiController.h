@@ -65,6 +65,7 @@ private:
     void update_mqtt_ui();
     void update_status_icons();
     void update_ui();
+    void update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar);
     void update_settings_header();
     void update_theme_custom_info(bool presets);
     void update_status_message(uint32_t now_ms, bool gas_warmup);
@@ -86,7 +87,6 @@ private:
     lv_color_t color_card_border();
     lv_color_t getTempColor(float t);
     lv_color_t getHumidityColor(float h);
-    float compute_dew_point_c(float temp_c, float rh);
     lv_color_t getDewPointColor(float dew_c);
     lv_color_t getCO2Color(int co2);
     lv_color_t getPM25Color(float pm);
