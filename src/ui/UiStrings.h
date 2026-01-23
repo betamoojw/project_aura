@@ -87,6 +87,7 @@ enum class TextId : uint16_t {
     MsgHumidityVeryHigh,
     MsgHumidityHigh,
     LabelSettingsTitle,
+    LabelSettingsButton,
     LabelSettingsBack,
     LabelTempOffsetTitle,
     LabelHumOffsetTitle,

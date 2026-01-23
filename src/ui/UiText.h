@@ -58,6 +58,7 @@ inline const char *MqttPortalUrl() { return UiStrings::text(UiStrings::TextId::M
 inline const char *ThemePortalUrl() { return UiStrings::text(UiStrings::TextId::ThemePortalUrl); }
 
 inline const char *LabelSettingsTitle() { return UiStrings::text(UiStrings::TextId::LabelSettingsTitle); }
+inline const char *LabelSettingsButton() { return UiStrings::text(UiStrings::TextId::LabelSettingsButton); }
 inline const char *LabelSettingsBack() { return UiStrings::text(UiStrings::TextId::LabelSettingsBack); }
 inline const char *LabelTempOffsetTitle() { return UiStrings::text(UiStrings::TextId::LabelTempOffsetTitle); }
 inline const char *LabelHumOffsetTitle() { return UiStrings::text(UiStrings::TextId::LabelHumOffsetTitle); }

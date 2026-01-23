@@ -71,8 +71,9 @@ bool is_crash_reset(esp_reset_reason_t reason) {
 const char *language_label(Language lang) {
     switch (lang) {
         case Language::DE: return "DEUTSCH";
-        case Language::FR: return "FRANÇAIS";
         case Language::ES: return "ESPAÑOL";
+        case Language::FR: return "FRANÇAIS";
+        case Language::IT: return "ITALIANO";
         case Language::EN:
         default:
             return "ENGLISH";
@@ -1235,7 +1236,8 @@ Config::Language UiController::next_language(Config::Language current) {
         case Config::Language::EN: return Config::Language::DE;
         case Config::Language::DE: return Config::Language::ES;
         case Config::Language::ES: return Config::Language::FR;
-        case Config::Language::FR: return Config::Language::EN;
+        case Config::Language::FR: return Config::Language::IT;
+        case Config::Language::IT: return Config::Language::EN;
         default:
             return Config::Language::EN;
     }
@@ -1272,7 +1274,7 @@ void UiController::update_settings_texts() {
 
 void UiController::update_main_texts() {
     if (objects.label_status_title) safe_label_set_text(objects.label_status_title, UiText::LabelStatusTitle());
-    if (objects.label_btn_settings) safe_label_set_text(objects.label_btn_settings, UiText::LabelSettingsTitle());
+    if (objects.label_btn_settings) safe_label_set_text(objects.label_btn_settings, UiText::LabelSettingsButton());
     if (objects.label_temp_title) safe_label_set_text(objects.label_temp_title, UiText::LabelTemperatureTitle());
     if (objects.label_hum_title) safe_label_set_text(objects.label_hum_title, UiText::LabelHumidityTitle());
     if (objects.label_pressure_title) safe_label_set_text(objects.label_pressure_title, UiText::LabelPressureTitle());
