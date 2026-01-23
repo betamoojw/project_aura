@@ -1128,8 +1128,8 @@ void create_screen_page_main() {
                             // label_hum_title
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_hum_title = obj;
-                            lv_obj_set_pos(obj, 15, 12);
-                            lv_obj_set_size(obj, 117, LV_SIZE_CONTENT);
+                            lv_obj_set_pos(obj, 6, 12);
+                            lv_obj_set_size(obj, 126, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1424,11 +1424,12 @@ void create_screen_page_main() {
                             // label_nox_warmup
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_nox_warmup = obj;
-                            lv_obj_set_pos(obj, 56, 51);
-                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_pos(obj, 28, 46);
+                            lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_label_set_text(obj, "WARMUP");
                         }
                     }
@@ -1506,11 +1507,12 @@ void create_screen_page_main() {
                             // label_voc_warmup
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_voc_warmup = obj;
-                            lv_obj_set_pos(obj, 55, 51);
-                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_pos(obj, 28, 51);
+                            lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_label_set_text(obj, "WARMUP");
                         }
                     }
@@ -5240,7 +5242,7 @@ void create_screen_page_co2_calib() {
                                     lv_obj_t *obj = lv_label_create(parent_obj);
                                     objects.label_btn_co2_calib_start = obj;
                                     lv_obj_set_pos(obj, 6, 8);
-                                    lv_obj_set_size(obj, 160, LV_SIZE_CONTENT);
+                                    lv_obj_set_size(obj, 160, 40);
                                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                                     add_style_style_text_primary(obj);
                                     lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
