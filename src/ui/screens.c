@@ -1837,8 +1837,8 @@ void create_screen_page_settings() {
                             // label_btn_theme_color
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_btn_theme_color = obj;
-                            lv_obj_set_pos(obj, 5, 18);
-                            lv_obj_set_size(obj, 136, LV_SIZE_CONTENT);
+                            lv_obj_set_pos(obj, 1, 18);
+                            lv_obj_set_size(obj, 144, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);

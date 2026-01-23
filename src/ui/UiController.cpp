@@ -75,6 +75,7 @@ const char *language_label(Language lang) {
         case Language::FR: return "FRANÇAIS";
         case Language::IT: return "ITALIANO";
         case Language::PT: return "PORTUGUÊS BR";
+        case Language::NL: return "NEDERLANDS";
         case Language::EN:
         default:
             return "ENGLISH";
@@ -1239,7 +1240,8 @@ Config::Language UiController::next_language(Config::Language current) {
         case Config::Language::ES: return Config::Language::FR;
         case Config::Language::FR: return Config::Language::IT;
         case Config::Language::IT: return Config::Language::PT;
-        case Config::Language::PT: return Config::Language::EN;
+        case Config::Language::PT: return Config::Language::NL;
+        case Config::Language::NL: return Config::Language::EN;
         default:
             return Config::Language::EN;
     }
