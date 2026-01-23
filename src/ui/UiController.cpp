@@ -74,7 +74,7 @@ const char *language_label(Language lang) {
         case Language::ES: return "ESPAÑOL";
         case Language::FR: return "FRANÇAIS";
         case Language::IT: return "ITALIANO";
-        case Language::PT: return "PORTUGUÊS (BR)";
+        case Language::PT: return "PORTUGUÊS BR";
         case Language::EN:
         default:
             return "ENGLISH";
