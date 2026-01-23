@@ -429,6 +429,9 @@ bool StorageManager::loadConfig() {
         readValue(ui, "led_indicators", loaded.led_indicators);
         readValue(ui, "alert_blink", loaded.alert_blink);
         readValue(ui, "asc_enabled", loaded.asc_enabled);
+        int lang_raw = static_cast<int>(Config::Language::EN);
+        readValue(ui, "lang", lang_raw);
+        loaded.language = Config::clampLanguage(lang_raw);
     }
 
     ArduinoJson::JsonObject backlight = root["backlight"].as<ArduinoJson::JsonObject>();
@@ -515,6 +518,7 @@ bool StorageManager::saveConfigInternal() {
     ui["led_indicators"] = config_.led_indicators;
     ui["alert_blink"] = config_.alert_blink;
     ui["asc_enabled"] = config_.asc_enabled;
+    ui["lang"] = static_cast<uint8_t>(config_.language);
 
     ArduinoJson::JsonObject backlight = root["backlight"].to<ArduinoJson::JsonObject>();
     backlight["timeout_s"] = config_.backlight_timeout_s;

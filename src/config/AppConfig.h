@@ -52,6 +52,20 @@ namespace Config {
     constexpr uint8_t SAFE_BOOT_MAX_REBOOTS = 5;
     constexpr uint32_t LAST_GOOD_COMMIT_DELAY_MS = 3UL * 60UL * 1000UL;
 
+    enum class Language : uint8_t {
+        EN = 0,
+        DE = 1,
+        ES = 2,
+        COUNT
+    };
+
+    inline Language clampLanguage(int value) {
+        if (value < 0 || value >= static_cast<int>(Language::COUNT)) {
+            return Language::EN;
+        }
+        return static_cast<Language>(value);
+    }
+
     constexpr uint8_t SEN66_ADDR = 0x6B;
     constexpr uint16_t SEN66_CMD_START = 0x0021;
     constexpr uint16_t SEN66_CMD_STOP = 0x0104;
@@ -251,6 +265,7 @@ namespace Config {
         bool led_indicators = true;
         bool alert_blink = true;
         bool asc_enabled = true;
+        Language language = Language::EN;
 
         uint32_t backlight_timeout_s = 0;
         bool backlight_schedule_enabled = false;

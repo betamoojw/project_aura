@@ -5,6 +5,7 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #include "ui/StatusMessages.h"
+#include "ui/UiStrings.h"
 #include "core/MathUtils.h"
 
 #include <math.h>
@@ -16,6 +17,9 @@ namespace {
 constexpr size_t kMaxMessages = 12;
 
 } // namespace
+
+using UiStrings::TextId;
+using UiStrings::text;
 
 StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmup) {
     StatusMessageResult result;
@@ -44,13 +48,13 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         result.has_valid = true;
         if (data.co2 >= 1500) {
             co2_sev = STATUS_RED;
-            co2_msg = "CO2 Very High! Ventilate now";
+            co2_msg = text(TextId::MsgCo2VeryHigh);
         } else if (data.co2 >= 1000) {
             co2_sev = STATUS_ORANGE;
-            co2_msg = "CO2 High - Ventilate soon";
+            co2_msg = text(TextId::MsgCo2High);
         } else if (data.co2 >= 800) {
             co2_sev = STATUS_YELLOW;
-            co2_msg = "CO2 Rising - Consider ventilation";
+            co2_msg = text(TextId::MsgCo2Rising);
         }
     }
 
@@ -58,13 +62,13 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         result.has_valid = true;
         if (data.pm25 >= 55.0f) {
             pm25_sev = STATUS_RED;
-            pm25_msg = "PM2.5 Very High! Purify - stop smoke";
+            pm25_msg = text(TextId::MsgPm25VeryHigh);
         } else if (data.pm25 >= 35.0f) {
             pm25_sev = STATUS_ORANGE;
-            pm25_msg = "PM2.5 High - Purify - check source";
+            pm25_msg = text(TextId::MsgPm25High);
         } else if (data.pm25 >= 12.0f) {
             pm25_sev = STATUS_YELLOW;
-            pm25_msg = "PM2.5 Elevated - Consider purifier";
+            pm25_msg = text(TextId::MsgPm25Elevated);
         }
     }
 
@@ -72,13 +76,13 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         result.has_valid = true;
         if (data.pm10 >= 254.0f) {
             pm10_sev = STATUS_RED;
-            pm10_msg = "PM10 Very High! Purify - check source";
+            pm10_msg = text(TextId::MsgPm10VeryHigh);
         } else if (data.pm10 >= 154.0f) {
             pm10_sev = STATUS_ORANGE;
-            pm10_msg = "PM10 High - Purify - reduce dust";
+            pm10_msg = text(TextId::MsgPm10High);
         } else if (data.pm10 >= 54.0f) {
             pm10_sev = STATUS_YELLOW;
-            pm10_msg = "PM10 Elevated - Purify - reduce dust";
+            pm10_msg = text(TextId::MsgPm10Elevated);
         }
     }
 
@@ -86,13 +90,13 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         result.has_valid = true;
         if (data.hcho >= 100.0f) {
             hcho_sev = STATUS_RED;
-            hcho_msg = "HCHO Very High! Ventilate - remove source";
+            hcho_msg = text(TextId::MsgHchoVeryHigh);
         } else if (data.hcho >= 60.0f) {
             hcho_sev = STATUS_ORANGE;
-            hcho_msg = "HCHO High - Ventilate - remove source";
+            hcho_msg = text(TextId::MsgHchoHigh);
         } else if (data.hcho >= 30.0f) {
             hcho_sev = STATUS_YELLOW;
-            hcho_msg = "HCHO Detected - Check sources";
+            hcho_msg = text(TextId::MsgHchoDetected);
         }
     }
 
@@ -100,10 +104,10 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         result.has_valid = true;
         if (data.voc_index >= 250) {
             voc_sev = STATUS_RED;
-            voc_msg = "VOC Very High! Find source - vent";
+            voc_msg = text(TextId::MsgVocVeryHigh);
         } else if (data.voc_index >= 151) {
             voc_sev = STATUS_ORANGE;
-            voc_msg = "VOC High - Increase ventilation";
+            voc_msg = text(TextId::MsgVocHigh);
         }
     }
 
@@ -111,13 +115,13 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         result.has_valid = true;
         if (data.nox_index >= 200) {
             nox_sev = STATUS_RED;
-            nox_msg = "NOx Very High! Stop source - ventilate";
+            nox_msg = text(TextId::MsgNoxVeryHigh);
         } else if (data.nox_index >= 100) {
             nox_sev = STATUS_ORANGE;
-            nox_msg = "NOx High - Use hood - check source";
+            nox_msg = text(TextId::MsgNoxHigh);
         } else if (data.nox_index >= 50) {
             nox_sev = STATUS_YELLOW;
-            nox_msg = "NOx Elevated - Check stove/outside";
+            nox_msg = text(TextId::MsgNoxElevated);
         }
     }
 
@@ -126,22 +130,22 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         const float t = data.temperature;
         if (t < 19.0f) {
             temp_sev = STATUS_RED;
-            temp_msg = "Temp Too Cold! Heat now";
+            temp_msg = text(TextId::MsgTempTooCold);
         } else if (t < 20.0f) {
             temp_sev = STATUS_ORANGE;
-            temp_msg = "Temp Cold - Heat the room";
+            temp_msg = text(TextId::MsgTempCold);
         } else if (t < 21.0f) {
             temp_sev = STATUS_YELLOW;
-            temp_msg = "Temp Slightly Cool - Add heat";
+            temp_msg = text(TextId::MsgTempSlightlyCool);
         } else if (t > 27.0f) {
             temp_sev = STATUS_RED;
-            temp_msg = "Temp Too Hot! Cool now";
+            temp_msg = text(TextId::MsgTempTooHot);
         } else if (t > 26.0f) {
             temp_sev = STATUS_ORANGE;
-            temp_msg = "Temp Warm - Ventilate / cool";
+            temp_msg = text(TextId::MsgTempWarm);
         } else if (t > 25.0f) {
             temp_sev = STATUS_YELLOW;
-            temp_msg = "Temp Slightly Warm - Increase airflow";
+            temp_msg = text(TextId::MsgTempSlightlyWarm);
         }
     }
 
@@ -153,23 +157,23 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         if (isfinite(dew_c)) {
             if (dew_c < 5.0f) {
                 dp_sev = STATUS_RED;
-                dp_msg = "DP Very Low! Humidify";
+                dp_msg = text(TextId::MsgDewPointVeryLow);
                 dp_low = true;
             } else if (dew_c < 10.0f) {
                 dp_sev = STATUS_YELLOW;
-                dp_msg = "DP Low - Air may feel dry";
+                dp_msg = text(TextId::MsgDewPointLow);
                 dp_low = true;
             } else if (dew_c > 21.0f) {
                 dp_sev = STATUS_RED;
-                dp_msg = "DP Muggy! Dehumidify now";
+                dp_msg = text(TextId::MsgDewPointMuggy);
                 dp_high = true;
             } else if (dew_c > 18.0f) {
                 dp_sev = STATUS_ORANGE;
-                dp_msg = "DP Very High - Vent/dehumidify";
+                dp_msg = text(TextId::MsgDewPointVeryHigh);
                 dp_high = true;
             } else if (dew_c > 16.0f) {
                 dp_sev = STATUS_YELLOW;
-                dp_msg = "DP High - Air may feel muggy";
+                dp_msg = text(TextId::MsgDewPointHigh);
                 dp_high = true;
             }
         }
@@ -180,22 +184,22 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         const float h = data.humidity;
         if (h < 20.0f) {
             hum_sev = STATUS_RED;
-            hum_msg = "Humidity Extremely Low! Humidify";
+            hum_msg = text(TextId::MsgHumidityExtremelyLow);
         } else if (h < 30.0f) {
             hum_sev = STATUS_ORANGE;
-            hum_msg = "Humidity Very Low - Use humidifier";
+            hum_msg = text(TextId::MsgHumidityVeryLow);
         } else if (h < 40.0f) {
             hum_sev = STATUS_YELLOW;
-            hum_msg = "Humidity Low - Consider humidifier";
+            hum_msg = text(TextId::MsgHumidityLow);
         } else if (h > 70.0f) {
             hum_sev = STATUS_RED;
-            hum_msg = "Humidity Extremely High! Dehumidify";
+            hum_msg = text(TextId::MsgHumidityExtremelyHigh);
         } else if (h > 65.0f) {
             hum_sev = STATUS_ORANGE;
-            hum_msg = "Humidity Very High - Dehumidify";
+            hum_msg = text(TextId::MsgHumidityVeryHigh);
         } else if (h > 60.0f) {
             hum_sev = STATUS_YELLOW;
-            hum_msg = "Humidity High - Increase airflow";
+            hum_msg = text(TextId::MsgHumidityHigh);
         }
     }
 

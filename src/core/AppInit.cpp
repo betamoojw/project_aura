@@ -17,6 +17,7 @@
 #include "core/InitConfig.h"
 #include "core/Logger.h"
 #include "lvgl_v8_port.h"
+#include "ui/UiStrings.h"
 
 namespace {
 
@@ -106,6 +107,7 @@ void AppInit::initManagersAndConfig(Context &ctx, StorageManager::BootAction boo
     ctx.networkManager.setStateChangeCallback(wifi_state_change_cb, &g_wifi_state_ctx);
 
     const auto &cfg = ctx.storage.config();
+    UiStrings::setLanguage(cfg.language);
     ctx.temp_offset = cfg.temp_offset;
     ctx.hum_offset = cfg.hum_offset;
     InitConfig::normalizeOffsets(ctx.temp_offset, ctx.hum_offset);

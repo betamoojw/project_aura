@@ -6,53 +6,55 @@
 
 #pragma once
 
+#include "ui/UiStrings.h"
+
 namespace UiText {
 
-inline constexpr const char kValueMissing[] = "---";
-inline constexpr const char kValueMissingShort[] = "--";
-inline constexpr const char kValueZeroPercent[] = "0%";
-inline constexpr const char kTimeMissing[] = "--:--";
-inline constexpr const char kDateMissing[] = "--.--.----";
+inline const char *ValueMissing() { return UiStrings::text(UiStrings::TextId::ValueMissing); }
+inline const char *ValueMissingShort() { return UiStrings::text(UiStrings::TextId::ValueMissingShort); }
+inline const char *ValueZeroPercent() { return UiStrings::text(UiStrings::TextId::ValueZeroPercent); }
+inline const char *TimeMissing() { return UiStrings::text(UiStrings::TextId::TimeMissing); }
+inline const char *DateMissing() { return UiStrings::text(UiStrings::TextId::DateMissing); }
 
-inline constexpr const char kUnitC[] = "C";
-inline constexpr const char kUnitF[] = "F";
-inline constexpr const char kUnitPpb[] = "ppb";
-inline constexpr const char kUnitIndex[] = "Index";
+inline const char *UnitC() { return UiStrings::text(UiStrings::TextId::UnitC); }
+inline const char *UnitF() { return UiStrings::text(UiStrings::TextId::UnitF); }
+inline const char *UnitPpb() { return UiStrings::text(UiStrings::TextId::UnitPpb); }
+inline const char *UnitIndex() { return UiStrings::text(UiStrings::TextId::UnitIndex); }
 
-inline constexpr const char kLabelHcho[] = "HCHO";
-inline constexpr const char kLabelAqi[] = "AQI";
+inline const char *LabelHcho() { return UiStrings::text(UiStrings::TextId::LabelHcho); }
+inline const char *LabelAqi() { return UiStrings::text(UiStrings::TextId::LabelAqi); }
 
-inline constexpr const char kStatusInitializing[] = "Initializing";
-inline constexpr const char kStatusAllGood[] = "Fresh Air - All Good";
-inline constexpr const char kQualityExcellent[] = "Excellent";
-inline constexpr const char kQualityGood[] = "Good";
-inline constexpr const char kQualityModerate[] = "Moderate";
-inline constexpr const char kQualityPoor[] = "Poor";
+inline const char *StatusInitializing() { return UiStrings::text(UiStrings::TextId::StatusInitializing); }
+inline const char *StatusAllGood() { return UiStrings::text(UiStrings::TextId::StatusAllGood); }
+inline const char *QualityExcellent() { return UiStrings::text(UiStrings::TextId::QualityExcellent); }
+inline const char *QualityGood() { return UiStrings::text(UiStrings::TextId::QualityGood); }
+inline const char *QualityModerate() { return UiStrings::text(UiStrings::TextId::QualityModerate); }
+inline const char *QualityPoor() { return UiStrings::text(UiStrings::TextId::QualityPoor); }
 
-inline constexpr const char kStatusOff[] = "OFF";
-inline constexpr const char kStatusOn[] = "ON";
-inline constexpr const char kStatusOk[] = "OK";
-inline constexpr const char kStatusErr[] = "ERR";
-inline constexpr const char kStatusSync[] = "SYNC";
+inline const char *StatusOff() { return UiStrings::text(UiStrings::TextId::StatusOff); }
+inline const char *StatusOn() { return UiStrings::text(UiStrings::TextId::StatusOn); }
+inline const char *StatusOk() { return UiStrings::text(UiStrings::TextId::StatusOk); }
+inline const char *StatusErr() { return UiStrings::text(UiStrings::TextId::StatusErr); }
+inline const char *StatusSync() { return UiStrings::text(UiStrings::TextId::StatusSync); }
 
-inline constexpr const char kWifiStatusConnected[] = "Connected";
-inline constexpr const char kWifiStatusApMode[] = "AP Mode";
-inline constexpr const char kWifiStatusError[] = "Error";
-inline constexpr const char kWifiStatusConnecting[] = "Connecting";
+inline const char *WifiStatusConnected() { return UiStrings::text(UiStrings::TextId::WifiStatusConnected); }
+inline const char *WifiStatusApMode() { return UiStrings::text(UiStrings::TextId::WifiStatusApMode); }
+inline const char *WifiStatusError() { return UiStrings::text(UiStrings::TextId::WifiStatusError); }
+inline const char *WifiStatusConnecting() { return UiStrings::text(UiStrings::TextId::WifiStatusConnecting); }
 
-inline constexpr const char kMqttStatusDisabled[] = "Disabled";
-inline constexpr const char kMqttStatusNoWifi[] = "No WiFi";
-inline constexpr const char kMqttStatusConnected[] = "Connected";
-inline constexpr const char kMqttStatusError[] = "Error";
-inline constexpr const char kMqttStatusRetry10m[] = "Retrying (10m)";
-inline constexpr const char kMqttStatusRetry1h[] = "Retrying (1h)";
-inline constexpr const char kMqttStatusConnecting[] = "Connecting...";
+inline const char *MqttStatusDisabled() { return UiStrings::text(UiStrings::TextId::MqttStatusDisabled); }
+inline const char *MqttStatusNoWifi() { return UiStrings::text(UiStrings::TextId::MqttStatusNoWifi); }
+inline const char *MqttStatusConnected() { return UiStrings::text(UiStrings::TextId::MqttStatusConnected); }
+inline const char *MqttStatusError() { return UiStrings::text(UiStrings::TextId::MqttStatusError); }
+inline const char *MqttStatusRetry10m() { return UiStrings::text(UiStrings::TextId::MqttStatusRetry10m); }
+inline const char *MqttStatusRetry1h() { return UiStrings::text(UiStrings::TextId::MqttStatusRetry1h); }
+inline const char *MqttStatusConnecting() { return UiStrings::text(UiStrings::TextId::MqttStatusConnecting); }
 
-inline constexpr const char kMqttToggleLabel[] = "ON / OFF";
-inline constexpr const char kNtpInterval[] = "Every 6h";
+inline const char *MqttToggleLabel() { return UiStrings::text(UiStrings::TextId::MqttToggleLabel); }
+inline const char *NtpInterval() { return UiStrings::text(UiStrings::TextId::NtpInterval); }
 
-inline constexpr const char kWifiPortalUrl[] = "http://192.168.4.1";
-inline constexpr const char kMqttPortalUrl[] = "http://aura.local/mqtt";
-inline constexpr const char kThemePortalUrl[] = "http://aura.local/theme";
+inline const char *WifiPortalUrl() { return UiStrings::text(UiStrings::TextId::WifiPortalUrl); }
+inline const char *MqttPortalUrl() { return UiStrings::text(UiStrings::TextId::MqttPortalUrl); }
+inline const char *ThemePortalUrl() { return UiStrings::text(UiStrings::TextId::ThemePortalUrl); }
 
 } // namespace UiText
