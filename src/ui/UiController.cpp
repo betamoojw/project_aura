@@ -781,6 +781,7 @@ bool UiController::boot_diag_has_errors(uint32_t now_ms) {
 }
 
 void UiController::update_boot_diag(uint32_t now_ms) {
+    update_boot_diag_texts();
     char buf[64];
 
     if (objects.lbl_diag_app_ver) {
