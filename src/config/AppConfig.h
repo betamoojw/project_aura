@@ -56,6 +56,7 @@ namespace Config {
         EN = 0,
         DE = 1,
         ES = 2,
+        FR = 3,
         COUNT
     };
 
