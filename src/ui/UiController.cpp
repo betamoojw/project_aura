@@ -166,275 +166,147 @@ void UiController::begin() {
     }
     current_screen_id = SCREEN_ID_PAGE_MAIN;
     pending_screen_id = SCREEN_ID_PAGE_MAIN;
-    if (objects.btn_settings) {
-        lv_obj_add_event_cb(objects.btn_settings, on_settings_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_back) {
-        lv_obj_add_event_cb(objects.btn_back, on_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_wifi) {
-        lv_obj_add_event_cb(objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_wifi_back) {
-        lv_obj_add_event_cb(objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_mqtt) {
-        lv_obj_add_event_cb(objects.btn_mqtt, on_mqtt_settings_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_mqtt_back) {
-        lv_obj_add_event_cb(objects.btn_mqtt_back, on_mqtt_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    apply_toggle_style(objects.btn_night_mode);
-    apply_toggle_style(objects.btn_auto_dim);
-    apply_toggle_style(objects.btn_wifi);
-    apply_toggle_style(objects.btn_mqtt);
-    apply_toggle_style(objects.btn_units_c_f);
-    apply_toggle_style(objects.btn_led_indicators);
-    apply_toggle_style(objects.btn_alert_blink);
-    apply_toggle_style(objects.btn_co2_calib_asc);
-    apply_toggle_style(objects.btn_head_status);
-    apply_toggle_style(objects.btn_wifi_toggle);
-    apply_toggle_style(objects.btn_ntp_toggle);
-    apply_toggle_style(objects.btn_backlight_schedule_toggle);
-    apply_toggle_style(objects.btn_backlight_always_on);
-    apply_toggle_style(objects.btn_backlight_30s);
-    apply_toggle_style(objects.btn_backlight_1m);
-    apply_toggle_style(objects.btn_backlight_5m);
-    apply_toggle_style(objects.btn_auto_night_toggle);
-    if (objects.btn_head_status) {
-        lv_obj_add_state(objects.btn_head_status, LV_STATE_CHECKED);
-        lv_obj_add_event_cb(objects.btn_head_status, on_head_status_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_wifi_toggle) {
-        lv_obj_add_event_cb(objects.btn_wifi_toggle, on_wifi_toggle_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_mqtt_toggle) {
-        apply_toggle_style(objects.btn_mqtt_toggle);
-        lv_obj_add_event_cb(objects.btn_mqtt_toggle, on_mqtt_toggle_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_mqtt_reconnect) {
-        lv_obj_add_event_cb(objects.btn_mqtt_reconnect, on_mqtt_reconnect_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_wifi_reconnect) {
-        lv_obj_add_event_cb(objects.btn_wifi_reconnect, on_wifi_reconnect_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_wifi_start_ap) {
-        lv_obj_add_event_cb(objects.btn_wifi_start_ap, on_wifi_start_ap_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_time_date) {
-        lv_obj_add_event_cb(objects.btn_time_date, on_time_date_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_dim) {
-        lv_obj_add_event_cb(objects.btn_auto_dim, on_auto_night_settings_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_head_status_1) {
-        lv_obj_add_event_cb(objects.btn_head_status_1, on_backlight_settings_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_back) {
-        lv_obj_add_event_cb(objects.btn_backlight_back, on_backlight_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_back) {
-        lv_obj_add_event_cb(objects.btn_auto_night_back, on_auto_night_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_toggle) {
-        lv_obj_add_event_cb(objects.btn_auto_night_toggle, on_auto_night_toggle_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_auto_night_start_hours_minus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_start_hours_minus, on_auto_night_start_hours_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_start_hours_plus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_start_hours_plus, on_auto_night_start_hours_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_start_minutes_minus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_start_minutes_minus, on_auto_night_start_minutes_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_start_minutes_plus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_start_minutes_plus, on_auto_night_start_minutes_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_end_hours_minus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_end_hours_minus, on_auto_night_end_hours_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_end_hours_plus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_end_hours_plus, on_auto_night_end_hours_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_end_minutes_minus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_end_minutes_minus, on_auto_night_end_minutes_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_auto_night_end_minutes_plus) {
-        lv_obj_add_event_cb(objects.btn_auto_night_end_minutes_plus, on_auto_night_end_minutes_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_schedule_toggle) {
-        lv_obj_add_event_cb(objects.btn_backlight_schedule_toggle, on_backlight_schedule_toggle_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_backlight_always_on) {
-        lv_obj_add_event_cb(objects.btn_backlight_always_on, on_backlight_preset_always_on_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_30s) {
-        lv_obj_add_event_cb(objects.btn_backlight_30s, on_backlight_preset_30s_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_1m) {
-        lv_obj_add_event_cb(objects.btn_backlight_1m, on_backlight_preset_1m_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_5m) {
-        lv_obj_add_event_cb(objects.btn_backlight_5m, on_backlight_preset_5m_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_sleep_hours_minus) {
-        lv_obj_add_event_cb(objects.btn_backlight_sleep_hours_minus, on_backlight_sleep_hours_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_sleep_hours_plus) {
-        lv_obj_add_event_cb(objects.btn_backlight_sleep_hours_plus, on_backlight_sleep_hours_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_sleep_minutes_minus) {
-        lv_obj_add_event_cb(objects.btn_backlight_sleep_minutes_minus, on_backlight_sleep_minutes_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_sleep_minutes_plus) {
-        lv_obj_add_event_cb(objects.btn_backlight_sleep_minutes_plus, on_backlight_sleep_minutes_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_wake_hours_minus) {
-        lv_obj_add_event_cb(objects.btn_backlight_wake_hours_minus, on_backlight_wake_hours_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_wake_hours_plus) {
-        lv_obj_add_event_cb(objects.btn_backlight_wake_hours_plus, on_backlight_wake_hours_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_wake_minutes_minus) {
-        lv_obj_add_event_cb(objects.btn_backlight_wake_minutes_minus, on_backlight_wake_minutes_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_backlight_wake_minutes_plus) {
-        lv_obj_add_event_cb(objects.btn_backlight_wake_minutes_plus, on_backlight_wake_minutes_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_night_mode) {
-        if (night_mode) {
-            lv_obj_add_state(objects.btn_night_mode, LV_STATE_CHECKED);
-        } else {
-            lv_obj_clear_state(objects.btn_night_mode, LV_STATE_CHECKED);
+    struct EventBinding {
+        lv_obj_t *obj;
+        lv_event_cb_t cb;
+        lv_event_code_t code;
+    };
+
+    const EventBinding click_bindings[] = {
+        {objects.btn_settings, on_settings_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_back, on_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_mqtt, on_mqtt_settings_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_mqtt_back, on_mqtt_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_mqtt_reconnect, on_mqtt_reconnect_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_wifi_reconnect, on_wifi_reconnect_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_wifi_start_ap, on_wifi_start_ap_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_time_date, on_time_date_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_dim, on_auto_night_settings_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_head_status_1, on_backlight_settings_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_back, on_backlight_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_back, on_auto_night_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_start_hours_minus, on_auto_night_start_hours_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_start_hours_plus, on_auto_night_start_hours_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_start_minutes_minus, on_auto_night_start_minutes_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_start_minutes_plus, on_auto_night_start_minutes_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_end_hours_minus, on_auto_night_end_hours_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_end_hours_plus, on_auto_night_end_hours_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_end_minutes_minus, on_auto_night_end_minutes_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_auto_night_end_minutes_plus, on_auto_night_end_minutes_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_always_on, on_backlight_preset_always_on_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_30s, on_backlight_preset_30s_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_1m, on_backlight_preset_1m_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_5m, on_backlight_preset_5m_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_sleep_hours_minus, on_backlight_sleep_hours_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_sleep_hours_plus, on_backlight_sleep_hours_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_sleep_minutes_minus, on_backlight_sleep_minutes_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_sleep_minutes_plus, on_backlight_sleep_minutes_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_wake_hours_minus, on_backlight_wake_hours_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_wake_hours_plus, on_backlight_wake_hours_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_wake_minutes_minus, on_backlight_wake_minutes_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_backlight_wake_minutes_plus, on_backlight_wake_minutes_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_restart, on_restart_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_factory_reset, on_factory_reset_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_voc_reset, on_voc_reset_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_confirm_ok, on_confirm_ok_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_confirm_cancel, on_confirm_cancel_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_datetime_back, on_datetime_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_datetime_apply, on_datetime_apply_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_tz_plus, on_tz_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_tz_minus, on_tz_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_time_hours_minus, on_set_time_hours_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_time_hours_plus, on_set_time_hours_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_time_minutes_minus, on_set_time_minutes_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_time_minutes_plus, on_set_time_minutes_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_date_day_minus, on_set_date_day_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_date_day_plus, on_set_date_day_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_date_month_minus, on_set_date_month_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_date_month_plus, on_set_date_month_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_date_year_minus, on_set_date_year_minus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_set_date_year_plus, on_set_date_year_plus_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_wifi_forget, on_wifi_forget_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_co2_calib, on_co2_calib_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_co2_calib_back, on_co2_calib_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_co2_calib_start, on_co2_calib_start_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_temp_offset_minus, on_temp_offset_minus_cb, LV_EVENT_CLICKED},
+        {objects.btn_temp_offset_plus, on_temp_offset_plus_cb, LV_EVENT_CLICKED},
+        {objects.btn_hum_offset_minus, on_hum_offset_minus_cb, LV_EVENT_CLICKED},
+        {objects.btn_hum_offset_plus, on_hum_offset_plus_cb, LV_EVENT_CLICKED},
+        {objects.btn_theme_color, on_theme_color_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_theme_back, on_theme_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_diag_continue, on_boot_diag_continue_cb, LV_EVENT_CLICKED},
+    };
+
+    const EventBinding value_bindings[] = {
+        {objects.btn_head_status, on_head_status_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_wifi_toggle, on_wifi_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_mqtt_toggle, on_mqtt_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_auto_night_toggle, on_auto_night_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_backlight_schedule_toggle, on_backlight_schedule_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_night_mode, on_night_mode_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_units_c_f, on_units_c_f_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_led_indicators, on_led_indicators_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_alert_blink, on_alert_blink_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_co2_calib_asc, on_co2_calib_asc_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_ntp_toggle, on_ntp_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
+    };
+
+    auto bind_events = [](const EventBinding *bindings, size_t count) {
+        for (size_t i = 0; i < count; ++i) {
+            const EventBinding &binding = bindings[i];
+            if (binding.obj) {
+                lv_obj_add_event_cb(binding.obj, binding.cb, binding.code, nullptr);
+            }
         }
-        lv_obj_add_event_cb(objects.btn_night_mode, on_night_mode_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
+    };
+
+    lv_obj_t *toggle_buttons[] = {
+        objects.btn_night_mode,
+        objects.btn_auto_dim,
+        objects.btn_wifi,
+        objects.btn_mqtt,
+        objects.btn_units_c_f,
+        objects.btn_led_indicators,
+        objects.btn_alert_blink,
+        objects.btn_co2_calib_asc,
+        objects.btn_head_status,
+        objects.btn_wifi_toggle,
+        objects.btn_mqtt_toggle,
+        objects.btn_ntp_toggle,
+        objects.btn_backlight_schedule_toggle,
+        objects.btn_backlight_always_on,
+        objects.btn_backlight_30s,
+        objects.btn_backlight_1m,
+        objects.btn_backlight_5m,
+        objects.btn_auto_night_toggle,
+    };
+
+    for (lv_obj_t *btn : toggle_buttons) {
+        apply_toggle_style(btn);
     }
-    if (objects.btn_units_c_f) {
-        if (temp_units_c) {
-            lv_obj_add_state(objects.btn_units_c_f, LV_STATE_CHECKED);
-        } else {
-            lv_obj_clear_state(objects.btn_units_c_f, LV_STATE_CHECKED);
+
+    auto set_checked = [](lv_obj_t *btn, bool checked) {
+        if (!btn) {
+            return;
         }
-        lv_obj_add_event_cb(objects.btn_units_c_f, on_units_c_f_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_restart) {
-        lv_obj_add_event_cb(objects.btn_restart, on_restart_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_factory_reset) {
-        lv_obj_add_event_cb(objects.btn_factory_reset, on_factory_reset_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_voc_reset) {
-        lv_obj_add_event_cb(objects.btn_voc_reset, on_voc_reset_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_confirm_ok) {
-        lv_obj_add_event_cb(objects.btn_confirm_ok, on_confirm_ok_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_confirm_cancel) {
-        lv_obj_add_event_cb(objects.btn_confirm_cancel, on_confirm_cancel_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_datetime_back) {
-        lv_obj_add_event_cb(objects.btn_datetime_back, on_datetime_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_datetime_apply) {
-        lv_obj_add_event_cb(objects.btn_datetime_apply, on_datetime_apply_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_ntp_toggle) {
-        lv_obj_add_event_cb(objects.btn_ntp_toggle, on_ntp_toggle_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_tz_plus) {
-        lv_obj_add_event_cb(objects.btn_tz_plus, on_tz_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_tz_minus) {
-        lv_obj_add_event_cb(objects.btn_tz_minus, on_tz_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_time_hours_minus) {
-        lv_obj_add_event_cb(objects.btn_set_time_hours_minus, on_set_time_hours_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_time_hours_plus) {
-        lv_obj_add_event_cb(objects.btn_set_time_hours_plus, on_set_time_hours_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_time_minutes_minus) {
-        lv_obj_add_event_cb(objects.btn_set_time_minutes_minus, on_set_time_minutes_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_time_minutes_plus) {
-        lv_obj_add_event_cb(objects.btn_set_time_minutes_plus, on_set_time_minutes_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_date_day_minus) {
-        lv_obj_add_event_cb(objects.btn_set_date_day_minus, on_set_date_day_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_date_day_plus) {
-        lv_obj_add_event_cb(objects.btn_set_date_day_plus, on_set_date_day_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_date_month_minus) {
-        lv_obj_add_event_cb(objects.btn_set_date_month_minus, on_set_date_month_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_date_month_plus) {
-        lv_obj_add_event_cb(objects.btn_set_date_month_plus, on_set_date_month_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_date_year_minus) {
-        lv_obj_add_event_cb(objects.btn_set_date_year_minus, on_set_date_year_minus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_set_date_year_plus) {
-        lv_obj_add_event_cb(objects.btn_set_date_year_plus, on_set_date_year_plus_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_led_indicators) {
-        if (led_indicators_enabled) {
-            lv_obj_add_state(objects.btn_led_indicators, LV_STATE_CHECKED);
+        if (checked) {
+            lv_obj_add_state(btn, LV_STATE_CHECKED);
         } else {
-            lv_obj_clear_state(objects.btn_led_indicators, LV_STATE_CHECKED);
+            lv_obj_clear_state(btn, LV_STATE_CHECKED);
         }
-        lv_obj_add_event_cb(objects.btn_led_indicators, on_led_indicators_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_alert_blink) {
-        if (alert_blink_enabled) {
-            lv_obj_add_state(objects.btn_alert_blink, LV_STATE_CHECKED);
-        } else {
-            lv_obj_clear_state(objects.btn_alert_blink, LV_STATE_CHECKED);
-        }
-        lv_obj_add_event_cb(objects.btn_alert_blink, on_alert_blink_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_co2_calib_asc) {
-        if (co2_asc_enabled) {
-            lv_obj_add_state(objects.btn_co2_calib_asc, LV_STATE_CHECKED);
-        } else {
-            lv_obj_clear_state(objects.btn_co2_calib_asc, LV_STATE_CHECKED);
-        }
-        lv_obj_add_event_cb(objects.btn_co2_calib_asc, on_co2_calib_asc_event_cb, LV_EVENT_VALUE_CHANGED, nullptr);
-    }
-    if (objects.btn_wifi_forget) {
-        lv_obj_add_event_cb(objects.btn_wifi_forget, on_wifi_forget_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_co2_calib) {
-        lv_obj_add_event_cb(objects.btn_co2_calib, on_co2_calib_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_co2_calib_back) {
-        lv_obj_add_event_cb(objects.btn_co2_calib_back, on_co2_calib_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_co2_calib_start) {
-        lv_obj_add_event_cb(objects.btn_co2_calib_start, on_co2_calib_start_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_temp_offset_minus) {
-        lv_obj_add_event_cb(objects.btn_temp_offset_minus, on_temp_offset_minus_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_temp_offset_plus) {
-        lv_obj_add_event_cb(objects.btn_temp_offset_plus, on_temp_offset_plus_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_hum_offset_minus) {
-        lv_obj_add_event_cb(objects.btn_hum_offset_minus, on_hum_offset_minus_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_hum_offset_plus) {
-        lv_obj_add_event_cb(objects.btn_hum_offset_plus, on_hum_offset_plus_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_theme_color) {
-        lv_obj_add_event_cb(objects.btn_theme_color, on_theme_color_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_theme_back) {
-        lv_obj_add_event_cb(objects.btn_theme_back, on_theme_back_event_cb, LV_EVENT_CLICKED, nullptr);
-    }
-    if (objects.btn_diag_continue) {
-        lv_obj_add_event_cb(objects.btn_diag_continue, on_boot_diag_continue_cb, LV_EVENT_CLICKED, nullptr);
-    }
+    };
+
+    set_checked(objects.btn_head_status, true);
+    set_checked(objects.btn_night_mode, night_mode);
+    set_checked(objects.btn_units_c_f, temp_units_c);
+    set_checked(objects.btn_led_indicators, led_indicators_enabled);
+    set_checked(objects.btn_alert_blink, alert_blink_enabled);
+    set_checked(objects.btn_co2_calib_asc, co2_asc_enabled);
+
+    bind_events(click_bindings, sizeof(click_bindings) / sizeof(click_bindings[0]));
+    bind_events(value_bindings, sizeof(value_bindings) / sizeof(value_bindings[0]));
     themeManager.registerEvents(apply_toggle_style_cb, on_theme_swatch_event_cb, on_theme_tab_event_cb);
     {
         bool presets = themeManager.isCurrentPreset();
@@ -1049,17 +921,6 @@ void UiController::sync_auto_dim_button_state() {
     }
 }
 
-void UiController::confirm_set_visible(lv_obj_t *obj, bool visible) {
-    if (!obj) {
-        return;
-    }
-    if (visible) {
-        lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    } else {
-        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    }
-}
-
 void UiController::confirm_show(ConfirmAction action) {
     confirm_action = action;
     if (!objects.container_confirm) {
@@ -1069,30 +930,30 @@ void UiController::confirm_show(ConfirmAction action) {
     bool show_restart = (action == CONFIRM_RESTART);
     bool show_reset = (action == CONFIRM_FACTORY_RESET);
 
-    confirm_set_visible(objects.container_confirm, true);
-    confirm_set_visible(objects.container_confirm_card, true);
-    confirm_set_visible(objects.btn_confirm_ok, true);
-    confirm_set_visible(objects.btn_confirm_cancel, true);
-    confirm_set_visible(objects.label_btn_confirm_cancel, true);
+    set_visible(objects.container_confirm, true);
+    set_visible(objects.container_confirm_card, true);
+    set_visible(objects.btn_confirm_ok, true);
+    set_visible(objects.btn_confirm_cancel, true);
+    set_visible(objects.label_btn_confirm_cancel, true);
     lv_obj_add_flag(objects.container_confirm, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_move_foreground(objects.container_confirm);
 
-    confirm_set_visible(objects.label_btn_confirm_voc, show_voc);
-    confirm_set_visible(objects.label_confirm_title_voc, show_voc);
-    confirm_set_visible(objects.container_confirm_voc_text, show_voc);
+    set_visible(objects.label_btn_confirm_voc, show_voc);
+    set_visible(objects.label_confirm_title_voc, show_voc);
+    set_visible(objects.container_confirm_voc_text, show_voc);
 
-    confirm_set_visible(objects.label_btn_confirm_restart, show_restart);
-    confirm_set_visible(objects.label_confirm_title_restart, show_restart);
-    confirm_set_visible(objects.container_confirm_restart_text, show_restart);
+    set_visible(objects.label_btn_confirm_restart, show_restart);
+    set_visible(objects.label_confirm_title_restart, show_restart);
+    set_visible(objects.container_confirm_restart_text, show_restart);
 
-    confirm_set_visible(objects.label_btn_confirm_reset, show_reset);
-    confirm_set_visible(objects.label_confirm_title_reset, show_reset);
-    confirm_set_visible(objects.container_confirm_reset_text, show_reset);
+    set_visible(objects.label_btn_confirm_reset, show_reset);
+    set_visible(objects.label_confirm_title_reset, show_reset);
+    set_visible(objects.container_confirm_reset_text, show_reset);
 }
 
 void UiController::confirm_hide() {
     confirm_action = CONFIRM_NONE;
-    confirm_set_visible(objects.container_confirm, false);
+    set_visible(objects.container_confirm, false);
 }
 
 void UiController::mqtt_apply_pending() {

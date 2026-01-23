@@ -112,7 +112,6 @@ private:
     void set_dot_color(lv_obj_t *obj, lv_color_t color);
     void set_chip_color(lv_obj_t *obj, lv_color_t color);
     void set_button_enabled(lv_obj_t *btn, bool enabled);
-    void confirm_set_visible(lv_obj_t *obj, bool visible);
     void confirm_show(ConfirmAction action);
     void confirm_hide();
 
