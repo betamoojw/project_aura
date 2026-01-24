@@ -60,6 +60,7 @@ namespace Config {
         IT = 4,
         PT = 5,
         NL = 6,
+        ZH = 7,
         COUNT
     };
 

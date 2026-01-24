@@ -1450,7 +1450,7 @@ void create_screen_page_main() {
                             // label_dew_title
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_dew_title = obj;
-                            lv_obj_set_pos(obj, 26, 83);
+                            lv_obj_set_pos(obj, 26, 81);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1461,7 +1461,7 @@ void create_screen_page_main() {
                             // label_dew_value
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_dew_value = obj;
-                            lv_obj_set_pos(obj, 68, 82);
+                            lv_obj_set_pos(obj, 68, 80);
                             lv_obj_set_size(obj, 38, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1473,7 +1473,7 @@ void create_screen_page_main() {
                             // label_dew_unit
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_dew_unit = obj;
-                            lv_obj_set_pos(obj, 111, 87);
+                            lv_obj_set_pos(obj, 111, 85);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1484,7 +1484,7 @@ void create_screen_page_main() {
                             // dot_dp
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.dot_dp = obj;
-                            lv_obj_set_pos(obj, 150, 86);
+                            lv_obj_set_pos(obj, 148, 84);
                             lv_obj_set_size(obj, 14, 14);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1537,7 +1537,7 @@ void create_screen_page_main() {
                             // dot_ah
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.dot_ah = obj;
-                            lv_obj_set_pos(obj, 150, 49);
+                            lv_obj_set_pos(obj, 148, 49);
                             lv_obj_set_size(obj, 14, 14);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1555,7 +1555,7 @@ void create_screen_page_main() {
                             // dot_hum
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.dot_hum = obj;
-                            lv_obj_set_pos(obj, 150, 13);
+                            lv_obj_set_pos(obj, 148, 15);
                             lv_obj_set_size(obj, 14, 14);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);

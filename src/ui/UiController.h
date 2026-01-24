@@ -75,6 +75,7 @@ private:
     void update_boot_diag(uint32_t now_ms);
     bool boot_diag_has_errors(uint32_t now_ms);
     void update_language_label();
+    void update_language_fonts();
     Config::Language next_language(Config::Language current);
     void update_settings_texts();
     void update_main_texts();

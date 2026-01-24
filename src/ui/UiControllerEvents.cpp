@@ -170,6 +170,7 @@ void UiController::on_language_event(lv_event_t *e) {
     update_backlight_texts();
     update_co2_calib_texts();
     update_boot_diag_texts();
+    update_language_fonts();
     update_ui();
     update_wifi_ui();
     update_mqtt_ui();
