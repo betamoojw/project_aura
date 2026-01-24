@@ -138,10 +138,10 @@ void UiController::update_datetime_ui() {
             safe_label_set_text(objects.label_wifi_status_1, UiText::StatusOff());
             if (objects.chip_wifi_status) set_chip_color(objects.chip_wifi_status, color_yellow());
         } else if (wifi_state == AuraNetworkManager::WIFI_STATE_STA_CONNECTED) {
-            safe_label_set_text(objects.label_wifi_status_1, UiText::StatusOn());
+            safe_label_set_text(objects.label_wifi_status_1, UiText::StatusOk());
             if (objects.chip_wifi_status) set_chip_color(objects.chip_wifi_status, color_green());
         } else {
-            safe_label_set_text(objects.label_wifi_status_1, UiText::StatusOn());
+            safe_label_set_text(objects.label_wifi_status_1, UiText::StatusSync());
             if (objects.chip_wifi_status) set_chip_color(objects.chip_wifi_status, color_blue());
         }
     }
