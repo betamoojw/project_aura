@@ -33,6 +33,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     StatusSeverity nox_sev = STATUS_NONE;
     StatusSeverity hum_sev = STATUS_NONE;
     StatusSeverity dp_sev = STATUS_NONE;
+    StatusSeverity ah_sev = STATUS_NONE;
 
     const char *co2_msg = nullptr;
     const char *voc_msg = nullptr;
@@ -43,6 +44,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     const char *nox_msg = nullptr;
     const char *hum_msg = nullptr;
     const char *dp_msg = nullptr;
+    const char *ah_msg = nullptr;
 
     if (data.co2_valid && data.co2 > 0) {
         result.has_valid = true;
@@ -203,6 +205,26 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         }
     }
 
+    if (data.temp_valid && data.hum_valid) {
+        float ah_gm3 = MathUtils::compute_absolute_humidity_gm3(data.temperature, data.humidity);
+        if (isfinite(ah_gm3)) {
+            result.has_valid = true;
+            if (ah_gm3 < 5.0f) {
+                ah_sev = STATUS_RED;
+                ah_msg = text(TextId::MsgAhVeryLow);
+            } else if (ah_gm3 < 7.0f) {
+                ah_sev = STATUS_YELLOW;
+                ah_msg = text(TextId::MsgAhLow);
+            } else if (ah_gm3 > 18.0f) {
+                ah_sev = STATUS_RED;
+                ah_msg = text(TextId::MsgAhVeryHigh);
+            } else if (ah_gm3 > 15.0f) {
+                ah_sev = STATUS_YELLOW;
+                ah_msg = text(TextId::MsgAhHigh);
+            }
+        }
+    }
+
     if (dp_high && data.hum_valid && data.humidity > 60.0f) {
         hum_sev = STATUS_NONE;
         hum_msg = nullptr;
@@ -227,12 +249,14 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         add_msg(sev, co2_sev, STATUS_SENSOR_CO2, co2_msg);
         add_msg(sev, temp_sev, STATUS_SENSOR_TEMP, temp_msg);
         add_msg(sev, hum_sev, STATUS_SENSOR_HUM, hum_msg);
+        add_msg(sev, ah_sev, STATUS_SENSOR_AH, ah_msg);
         add_msg(sev, dp_sev, STATUS_SENSOR_DP, dp_msg);
     };
 
     const bool has_red = (co2_sev == STATUS_RED) || (voc_sev == STATUS_RED) || (hcho_sev == STATUS_RED) ||
                          (temp_sev == STATUS_RED) || (pm25_sev == STATUS_RED) || (pm10_sev == STATUS_RED) ||
-                         (nox_sev == STATUS_RED) || (hum_sev == STATUS_RED) || (dp_sev == STATUS_RED);
+                         (nox_sev == STATUS_RED) || (hum_sev == STATUS_RED) || (dp_sev == STATUS_RED) ||
+                         (ah_sev == STATUS_RED);
     if (has_red) {
         add_by_severity(STATUS_RED);
     } else {

@@ -29,6 +29,7 @@ enum StatusSensor : uint8_t {
     STATUS_SENSOR_CO2,
     STATUS_SENSOR_TEMP,
     STATUS_SENSOR_HUM,
+    STATUS_SENSOR_AH,
     STATUS_SENSOR_DP,
 };
 

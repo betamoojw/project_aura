@@ -196,7 +196,11 @@ constexpr const char *kStringsEn[] = {
     "FAIL",
     "STARTING",
     "NOT FOUND",
-    "LOST"
+    "LOST",
+    "AH very low! Humidify now",
+    "AH low - Use humidifier",
+    "AH high - Risk of mold",
+    "AH very high! Mold grows fast"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -383,7 +387,11 @@ constexpr const char *kStringsDe[] = {
     "FEHLER",
     "STARTET...",
     "NICHT GEFUNDEN",
-    "VERLOREN"
+    "VERLOREN",
+    "AH sehr niedrig! Befeuchten",
+    "AH niedrig - Luftbefeuchter",
+    "AH hoch - Schimmelrisiko",
+    "AH sehr hoch! Schimmel wächst"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -574,7 +582,11 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "ÉCHEC",
     "DÉMARRAGE",
     "NON TROUVÉ",
-    "PERDU"
+    "PERDU",
+    "AH très bas! Humidifiez",
+    "AH bas - Utiliser humidif.",
+    "AH élevé - Risque de moisissure",
+    "AH très élevé! Moisissure rapide"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -765,7 +777,11 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "FALLITO",
     "AVVIO",
     "NON TROVATO",
-    "PERSO"
+    "PERSO",
+    "AH molto basso! Umidifica",
+    "AH basso - Usa umidificatore",
+    "AH alto - Rischio muffa",
+    "AH molto alto! Muffa rapida"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -956,7 +972,11 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "FALHA",
     "INICIANDO",
     "NÃO ENCONTRADO",
-    "PERDIDO"
+    "PERDIDO",
+    "AH muito baixo! Umidifique",
+    "AH baixo - Use umidificador",
+    "AH alto - Risco de mofo",
+    "AH muito alto! Mofo rápido"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1147,7 +1167,11 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "MISLUKT",
     "STARTEN",
     "NIET GEVONDEN",
-    "VERLOREN"
+    "VERLOREN",
+    "AH zeer laag! Bevochtig",
+    "AH laag - Gebruik bevochtiger",
+    "AH hoog - Schimmelrisico",
+    "AH zeer hoog! Schimmel snel"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1338,7 +1362,11 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "FALLO",
     "INICIANDO",
     "NO ENCONTRADO",
-    "PERDIDO"
+    "PERDIDO",
+    "AH muy bajo! Humidifica",
+    "AH bajo - Usa humidificador",
+    "AH alto - Riesgo de moho",
+    "AH muy alto! Moho rápido"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==

@@ -560,6 +560,15 @@ lv_color_t UiController::getHumidityColor(float h) {
     return color_red();
 }
 
+lv_color_t UiController::getAbsoluteHumidityColor(float ah) {
+    if (!isfinite(ah)) return color_inactive();
+    if (ah < 5.0f) return color_red();
+    if (ah < 7.0f) return color_yellow();
+    if (ah < 15.0f) return color_green();
+    if (ah <= 18.0f) return color_yellow();
+    return color_red();
+}
+
 lv_color_t UiController::getDewPointColor(float dew_c) {
     if (!isfinite(dew_c)) return color_inactive();
     if (dew_c < 5.0f) return color_red();
@@ -1280,7 +1289,6 @@ void UiController::update_main_texts() {
     if (objects.label_status_title) safe_label_set_text(objects.label_status_title, UiText::LabelStatusTitle());
     if (objects.label_btn_settings) safe_label_set_text(objects.label_btn_settings, UiText::LabelSettingsButton());
     if (objects.label_temp_title) safe_label_set_text(objects.label_temp_title, UiText::LabelTemperatureTitle());
-    if (objects.label_hum_title) safe_label_set_text(objects.label_hum_title, UiText::LabelHumidityTitle());
     if (objects.label_pressure_title) safe_label_set_text(objects.label_pressure_title, UiText::LabelPressureTitle());
     if (objects.label_time_title) safe_label_set_text(objects.label_time_title, UiText::LabelTimeCard());
     if (objects.label_voc_warmup) safe_label_set_text(objects.label_voc_warmup, UiText::LabelWarmup());

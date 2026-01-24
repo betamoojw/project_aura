@@ -198,6 +198,10 @@ enum class TextId : uint16_t {
     BootDiagStarting,
     BootDiagNotFound,
     BootDiagLost,
+    MsgAhVeryLow,
+    MsgAhLow,
+    MsgAhHigh,
+    MsgAhVeryHigh,
     Count
 };
 
