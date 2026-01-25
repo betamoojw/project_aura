@@ -1,0 +1,157 @@
+title: Project Aura
+views:
+  - title: Project Aura
+    path: kitchen
+    icon: mdi:air-filter
+    cards:
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: tile
+            entity: sensor.project_aura_project_aura_temperature
+            name: Temperature
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_humidity
+            name: Humidity
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_absolute_humidity
+            name: Absolute Humidity
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_dew_point
+            name: Dew Point
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_pressure
+            name: Pressure
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_hcho
+            name: HCHO
+            vertical: false
+            features_position: bottom
+      - type: gauge
+        entity: sensor.project_aura_project_aura_co2
+        name: CO2
+        min: 400
+        max: 2000
+        needle: true
+        severity:
+          green: 900
+          yellow: 1200
+          red: 1500
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: tile
+            entity: sensor.project_aura_project_aura_voc_index
+            name: VOC Index
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_nox_index
+            name: NOx Index
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_pm2_5
+            name: PM2.5
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_pm10
+            name: PM10
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_pressure_delta_3h
+            name: Pressure Delta 3h
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_pressure_delta_24h
+            name: Pressure Delta 24h
+            vertical: false
+            features_position: bottom
+      - chart_type: line
+        period: hour
+        type: statistics-graph
+        entities:
+          - sensor.project_aura_project_aura_co2
+        min_y_axis: 400
+        max_y_axis: 3000
+        stat_types:
+          - min
+          - max
+        days_to_show: 1
+        hide_legend: true
+        title: CO2 Concentration
+      - chart_type: line
+        period: hour
+        type: statistics-graph
+        entities:
+          - sensor.project_aura_project_aura_temperature
+        stat_types:
+          - min
+          - max
+        min_y_axis: 10
+        max_y_axis: 30
+        hide_legend: true
+        title: Temperature
+        days_to_show: 1
+      - chart_type: line
+        period: hour
+        type: statistics-graph
+        entities:
+          - sensor.project_aura_project_aura_humidity
+        stat_types:
+          - min
+          - max
+        min_y_axis: 20
+        max_y_axis: 100
+        hide_legend: true
+        logarithmic_scale: false
+        title: Humidity
+        days_to_show: 1
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: tile
+            entity: switch.project_aura_project_aura_night_mode
+            name: Night Mode
+            icon: mdi:weather-night
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.project_aura_project_aura_backlight
+            name: Backlight
+            icon: mdi:television
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.project_aura_project_aura_alert_blink
+            name: Alert Blink
+            icon: mdi:alarm-light
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: button.project_aura_project_aura_restart
+            name: Restart
+            icon: mdi:restart-alert
+            vertical: false
+            features_position: bottom
+            tap_action:
+              action: press
+              confirmation:
+                text: Are you sure you want to restart the Project Aura?
+    type: masonry
