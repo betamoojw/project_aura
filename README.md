@@ -41,6 +41,16 @@ This repository contains the firmware and configuration needed to flash and cust
 - MQTT state publishing and Home Assistant discovery + command topics.
 - **Robust Safe Boot:** automatic rollback to last-known-good config after crashes, plus boot diagnostics and I2C recovery.
 
+## UI Languages
+- English
+- Deutsch
+- Español
+- Français
+- Italiano
+- Português BR
+- Nederlands
+- 简体中文
+
 ## Hardware
 - Waveshare ESP32-S3-Touch-LCD-4.3 (16MB flash, LittleFS).
 - RGB LCD + touch via ESP32_Display_Panel (GT911 supported).
