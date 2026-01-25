@@ -590,7 +590,8 @@ lv_color_t UiController::getAbsoluteHumidityColor(float ah) {
 lv_color_t UiController::getDewPointColor(float dew_c) {
     if (!isfinite(dew_c)) return color_inactive();
     if (dew_c < 5.0f) return color_red();
-    if (dew_c <= 10.0f) return color_orange();
+    if (dew_c <= 8.0f) return color_orange();
+    if (dew_c <= 10.0f) return color_yellow();
     if (dew_c <= 16.0f) return color_green();
     if (dew_c <= 18.0f) return color_yellow();
     if (dew_c <= 21.0f) return color_orange();

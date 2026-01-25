@@ -161,6 +161,10 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
                 dp_sev = STATUS_RED;
                 dp_msg = text(TextId::MsgDewPointVeryLow);
                 dp_low = true;
+            } else if (dew_c < 8.0f) {
+                dp_sev = STATUS_ORANGE;
+                dp_msg = text(TextId::MsgDewPointLow);
+                dp_low = true;
             } else if (dew_c < 10.0f) {
                 dp_sev = STATUS_YELLOW;
                 dp_msg = text(TextId::MsgDewPointLow);
