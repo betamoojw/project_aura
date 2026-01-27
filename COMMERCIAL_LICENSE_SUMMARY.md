@@ -18,6 +18,7 @@ What the Commercial License allows (summary)
 What it does not allow
 - Claim that your product is "Official" or "Certified" unless explicitly authorized.
 - Use Project Aura logos or branding outside the scope of the license.
+- Resell or share the digital design files (STL/3MF/STEP/PDF) unless explicitly authorized.
 - Transfer or sublicense the license to third parties, unless the license explicitly allows it.
 
 How to obtain

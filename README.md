@@ -1,6 +1,5 @@
 # Project Aura
 
-<!-- TODO: Replace badges with the exact set you already shared -->
 [![PlatformIO](https://img.shields.io/badge/platform-PlatformIO-ff7f2a?logo=platformio&logoColor=white)](https://platformio.org/)
 [![ESP32-S3](https://img.shields.io/badge/target-ESP32--S3-323330)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![LVGL](https://img.shields.io/badge/ui-LVGL-00b0f0)](https://lvgl.io/)
@@ -16,12 +15,12 @@ setup portal, and MQTT with Home Assistant discovery.
 This repository contains the firmware source code and configuration needed to flash and customize the device.
 
 ## Video Demo
-Video demo - click the image.
+Click the image.
 [![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/maxresdefault.jpg)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
 
 ## Highlights
 - Professional telemetry: PM2.5/PM10, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO.
-- No soldering required: designed for easy assembly using standard JST/Grove connectors.
+- No soldering required: designed for easy assembly using Grove/QT connectors.
 - Smooth LVGL UI with night mode, custom themes, and status indicators.
 - Easy setup: Wi-Fi AP onboarding + mDNS portal (http://aura.local) for configuration.
 - Home Assistant ready: automatic MQTT discovery and ready-to-use dashboard code.
