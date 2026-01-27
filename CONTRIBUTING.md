@@ -1,18 +1,43 @@
-# Contributing
+# Contributing to Project Aura
 
-Thanks for your interest in contributing.
+First off, thank you for considering contributing to Project Aura! It's people like you that make the
+open-source community such an amazing place to learn, inspire, and create.
 
-This project uses a Contributor License Agreement (CLA) to keep dual licensing possible. By
-submitting a pull request, you agree to the CLA in CLA.md.
+## Legal: The Contributor License Agreement (CLA)
 
-Before you start
-- Search existing issues to avoid duplicates.
-- Open an issue for large changes or behavior changes.
+Project Aura uses a **Dual Licensing** model (GPLv3 for open source, Commercial for proprietary use).
+To maintain this model, I require all contributors to agree to a Contributor License Agreement (CLA).
 
-How to contribute
-1. Fork the repository and create a feature branch.
-2. Keep changes focused and well scoped.
-3. Run tests when possible.
-4. Submit a pull request with a clear description.
+**By submitting a pull request, you automatically agree to the terms in [CLA.md](CLA.md).**
 
-By submitting a pull request, you agree to the CLA.
+This agreement gives 21CNCStudio the right to use your contribution in both the open-source and
+commercial versions of the firmware, while you retain copyright ownership of your code.
+
+## Found a Bug?
+
+If you find a bug in the source code or a mistake in the documentation, please
+[submit an issue](https://github.com/21cncstudio/project_aura/issues).
+
+**Before you submit:**
+1.  **Search** existing issues to avoid duplicates.
+2.  **Check** [GitHub Discussions](https://github.com/21cncstudio/project_aura/discussions) for Q&A.
+
+## Contributing Code
+
+I love pull requests! Here's a quick guide:
+
+1.  **Fork** the repository and create your branch from `main`.
+2.  **Code**:
+    *   Keep changes focused and well-scoped.
+    *   Follow the existing code style.
+    *   Add SPDX headers to new files (copy from existing files).
+3.  **Test**: Run tests (`scripts/run_tests.ps1`) or verify on hardware.
+4.  **Pull Request**:
+    *   Open a PR against the `main` branch.
+    *   Describe your changes clearly.
+
+## Questions?
+
+For general questions, hardware help, or showing off your build, please join the GitHub Discussions.
+
+Thanks!

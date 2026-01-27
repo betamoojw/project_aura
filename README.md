@@ -4,6 +4,7 @@
 [![ESP32-S3](https://img.shields.io/badge/target-ESP32--S3-323330)](https://www.espressif.com/en/products/socs/esp32-s3)
 [![LVGL](https://img.shields.io/badge/ui-LVGL-00b0f0)](https://lvgl.io/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![YouTube Demo](https://img.shields.io/badge/YouTube-Demo-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
 
 Support this project: back the crowdfunding to get detailed build instructions, 3D-printable enclosure models, and wiring guides at:
 https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
@@ -13,6 +14,27 @@ reliable device rather than a bare sensor board. It combines a touch-friendly LV
 setup portal, and MQTT with Home Assistant discovery.
 
 This repository contains the firmware source code and configuration needed to flash and customize the device.
+
+**Join the community:** [GitHub Discussions](https://github.com/21cncstudio/project_aura/discussions)
+
+## Table of Contents
+- [Video Demo](#video-demo)
+- [Highlights](#highlights)
+- [Gallery](#gallery)
+- [UI Screens](#ui-screens)
+- [Hardware and BOM](#hardware-and-bom)
+- [Assembly and Wiring Notice](#assembly-and-wiring-notice)
+- [Pin Configuration](#pin-configuration)
+- [UI Languages](#ui-languages)
+- [Firmware Architecture](#firmware-architecture)
+- [Build and Flash](#build-and-flash-platformio)
+- [Configuration](#configuration)
+- [MQTT + Home Assistant](#mqtt--home-assistant)
+- [Contributing](#contributing)
+- [License and Commercial Use](#license-and-commercial-use)
+- [Tests](#tests)
+- [Docs](#docs)
+- [Repo Layout](#repo-layout)
 
 ## Video Demo
 Click the image.
@@ -79,7 +101,7 @@ DIY: verify pinouts against the pin table below before powering on to avoid dama
 | 3V3 | 3V3 | Power for external I2C sensors |
 | GND | GND | Common ground |
 | I2C SDA | GPIO 8 | SEN66, SFA30, BMP580 (external) |
-| I2C SCL | GPIO 9 | |
+| I2C SCL | GPIO 9 | Shared bus |
 
 Display and touch are integrated on the board; no external wiring is needed for them.
 
@@ -183,6 +205,12 @@ copy include/secrets.h.example include/secrets.h
 MQTT stays idle until configured and enabled.
 
 ![Home Assistant dashboard](docs/assets/ha-dashboard.jpg)
+
+## Contributing
+Contributions are welcome! Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for details on the process for submitting pull requests and the Contributor License Agreement (CLA).
+
+Found a bug? Open an Issue: https://github.com/21cncstudio/project_aura/issues
+Have a question? Ask in Discussions: https://github.com/21cncstudio/project_aura/discussions
 
 ## License and Commercial Use
 - Firmware in this repository is licensed under GPL-3.0-or-later (see `LICENSE`).
