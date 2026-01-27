@@ -33,7 +33,6 @@ This repository contains the firmware source code and configuration needed to fl
 - [Contributing](#contributing)
 - [License and Commercial Use](#license-and-commercial-use)
 - [Tests](#tests)
-- [Docs](#docs)
 - [Repo Layout](#repo-layout)
 
 ## Video Demo
@@ -221,9 +220,6 @@ Have a question? Ask in Discussions: https://github.com/21cncstudio/project_aura
 
 ## Tests
 See `TESTING.md` for native host tests and `scripts/run_tests.ps1`.
-
-## Docs
-- `CUSTOM_IPC_STACK_BUILD.md` covers custom ESP-IDF/Arduino IPC stack size builds.
 
 ## Repo Layout
 - `src/core/` boot, init, reliability
