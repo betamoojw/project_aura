@@ -14,6 +14,13 @@ reliable device rather than a bare sensor board. It combines a touch-friendly LV
 setup portal, and MQTT with Home Assistant discovery, all wrapped in a 3D-printable enclosure.
 This repository contains the firmware and configuration needed to flash and customize the device.
 
+## Highlights
+- Multi-sensor telemetry (temp, humidity, CO2, VOC, NOx, PM, pressure, HCHO).
+- LVGL UI with night mode, custom themes, and status indicators.
+- Wi-Fi AP onboarding + mDNS portal (`aura.local`) for Wi-Fi/MQTT/theme setup.
+- MQTT state publishing and Home Assistant discovery + command topics.
+- **Robust Safe Boot:** automatic rollback to last-known-good config after crashes, plus boot diagnostics and I2C recovery.
+
 ## Video Demo
 Video Demo - click the image.
 [![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/maxresdefault.jpg)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
@@ -45,13 +52,6 @@ Video Demo - click the image.
     <td align="center"><img src="docs/assets/ui-backlight.jpg" alt="Backlight"/><br/>Backlight</td>
   </tr>
 </table>
-
-## Highlights
-- Multi-sensor telemetry (temp, humidity, CO2, VOC, NOx, PM, pressure, HCHO).
-- LVGL UI with night mode, custom themes, and status indicators.
-- Wi-Fi AP onboarding + mDNS portal (`aura.local`) for Wi-Fi/MQTT/theme setup.
-- MQTT state publishing and Home Assistant discovery + command topics.
-- **Robust Safe Boot:** automatic rollback to last-known-good config after crashes, plus boot diagnostics and I2C recovery.
 
 ## UI Languages
 - English
