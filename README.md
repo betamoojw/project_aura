@@ -6,31 +6,26 @@
 [![LVGL](https://img.shields.io/badge/ui-LVGL-00b0f0)](https://lvgl.io/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Support this project: back the crowdfunding to get detailed build instructions and 3D-printable enclosure models at
+Support this project: back the crowdfunding to get detailed build instructions, 3D-printable enclosure models, and wiring guides at:
 https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
 
 Project Aura is an open-source ESP32-S3 air-quality station built for makers who want a polished,
 reliable device rather than a bare sensor board. It combines a touch-friendly LVGL UI, a local web
-setup portal, and MQTT with Home Assistant discovery, all wrapped in a 3D-printable enclosure.
-This repository contains the firmware and configuration needed to flash and customize the device.
+setup portal, and MQTT with Home Assistant discovery.
 
-## Highlights
-- Multi-sensor telemetry (temp, humidity, CO2, VOC, NOx, PM, pressure, HCHO).
-- LVGL UI with night mode, custom themes, and status indicators.
-- Wi-Fi AP onboarding + mDNS portal (`aura.local`) for Wi-Fi/MQTT/theme setup.
-- MQTT state publishing and Home Assistant discovery + command topics.
-- **Robust Safe Boot:** automatic rollback to last-known-good config after crashes, plus boot diagnostics and I2C recovery.
+This repository contains the firmware source code and configuration needed to flash and customize the device.
 
 ## Video Demo
-Video Demo - click the image.
+Video demo - click the image.
 [![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/maxresdefault.jpg)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
 
-
-## What you get
-- Firmware source code (GPL-3.0-or-later).
-- A ready-to-build PlatformIO project for ESP32-S3.
-- Access to enclosure models and a PDF build guide via the MakerWorld backer tier (not in this repository).
-- A Commercial License option for businesses (see `COMMERCIAL_LICENSE_SUMMARY.md`).
+## Highlights
+- Professional telemetry: PM2.5/PM10, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO.
+- No soldering required: designed for easy assembly using standard JST/Grove connectors.
+- Smooth LVGL UI with night mode, custom themes, and status indicators.
+- Easy setup: Wi-Fi AP onboarding + mDNS portal (http://aura.local) for configuration.
+- Home Assistant ready: automatic MQTT discovery and ready-to-use dashboard code.
+- Robust Safe Boot: automatic rollback to the last-known-good config after crashes.
 
 ![Project Aura device](docs/assets/device-hero.jpg)
 
@@ -53,36 +48,52 @@ Video Demo - click the image.
   </tr>
 </table>
 
-## UI Languages
-- English
-- Deutsch
-- Español
-- Français
-- Italiano
-- Português BR
-- Nederlands
-- 简体中文
+## Hardware and BOM
+Project Aura is designed around high-quality components to ensure accuracy. If you are sourcing parts yourself,
+look for these specific modules:
 
-## Hardware
-- Waveshare ESP32-S3-Touch-LCD-4.3 (16MB flash, LittleFS).
-- RGB LCD + touch via ESP32_Display_Panel (GT911 supported).
-- Sensor drivers included: SEN66, SFA3X, DPS310, BMP580, PCF8523 RTC.
+| Component | Part / Model |
+| :--- | :--- |
+| Core Board | Waveshare ESP32-S3-Touch-LCD-4.3 (800x480) |
+| Main Sensor | Sensirion SEN66 (via Adafruit breakout) |
+| Formaldehyde | Sensirion SFA30 (Grove interface, optional) |
+| Pressure | Adafruit BMP580 or DPS310 |
+| RTC | Adafruit PCF8523 |
 
-Note: SEN66 gas indices (VOC/NOx) require ~5 minutes of warmup for reliable readings; the UI shows WARMUP during this period.
+Sensor note: the SFA30 is fully supported and widely available. Support for the successor model (SFA40) is on the roadmap.
+Note: SEN66 gas indices (VOC/NOx) require about 5 minutes of warmup for reliable readings; the UI shows WARMUP during this period.
 
-⚡ Wiring Notice
-Please pay close attention to the cabling. The pin order on the board is custom and requires modification of standard cables.
-Supporters and backers have access to the comprehensive Build Guide, which covers this step in detail to ensure a trouble-free assembly.
+Recommended retailers: Mouser, DigiKey, LCSC, Adafruit, Seeed Studio, Waveshare.
 
-## Pin Configuration (Wiring)
+## Assembly and Wiring Notice
+Please pay close attention to the cabling. The pin order on the board is custom and requires modification
+of standard off-the-shelf cables (pin swapping).
+
+Backers: please refer to the comprehensive Build Guide included in your reward for the exact wiring diagram
+and a trouble-free assembly.
+
+DIY: verify pinouts against the pin table below before powering on to avoid damaging components.
+
+## Pin Configuration
 | Component | Pin (ESP32-S3) | Notes |
 | :--- | :--- | :--- |
-| **3V3** | `3V3` | Power for external I2C sensors |
-| **GND** | `GND` | Common ground |
-| **I2C SDA** | `GPIO 8` | SEN66, SFA3X, BMP580 (external) |
-| **I2C SCL** | `GPIO 9` | |
+| 3V3 | 3V3 | Power for external I2C sensors |
+| GND | GND | Common ground |
+| I2C SDA | GPIO 8 | SEN66, SFA30, BMP580 (external) |
+| I2C SCL | GPIO 9 | |
 
-Display and touch are on the board; no external wiring is needed.
+Display and touch are integrated on the board; no external wiring is needed for them.
+
+## UI Languages
+Project Aura speaks your language. You can switch languages in the Settings menu:
+- English
+- Deutsch
+- Espanol
+- Francais
+- Italiano
+- Portugues BR
+- Nederlands
+- Simplified Chinese
 
 ## Firmware Architecture
 Data flow and responsibilities are intentionally split into small managers:
@@ -90,7 +101,7 @@ Data flow and responsibilities are intentionally split into small managers:
 ```mermaid
 graph TD
     subgraph Hardware
-        Sensors[Sensors<br/>SEN66, SFA3X, BMP580]
+        Sensors[Sensors<br/>SEN66, SFA30, BMP580]
         Touch[Touch<br/>GT911]
         RTC[RTC<br/>PCF8523]
         LCD[LCD + Backlight]
@@ -134,24 +145,28 @@ Core modules live in `src/core/` and orchestrate startup (`AppInit`, `BoardInit`
 Feature managers are in `src/modules/`, UI in `src/ui/`, and web pages in `src/web/`.
 
 ## Build and Flash (PlatformIO)
-Prereqs: PlatformIO CLI or VSCode + PlatformIO extension.
+Prerequisites: PlatformIO CLI or VSCode + PlatformIO extension.
 Built with Arduino ESP32 core 3.1.1 (ESP-IDF 5.3.x).
 
 ```powershell
+git clone https://github.com/21cncstudio/project_aura.git
+cd project_aura
 pio run -e project_aura
 pio run -e project_aura -t upload
+pio run -e project_aura -t uploadfs
 pio device monitor -b 115200
 ```
 
-## Configuration and Secrets
-Runtime settings are stored on-device in LittleFS:
-- `/config.json` (active config)
-- `/config.last_good.json` (rollback snapshot)
-
-Wi-Fi, MQTT, and themes can be configured from the device UI or from the web portal:
-- AP mode SSID: `ProjectAura-Setup`
-- Config portal: `http://192.168.4.1`
-- When connected: `http://aura.local/` (Wi-Fi), `/mqtt`, `/theme`
+## Configuration
+1. Wi-Fi setup:
+   On first boot, the device creates a hotspot: `ProjectAura-Setup`.
+   Connect to it and open http://192.168.4.1 to configure Wi-Fi credentials.
+2. Web portal:
+   Once connected to your network, access the device at http://aura.local/. Configure MQTT, timezone, and themes there.
+3. Home Assistant:
+   MQTT discovery is enabled by default. The device appears in HA via MQTT integration automatically.
+   A ready-to-use dashboard YAML is available at `docs/home_assistant/dashboard.yaml`.
+   Setup guide: `docs/home_assistant/README.md`.
 
 Optional compile-time defaults belong in `include/secrets.h`, which is ignored by git.
 Copy and edit:
@@ -160,22 +175,17 @@ Copy and edit:
 copy include/secrets.h.example include/secrets.h
 ```
 
-This keeps Wi-Fi passwords and MQTT credentials out of the repository while still allowing
-easy local setup.
-
 ## MQTT + Home Assistant
 - State topic: `<base>/state`
 - Availability topic: `<base>/status`
 - Commands: `<base>/command/*` (night_mode, alert_blink, backlight, restart)
 - Home Assistant discovery: `homeassistant/*/config`
-- Dashboard YAML: `docs/home_assistant/dashboard.yaml` (standard cards only).
-- Setup guide: `docs/home_assistant/README.md`.
 
 MQTT stays idle until configured and enabled.
 
 ![Home Assistant dashboard](docs/assets/ha-dashboard.jpg)
 
-## License & Commercial Use
+## License and Commercial Use
 - Firmware in this repository is licensed under GPL-3.0-or-later (see `LICENSE`).
 - Commercial use is allowed under GPL. If you distribute firmware (including in devices), you must provide the Corresponding Source under GPL.
 - If you need to sell devices while keeping firmware modifications proprietary, obtain a Commercial License (see `COMMERCIAL_LICENSE_SUMMARY.md`).
@@ -194,4 +204,3 @@ See `TESTING.md` for native host tests and `scripts/run_tests.ps1`.
 - `src/ui/` LVGL screens, assets, controllers
 - `src/web/` HTML templates and handlers
 - `test/` native tests and mocks
-
