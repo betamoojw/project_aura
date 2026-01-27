@@ -2633,7 +2633,7 @@ void create_screen_page_settings() {
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_text_line_space(obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "Project Aura\nVersion: v1.0.6\n© Volodymyr Papush (21CNCStudio)\nOpen-source firmware (GPL-3.0-or-later)\n21cncstudio.com");
+                            lv_label_set_text(obj, "Project Aura\nVersion: v1.0.7\n© Volodymyr Papush (21CNCStudio)\nOpen-source firmware (GPL-3.0-or-later)\n21cncstudio.com");
                         }
                         {
                             // about_qr
