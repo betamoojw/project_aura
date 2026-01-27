@@ -56,6 +56,8 @@ This repository contains the firmware and configuration needed to flash and cust
 - RGB LCD + touch via ESP32_Display_Panel (GT911 supported).
 - Sensor drivers included: SEN66, SFA3X, DPS310, BMP580, PCF8523 RTC.
 
+Note: SEN66 gas indices (VOC/NOx) require ~5 minutes of warmup for reliable readings; the UI shows WARMUP during this period.
+
 ## Pin Configuration (Wiring)
 | Component | Pin (ESP32-S3) | Notes |
 | :--- | :--- | :--- |
