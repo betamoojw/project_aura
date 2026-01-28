@@ -13,6 +13,7 @@ public:
     bool begin();
     bool readTime(tm &out, bool &osc_stop, bool &valid);
     bool writeTime(const tm &utc_tm);
+    bool clearOscillatorStop();
 
 private:
     static uint8_t bcd2bin(uint8_t val);

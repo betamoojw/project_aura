@@ -94,3 +94,12 @@ bool Pcf8523::writeTime(const tm &utc_tm) {
     buf[6] = bin2bcd(static_cast<uint8_t>(utc_tm.tm_year + 1900 - 2000));
     return write(Config::PCF8523_REG_SECONDS, buf, sizeof(buf));
 }
+
+bool Pcf8523::clearOscillatorStop() {
+    uint8_t sec = 0;
+    if (!read(Config::PCF8523_REG_SECONDS, &sec, 1)) {
+        return false;
+    }
+    sec &= 0x7F;  // Clear OS bit (bit 7), keep seconds
+    return write(Config::PCF8523_REG_SECONDS, &sec, 1);
+}
