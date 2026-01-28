@@ -53,16 +53,21 @@ bool TimeManager::initRtc() {
     }
     rtc_present_ = true;
     rtc_lost_power_ = osc_stop;
-    if (osc_stop || !time_valid) {
+    if (!time_valid) {
         rtc_valid_ = false;
         return false;
     }
     time_t epoch = makeUtcEpoch(utc_tm);
     if (epoch > Config::TIME_VALID_EPOCH) {
+        if (osc_stop) {
+            rtc_.clearOscillatorStop();
+            rtc_lost_power_ = false;
+        }
         rtc_valid_ = true;
         setSystemTime(epoch);
         return true;
     }
+    rtc_valid_ = false;
     return false;
 }
 
