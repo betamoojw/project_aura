@@ -14,12 +14,18 @@ What the Commercial License allows (summary)
 - Sell devices that include the firmware.
 - Sell enclosures based on the Project Aura 3D models.
 - Use Project Aura trademarks only as explicitly granted (see TRADEMARKS.md).
+- Ship devices either with the original Project Aura branding (co-branding) or as white-label
+  with your own branding, if this is explicitly granted in the Commercial License.
 
 What it does not allow
 - Claim that your product is "Official" or "Certified" unless explicitly authorized.
+- Claim authorship of Project Aura or represent it as your original work.
 - Use Project Aura logos or branding outside the scope of the license.
 - Resell or share the digital design files (STL/3MF/STEP/PDF) unless explicitly authorized.
 - Transfer or sublicense the license to third parties, unless the license explicitly allows it.
+
+Attribution
+- Attribution is appreciated but not required unless explicitly stated in the full Commercial License.
 
 How to obtain
 - Purchase the Commercial Tier on MakerWorld: https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
