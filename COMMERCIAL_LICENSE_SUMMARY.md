@@ -13,9 +13,10 @@ What the Commercial License allows (summary)
   for your proprietary modifications.
 - Sell devices that include the firmware.
 - Sell enclosures based on the Project Aura 3D models.
-- Use Project Aura trademarks only as explicitly granted (see TRADEMARKS.md).
-- Ship devices either with the original Project Aura branding (co-branding) or as white-label
-  with your own branding, if this is explicitly granted in the Commercial License.
+- Use text-only branding ("Project Aura" and "developed by 21CNCStudio") as described in
+  TRADEMARKS.md.
+- Ship devices either with text co-branding or as white-label with your own branding.
+- Use of logos or stylized branding requires explicit written permission (see TRADEMARKS.md).
 
 What it does not allow
 - Claim that your product is "Official" or "Certified" unless explicitly authorized.
