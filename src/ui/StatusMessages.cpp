@@ -130,16 +130,16 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     if (data.temp_valid && isfinite(data.temperature)) {
         result.has_valid = true;
         const float t = data.temperature;
-        if (t < 19.0f) {
+        if (t < 16.0f) {
             temp_sev = STATUS_RED;
             temp_msg = text(TextId::MsgTempTooCold);
-        } else if (t < 20.0f) {
+        } else if (t < 18.0f) {
             temp_sev = STATUS_ORANGE;
             temp_msg = text(TextId::MsgTempCold);
-        } else if (t < 21.0f) {
+        } else if (t < 20.0f) {
             temp_sev = STATUS_YELLOW;
             temp_msg = text(TextId::MsgTempSlightlyCool);
-        } else if (t > 27.0f) {
+        } else if (t > 28.0f) {
             temp_sev = STATUS_RED;
             temp_msg = text(TextId::MsgTempTooHot);
         } else if (t > 26.0f) {
@@ -213,15 +213,21 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         float ah_gm3 = MathUtils::compute_absolute_humidity_gm3(data.temperature, data.humidity);
         if (isfinite(ah_gm3)) {
             result.has_valid = true;
-            if (ah_gm3 < 5.0f) {
+            if (ah_gm3 < 4.0f) {
                 ah_sev = STATUS_RED;
                 ah_msg = text(TextId::MsgAhVeryLow);
+            } else if (ah_gm3 < 5.0f) {
+                ah_sev = STATUS_ORANGE;
+                ah_msg = text(TextId::MsgAhLow);
             } else if (ah_gm3 < 7.0f) {
                 ah_sev = STATUS_YELLOW;
                 ah_msg = text(TextId::MsgAhLow);
-            } else if (ah_gm3 > 18.0f) {
+            } else if (ah_gm3 > 20.0f) {
                 ah_sev = STATUS_RED;
                 ah_msg = text(TextId::MsgAhVeryHigh);
+            } else if (ah_gm3 > 18.0f) {
+                ah_sev = STATUS_ORANGE;
+                ah_msg = text(TextId::MsgAhHigh);
             } else if (ah_gm3 > 15.0f) {
                 ah_sev = STATUS_YELLOW;
                 ah_msg = text(TextId::MsgAhHigh);

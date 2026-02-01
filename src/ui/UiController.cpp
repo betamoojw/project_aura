@@ -558,9 +558,9 @@ lv_color_t UiController::color_card_border() {
 }
 
 lv_color_t UiController::getTempColor(float t) {
-    if (t >= 21.0f && t <= 25.0f) return color_green();
-    if ((t >= 20.0f && t < 21.0f) || (t > 25.0f && t <= 26.0f)) return color_yellow();
-    if ((t >= 19.0f && t < 20.0f) || (t > 26.0f && t <= 27.0f)) return color_orange();
+    if (t >= 20.0f && t <= 25.0f) return color_green();
+    if ((t >= 18.0f && t < 20.0f) || (t > 25.0f && t <= 26.0f)) return color_yellow();
+    if ((t >= 16.0f && t < 18.0f) || (t > 26.0f && t <= 28.0f)) return color_orange();
     return color_red();
 }
 
@@ -573,10 +573,12 @@ lv_color_t UiController::getHumidityColor(float h) {
 
 lv_color_t UiController::getAbsoluteHumidityColor(float ah) {
     if (!isfinite(ah)) return color_inactive();
-    if (ah < 5.0f) return color_red();
+    if (ah < 4.0f) return color_red();
+    if (ah < 5.0f) return color_orange();
     if (ah < 7.0f) return color_yellow();
     if (ah < 15.0f) return color_green();
     if (ah <= 18.0f) return color_yellow();
+    if (ah <= 20.0f) return color_orange();
     return color_red();
 }
 
