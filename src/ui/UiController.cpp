@@ -1710,6 +1710,14 @@ void UiController::update_main_texts() {
     if (objects.label_nox_unit) safe_label_set_text(objects.label_nox_unit, UiText::UnitIndex());
 }
 
+void UiController::update_sensor_info_texts() {
+    if (objects.label_temperature_text) safe_label_set_text(objects.label_temperature_text, UiText::InfoTempText());
+    if (objects.label_temperature_excellent) safe_label_set_text(objects.label_temperature_excellent, UiText::InfoTempExcellent());
+    if (objects.label_temperature_acceptable) safe_label_set_text(objects.label_temperature_acceptable, UiText::InfoTempAcceptable());
+    if (objects.label_temperature_uncomfortable) safe_label_set_text(objects.label_temperature_uncomfortable, UiText::InfoTempUncomfortable());
+    if (objects.label_temperature_poor) safe_label_set_text(objects.label_temperature_poor, UiText::InfoTempPoor());
+}
+
 void UiController::update_confirm_texts() {
     if (objects.label_btn_confirm_voc) safe_label_set_text(objects.label_btn_confirm_voc, UiText::LabelConfirmVocButton());
     if (objects.label_btn_confirm_restart) safe_label_set_text(objects.label_btn_confirm_restart, UiText::LabelConfirmRestartButton());
@@ -1879,6 +1887,7 @@ void UiController::init_ui_defaults() {
     update_language_label();
     update_settings_texts();
     update_main_texts();
+    update_sensor_info_texts();
     update_confirm_texts();
     update_wifi_texts();
     update_mqtt_texts();

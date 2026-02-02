@@ -170,4 +170,10 @@ inline const char *BootDiagStarting() { return UiStrings::text(UiStrings::TextId
 inline const char *BootDiagNotFound() { return UiStrings::text(UiStrings::TextId::BootDiagNotFound); }
 inline const char *BootDiagLost() { return UiStrings::text(UiStrings::TextId::BootDiagLost); }
 
+inline const char *InfoTempText() { return UiStrings::text(UiStrings::TextId::InfoTempText); }
+inline const char *InfoTempExcellent() { return UiStrings::text(UiStrings::TextId::InfoTempExcellent); }
+inline const char *InfoTempAcceptable() { return UiStrings::text(UiStrings::TextId::InfoTempAcceptable); }
+inline const char *InfoTempUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoTempUncomfortable); }
+inline const char *InfoTempPoor() { return UiStrings::text(UiStrings::TextId::InfoTempPoor); }
+
 } // namespace UiText

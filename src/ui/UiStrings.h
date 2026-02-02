@@ -202,6 +202,11 @@ enum class TextId : uint16_t {
     MsgAhLow,
     MsgAhHigh,
     MsgAhVeryHigh,
+    InfoTempText,
+    InfoTempExcellent,
+    InfoTempAcceptable,
+    InfoTempUncomfortable,
+    InfoTempPoor,
     Count
 };
 

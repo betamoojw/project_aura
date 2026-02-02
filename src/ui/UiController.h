@@ -98,6 +98,7 @@ private:
     Config::Language next_language(Config::Language current);
     void update_settings_texts();
     void update_main_texts();
+    void update_sensor_info_texts();
     void update_confirm_texts();
     void update_wifi_texts();
     void update_mqtt_texts();

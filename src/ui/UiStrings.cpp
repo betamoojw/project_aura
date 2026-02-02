@@ -200,7 +200,12 @@ constexpr const char *kStringsEn[] = {
     "AH very low! Humidify now",
     "AH low - Use humidifier",
     "AH high - Risk of mold",
-    "AH very high! Mold grows fast"
+    "AH very high! Mold grows fast",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 constexpr const char *kStringsDe[] = {
@@ -391,7 +396,12 @@ constexpr const char *kStringsDe[] = {
     "AH sehr niedrig! Befeuchten",
     "AH niedrig - Luftbefeuchter",
     "AH hoch - Schimmelrisiko",
-    "AH sehr hoch! Schimmel wächst"
+    "AH sehr hoch! Schimmel wächst",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -586,7 +596,12 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "AH très bas! Humidifiez",
     "AH bas - Utiliser humidif.",
     "AH élevé - Risque de moisissure",
-    "AH très élevé! Moisissure rapide"
+    "AH très élevé! Moisissure rapide",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -781,7 +796,12 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "AH molto basso! Umidifica",
     "AH basso - Usa umidificatore",
     "AH alto - Rischio muffa",
-    "AH molto alto! Muffa rapida"
+    "AH molto alto! Muffa rapida",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -976,7 +996,12 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "AH muito baixo! Umidifique",
     "AH baixo - Use umidificador",
     "AH alto - Risco de mofo",
-    "AH muito alto! Mofo rápido"
+    "AH muito alto! Mofo rápido",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1171,7 +1196,12 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "AH zeer laag! Bevochtig",
     "AH laag - Gebruik bevochtiger",
     "AH hoog - Schimmelrisico",
-    "AH zeer hoog! Schimmel snel"
+    "AH zeer hoog! Schimmel snel",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1366,7 +1396,12 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "AH 很低! 立即加湿",
     "AH 低 - 使用加湿器",
     "AH 高 - 霉菌风险",
-    "AH 很高! 霉菌迅速生长"
+    "AH 很高! 霉菌迅速生长",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -1561,7 +1596,12 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "AH muy bajo! Humidifica",
     "AH bajo - Usa humidificador",
     "AH alto - Riesgo de moho",
-    "AH muy alto! Moho rápido"
+    "AH muy alto! Moho rápido",
+    "Temperature affects comfort, productivity, and sleep quality. Thresholds based on ASHRAE Standard 55 (thermal comfort) and WHO housing recommendations. Optimal range helps maintain focus and prevents fatigue. Extremes cause discomfort, drowsiness, or difficulty concentrating. Prolonged exposure to poor conditions may affect health.",
+    "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
+    "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
+    "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==
@@ -1606,3 +1646,6 @@ const char *text(TextId id) {
 }
 
 } // namespace UiStrings
+
+
+

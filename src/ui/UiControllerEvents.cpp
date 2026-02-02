@@ -202,6 +202,7 @@ void UiController::on_language_event(lv_event_t *e) {
     update_language_label();
     update_settings_texts();
     update_main_texts();
+    update_sensor_info_texts();
     update_confirm_texts();
     update_wifi_texts();
     update_mqtt_texts();
