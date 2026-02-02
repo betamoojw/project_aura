@@ -262,6 +262,11 @@ enum class TextId : uint16_t {
     InfoDpAcceptable,
     InfoDpUncomfortable,
     InfoDpPoor,
+    SensorInfoTitleTemperature,
+    SensorInfoTitleFormaldehyde,
+    SensorInfoTitleRh,
+    SensorInfoTitleAh,
+    SensorInfoTitleDp,
     Count
 };
 

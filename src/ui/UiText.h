@@ -230,5 +230,10 @@ inline const char *InfoDpExcellent() { return UiStrings::text(UiStrings::TextId:
 inline const char *InfoDpAcceptable() { return UiStrings::text(UiStrings::TextId::InfoDpAcceptable); }
 inline const char *InfoDpUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoDpUncomfortable); }
 inline const char *InfoDpPoor() { return UiStrings::text(UiStrings::TextId::InfoDpPoor); }
+inline const char *SensorInfoTitleTemperature() { return UiStrings::text(UiStrings::TextId::SensorInfoTitleTemperature); }
+inline const char *SensorInfoTitleFormaldehyde() { return UiStrings::text(UiStrings::TextId::SensorInfoTitleFormaldehyde); }
+inline const char *SensorInfoTitleRh() { return UiStrings::text(UiStrings::TextId::SensorInfoTitleRh); }
+inline const char *SensorInfoTitleAh() { return UiStrings::text(UiStrings::TextId::SensorInfoTitleAh); }
+inline const char *SensorInfoTitleDp() { return UiStrings::text(UiStrings::TextId::SensorInfoTitleDp); }
 
 } // namespace UiText

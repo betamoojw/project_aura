@@ -260,7 +260,12 @@ constexpr const char *kStringsEn[] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -511,7 +516,12 @@ constexpr const char *kStringsDe[] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -766,7 +776,12 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -1021,7 +1036,12 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -1276,7 +1296,12 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1531,7 +1556,12 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1786,7 +1816,12 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -2041,7 +2076,12 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
     "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
-    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
+    "TEMPERATURE",
+    "FORMALDEHYD",
+    "RELATIVE HUMIDITY",
+    "ABSOLUTE HUMIDITY",
+    "DEW POINT"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==

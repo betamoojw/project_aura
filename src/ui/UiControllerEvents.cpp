@@ -612,7 +612,7 @@ void UiController::on_card_temp_event(lv_event_t *e) {
     hide_all_sensor_info_containers();
     set_visible(objects.temperature_info, true);
     if (objects.label_sensor_info_title) {
-        safe_label_set_text(objects.label_sensor_info_title, "TEMPERATURE");
+        safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleTemperature());
     }
     const char *value = objects.label_temp_value
         ? lv_label_get_text(objects.label_temp_value)
@@ -670,7 +670,7 @@ void UiController::on_card_hcho_event(lv_event_t *e) {
     hide_all_sensor_info_containers();
     set_visible(objects.hcho_info, true);
     if (objects.label_sensor_info_title) {
-        safe_label_set_text(objects.label_sensor_info_title, "FORMALDEHYD");
+        safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleFormaldehyde());
     }
     const char *unit = objects.label_hcho_unit
         ? lv_label_get_text(objects.label_hcho_unit)

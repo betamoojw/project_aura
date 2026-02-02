@@ -1521,11 +1521,11 @@ void UiController::select_humidity_info(InfoSensor sensor) {
 
     if (objects.label_sensor_info_title) {
         if (sensor == INFO_RH) {
-            safe_label_set_text(objects.label_sensor_info_title, "RELATIVE HUMIDITY");
+            safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleRh());
         } else if (sensor == INFO_AH) {
-            safe_label_set_text(objects.label_sensor_info_title, "ABSOLUTE HUMIDITY");
+            safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleAh());
         } else if (sensor == INFO_DP) {
-            safe_label_set_text(objects.label_sensor_info_title, "DEW POINT");
+            safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleDp());
         }
     }
     update_sensor_info_ui();
