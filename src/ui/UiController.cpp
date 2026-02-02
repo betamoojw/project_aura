@@ -1756,6 +1756,21 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_24h_pressure_acceptable) safe_label_set_text(objects.label_24h_pressure_acceptable, UiText::InfoPressure24hAcceptable());
     if (objects.label_24h_pressure_uncomfortable) safe_label_set_text(objects.label_24h_pressure_uncomfortable, UiText::InfoPressure24hUncomfortable());
     if (objects.label_24h_pressure_poor) safe_label_set_text(objects.label_24h_pressure_poor, UiText::InfoPressure24hPoor());
+    if (objects.label_rh_text) safe_label_set_text(objects.label_rh_text, UiText::InfoRhText());
+    if (objects.label_rh_excellent) safe_label_set_text(objects.label_rh_excellent, UiText::InfoRhExcellent());
+    if (objects.label_rh_acceptable) safe_label_set_text(objects.label_rh_acceptable, UiText::InfoRhAcceptable());
+    if (objects.label_rh_uncomfortable) safe_label_set_text(objects.label_rh_uncomfortable, UiText::InfoRhUncomfortable());
+    if (objects.label_rh_poor) safe_label_set_text(objects.label_rh_poor, UiText::InfoRhPoor());
+    if (objects.label_ah_text) safe_label_set_text(objects.label_ah_text, UiText::InfoAhText());
+    if (objects.label_ah_excellent) safe_label_set_text(objects.label_ah_excellent, UiText::InfoAhExcellent());
+    if (objects.label_ah_acceptable) safe_label_set_text(objects.label_ah_acceptable, UiText::InfoAhAcceptable());
+    if (objects.label_ah_uncomfortable) safe_label_set_text(objects.label_ah_uncomfortable, UiText::InfoAhUncomfortable());
+    if (objects.label_ah_poor) safe_label_set_text(objects.label_ah_poor, UiText::InfoAhPoor());
+    if (objects.label_dp_text) safe_label_set_text(objects.label_dp_text, UiText::InfoDpText());
+    if (objects.label_dp_excellent) safe_label_set_text(objects.label_dp_excellent, UiText::InfoDpExcellent());
+    if (objects.label_dp_acceptable) safe_label_set_text(objects.label_dp_acceptable, UiText::InfoDpAcceptable());
+    if (objects.label_dp_uncomfortable) safe_label_set_text(objects.label_dp_uncomfortable, UiText::InfoDpUncomfortable());
+    if (objects.label_dp_poor) safe_label_set_text(objects.label_dp_poor, UiText::InfoDpPoor());
 }
 
 void UiController::update_confirm_texts() {

@@ -245,7 +245,22 @@ constexpr const char *kStringsEn[] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -481,7 +496,22 @@ constexpr const char *kStringsDe[] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -721,7 +751,22 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -961,7 +1006,22 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -1201,7 +1261,22 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1441,7 +1516,22 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1681,7 +1771,22 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -1921,7 +2026,22 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <2 hPa\nStable conditions",
     "Acceptable: 2-6 hPa\nSmall change",
     "Uncomfortable: 6-10 hPa\nSignificant change",
-    "Poor: >10 hPa\nMajor change, storms possible"
+    "Poor: >10 hPa\nMajor change, storms possible",
+    "Humidity affects respiratory comfort, skin health, and perceived temperature. Thresholds based on ASHRAE Standard 55 and EPA recommendations. Optimal range (40-60%) prevents dry airways and inhibits mold growth. Low humidity causes dry skin, irritation, and static. High humidity promotes mold, dust mites, and discomfort. Balance is key for health and home.",
+    "Excellent: 40-60%\nOptimal comfort, healthy for airways and skin",
+    "Acceptable: 30-40% or 60-65%\nSlight dryness or humidity, minor discomfort possible",
+    "Uncomfortable: 20-30% or 65-70%\nDry skin/irritation or sticky/muggy feeling",
+    "Poor: <20% or >70%\nHealth risk: respiratory issues or mold growth likely",
+    "Absolute humidity measures actual water vapor mass in air (g/m3), independent of temperature. Unlike relative humidity, it shows true moisture content. Low levels dry out airways and skin. High levels make cooling difficult and promote mold. Useful for ventilation decisions and comparing indoor/outdoor air. Optimal range supports respiratory health and comfort.",
+    "Excellent: 7-15 g/m3\nOptimal moisture, comfortable breathing",
+    "Acceptable: 5-7 or 15-18 g/m3\nSlightly dry or humid, minor discomfort possible",
+    "Uncomfortable: 4-5 or 18-20 g/m3\nNoticeable dryness or mugginess, discomfort likely",
+    "Poor: <4 or >20 g/m3\nVery dry or humid, respiratory and skin issues likely",
+    "Dew point indicates moisture comfort better than relative humidity. Based on NOAA comfort scale. It shows how muggy or dry the air feels. Low dew point means dry air causing skin and respiratory irritation. High dew point feels sticky and oppressive, making it hard to cool down through sweating. Ideal range provides comfortable breathing and natural cooling.",
+    "Excellent: 10-16 C (50-61 F)\nIdeal comfort, pleasant breathing",
+    "Acceptable: 8-10 C (46-50 F) or 16-18 C (61-64 F)\nSlightly dry or humid, still comfortable",
+    "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
+    "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==
