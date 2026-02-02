@@ -59,6 +59,10 @@ private:
         CONFIRM_RESTART,
         CONFIRM_FACTORY_RESET,
     };
+    enum InfoSensor {
+        INFO_NONE = 0,
+        INFO_TEMP,
+    };
 
     void update_temp_offset_label();
     void update_hum_offset_label();
@@ -66,6 +70,7 @@ private:
     void update_mqtt_ui();
     void update_status_icons();
     void update_ui();
+    void update_sensor_info_ui();
     void update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar);
     void update_settings_header();
     void update_theme_custom_info(bool presets);
@@ -371,4 +376,5 @@ private:
     bool boot_diag_has_error = false;
     uint32_t boot_diag_start_ms = 0;
     uint32_t last_boot_diag_update_ms = 0;
+    InfoSensor info_sensor = INFO_NONE;
 };

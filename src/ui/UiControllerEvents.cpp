@@ -592,6 +592,7 @@ void UiController::on_card_temp_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    info_sensor = INFO_TEMP;
     hide_all_sensor_info_containers();
     set_visible(objects.temperature_info, true);
     if (objects.label_sensor_info_title) {
@@ -618,6 +619,8 @@ void UiController::on_sensors_info_back_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    info_sensor = INFO_NONE;
+    hide_all_sensor_info_containers();
     pending_screen_id = SCREEN_ID_PAGE_MAIN;
 }
 

@@ -396,13 +396,14 @@ void UiController::poll(uint32_t now) {
     }
     if (now - last_blink_ms >= BLINK_PERIOD_MS) {
         last_blink_ms = now;
-        if (alert_blink_enabled) {
-            blink_state = !blink_state;
-            if (current_screen_id == SCREEN_ID_PAGE_MAIN ||
-                current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
-                data_dirty = true;
+            if (alert_blink_enabled) {
+                blink_state = !blink_state;
+                if (current_screen_id == SCREEN_ID_PAGE_MAIN ||
+                    current_screen_id == SCREEN_ID_PAGE_SETTINGS ||
+                    current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
+                    data_dirty = true;
+                }
             }
-        }
     }
     if (current_screen_id == SCREEN_ID_PAGE_MAIN &&
         status_msg_count > 1 &&
@@ -454,23 +455,25 @@ void UiController::poll(uint32_t now) {
     }
     backlightManager.poll(lvgl_ready);
     update_status_icons();
-    if (pending_screen_id != 0) {
-        int next_screen = pending_screen_id;
-        loadScreen(static_cast<ScreensEnum>(next_screen));
-        current_screen_id = next_screen;
-        pending_screen_id = 0;
-        if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
-            temp_offset_ui_dirty = true;
-            hum_offset_ui_dirty = true;
-            data_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
-            data_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
-            datetime_ui_dirty = true;
-            clock_ui_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
-            networkManager.markUiDirty();
-        } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
+        if (pending_screen_id != 0) {
+            int next_screen = pending_screen_id;
+            loadScreen(static_cast<ScreensEnum>(next_screen));
+            current_screen_id = next_screen;
+            pending_screen_id = 0;
+            if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
+                temp_offset_ui_dirty = true;
+                hum_offset_ui_dirty = true;
+                data_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
+                data_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
+                data_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
+                datetime_ui_dirty = true;
+                clock_ui_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
+                networkManager.markUiDirty();
+            } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
             backlightManager.markUiDirty();
         } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
             nightModeManager.markUiDirty();
@@ -522,15 +525,17 @@ void UiController::poll(uint32_t now) {
             nightModeManager.updateUi();
             did_update = true;
         }
-        if (data_dirty) {
-            if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
-                update_ui();
-            } else if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
-                update_settings_header();
+            if (data_dirty) {
+                if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
+                    update_ui();
+                } else if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
+                    update_settings_header();
+                } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
+                    update_sensor_info_ui();
+                }
+                data_dirty = false;
+                did_update = true;
             }
-            data_dirty = false;
-            did_update = true;
-        }
         if (did_update) {
             last_ui_update_ms = now;
         }
@@ -1237,6 +1242,33 @@ void UiController::update_ui() {
     }
 
     update_sensor_cards(aq, gas_warmup, show_co2_bar);
+}
+
+void UiController::update_sensor_info_ui() {
+    if (info_sensor == INFO_NONE) {
+        return;
+    }
+    switch (info_sensor) {
+        case INFO_TEMP: {
+            char buf[16];
+            if (currentData.temp_valid) {
+                float temp_display = currentData.temperature;
+                if (!temp_units_c) {
+                    temp_display = (temp_display * 9.0f / 5.0f) + 32.0f;
+                }
+                snprintf(buf, sizeof(buf), "%.1f", temp_display);
+            } else {
+                strcpy(buf, UiText::ValueMissing());
+            }
+            safe_label_set_text(objects.label_sensor_value, buf);
+            lv_color_t temp_col = currentData.temp_valid ? getTempColor(currentData.temperature) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(temp_col));
+            break;
+        }
+        case INFO_NONE:
+        default:
+            break;
+    }
 }
 
 void UiController::set_visible(lv_obj_t *obj, bool visible) {
