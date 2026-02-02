@@ -69,6 +69,8 @@ private:
         INFO_RH,
         INFO_AH,
         INFO_DP,
+        INFO_PM25,
+        INFO_PM10,
     };
 
     void update_temp_offset_label();
@@ -79,6 +81,7 @@ private:
     void update_ui();
     void update_sensor_info_ui();
     void select_humidity_info(InfoSensor sensor);
+    void select_pm_info(InfoSensor sensor);
     void update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar);
     void update_settings_header();
     void update_theme_custom_info(bool presets);
@@ -236,6 +239,10 @@ private:
     void on_rh_info_event(lv_event_t *e);
     void on_ah_info_event(lv_event_t *e);
     void on_dp_info_event(lv_event_t *e);
+    void on_card_pm25_event(lv_event_t *e);
+    void on_card_pm10_event(lv_event_t *e);
+    void on_pm25_info_event(lv_event_t *e);
+    void on_pm10_info_event(lv_event_t *e);
     void on_sensors_info_back_event(lv_event_t *e);
     void on_temp_offset_minus(lv_event_t *e);
     void on_temp_offset_plus(lv_event_t *e);
@@ -327,6 +334,10 @@ private:
     static void on_rh_info_event_cb(lv_event_t *e);
     static void on_ah_info_event_cb(lv_event_t *e);
     static void on_dp_info_event_cb(lv_event_t *e);
+    static void on_card_pm25_event_cb(lv_event_t *e);
+    static void on_card_pm10_event_cb(lv_event_t *e);
+    static void on_pm25_info_event_cb(lv_event_t *e);
+    static void on_pm10_info_event_cb(lv_event_t *e);
     static void on_sensors_info_back_event_cb(lv_event_t *e);
     static void on_temp_offset_minus_cb(lv_event_t *e);
     static void on_temp_offset_plus_cb(lv_event_t *e);

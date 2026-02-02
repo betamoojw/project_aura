@@ -207,10 +207,14 @@ void UiController::begin() {
         {objects.card_hcho, on_card_hcho_event_cb, LV_EVENT_CLICKED},
         {objects.card_co2, on_card_co2_event_cb, LV_EVENT_CLICKED},
         {objects.card_hum, on_card_hum_event_cb, LV_EVENT_CLICKED},
+        {objects.card_pm25, on_card_pm25_event_cb, LV_EVENT_CLICKED},
+        {objects.card_pm10, on_card_pm10_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_rh_info, on_rh_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_ah_info, on_ah_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_dp_info, on_dp_info_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm25, on_pm25_info_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm10, on_pm10_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_mqtt, on_mqtt_settings_event_cb, LV_EVENT_CLICKED},
@@ -321,6 +325,8 @@ void UiController::begin() {
         objects.btn_rh_info,
         objects.btn_ah_info,
         objects.btn_dp_info,
+        objects.btn_pm25,
+        objects.btn_pm10,
     };
 
     for (lv_obj_t *btn : toggle_buttons) {
@@ -345,6 +351,7 @@ void UiController::begin() {
     set_checked(objects.btn_alert_blink, alert_blink_enabled);
     set_checked(objects.btn_co2_calib_asc, co2_asc_enabled);
     set_checked(objects.btn_rh_info, true);
+    set_checked(objects.btn_pm25, true);
 
     bind_events(click_bindings, sizeof(click_bindings) / sizeof(click_bindings[0]));
     bind_events(value_bindings, sizeof(value_bindings) / sizeof(value_bindings[0]));
@@ -1396,6 +1403,40 @@ void UiController::update_sensor_info_ui() {
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(dp_col));
             break;
         }
+        case INFO_PM25: {
+            if (currentData.pm25_valid) {
+                char buf[16];
+                if (currentData.pm25 < 10.0f) snprintf(buf, sizeof(buf), "%.1f", currentData.pm25);
+                else snprintf(buf, sizeof(buf), "%.0f", currentData.pm25);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            const char *unit = objects.label_pm25_unit
+                ? lv_label_get_text(objects.label_pm25_unit)
+                : "";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            lv_color_t pm25_col = currentData.pm25_valid ? getPM25Color(currentData.pm25) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm25_col));
+            break;
+        }
+        case INFO_PM10: {
+            if (currentData.pm10_valid) {
+                char buf[16];
+                if (currentData.pm10 < 10.0f) snprintf(buf, sizeof(buf), "%.1f", currentData.pm10);
+                else snprintf(buf, sizeof(buf), "%.0f", currentData.pm10);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            const char *unit = objects.label_pm10_unit
+                ? lv_label_get_text(objects.label_pm10_unit)
+                : "";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            lv_color_t pm10_col = currentData.pm10_valid ? getPM10Color(currentData.pm10) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm10_col));
+            break;
+        }
         case INFO_NONE:
         default:
             break;
@@ -1426,6 +1467,31 @@ void UiController::select_humidity_info(InfoSensor sensor) {
             safe_label_set_text(objects.label_sensor_info_title, "ABSOLUTE HUMIDITY");
         } else if (sensor == INFO_DP) {
             safe_label_set_text(objects.label_sensor_info_title, "DEW POINT");
+        }
+    }
+    update_sensor_info_ui();
+}
+
+void UiController::select_pm_info(InfoSensor sensor) {
+    info_sensor = sensor;
+    hide_all_sensor_info_containers();
+    set_visible(objects.pm_info, true);
+    set_visible(objects.pm25_info, sensor == INFO_PM25);
+    set_visible(objects.pm10_info, sensor == INFO_PM10);
+
+    auto set_checked = [](lv_obj_t *btn, bool checked) {
+        if (!btn) return;
+        if (checked) lv_obj_add_state(btn, LV_STATE_CHECKED);
+        else lv_obj_clear_state(btn, LV_STATE_CHECKED);
+    };
+    set_checked(objects.btn_pm25, sensor == INFO_PM25);
+    set_checked(objects.btn_pm10, sensor == INFO_PM10);
+
+    if (objects.label_sensor_info_title) {
+        if (sensor == INFO_PM25) {
+            safe_label_set_text(objects.label_sensor_info_title, "PM2.5");
+        } else if (sensor == INFO_PM10) {
+            safe_label_set_text(objects.label_sensor_info_title, "PM10");
         }
     }
     update_sensor_info_ui();

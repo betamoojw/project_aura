@@ -109,6 +109,10 @@ void UiController::on_card_hum_event_cb(lv_event_t *e) { if (instance_) instance
 void UiController::on_rh_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_rh_info_event(e); }
 void UiController::on_ah_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_ah_info_event(e); }
 void UiController::on_dp_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_dp_info_event(e); }
+void UiController::on_card_pm25_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm25_event(e); }
+void UiController::on_card_pm10_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm10_event(e); }
+void UiController::on_pm25_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm25_info_event(e); }
+void UiController::on_pm10_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm10_info_event(e); }
 void UiController::on_sensors_info_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_sensors_info_back_event(e); }
 void UiController::on_temp_offset_minus_cb(lv_event_t *e) { if (instance_) instance_->on_temp_offset_minus(e); }
 void UiController::on_temp_offset_plus_cb(lv_event_t *e) { if (instance_) instance_->on_temp_offset_plus(e); }
@@ -717,6 +721,36 @@ void UiController::on_dp_info_event(lv_event_t *e) {
         return;
     }
     select_humidity_info(INFO_DP);
+}
+
+void UiController::on_card_pm25_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_pm_info(INFO_PM25);
+    pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+}
+
+void UiController::on_card_pm10_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_pm_info(INFO_PM10);
+    pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+}
+
+void UiController::on_pm25_info_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_pm_info(INFO_PM25);
+}
+
+void UiController::on_pm10_info_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_pm_info(INFO_PM10);
 }
 
 void UiController::on_sensors_info_back_event(lv_event_t *e) {
