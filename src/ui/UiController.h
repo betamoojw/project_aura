@@ -65,6 +65,7 @@ private:
         INFO_VOC,
         INFO_NOX,
         INFO_HCHO,
+        INFO_CO2,
     };
 
     void update_temp_offset_label();
@@ -226,6 +227,7 @@ private:
     void on_card_voc_event(lv_event_t *e);
     void on_card_nox_event(lv_event_t *e);
     void on_card_hcho_event(lv_event_t *e);
+    void on_card_co2_event(lv_event_t *e);
     void on_sensors_info_back_event(lv_event_t *e);
     void on_temp_offset_minus(lv_event_t *e);
     void on_temp_offset_plus(lv_event_t *e);
@@ -312,6 +314,7 @@ private:
     static void on_card_voc_event_cb(lv_event_t *e);
     static void on_card_nox_event_cb(lv_event_t *e);
     static void on_card_hcho_event_cb(lv_event_t *e);
+    static void on_card_co2_event_cb(lv_event_t *e);
     static void on_sensors_info_back_event_cb(lv_event_t *e);
     static void on_temp_offset_minus_cb(lv_event_t *e);
     static void on_temp_offset_plus_cb(lv_event_t *e);

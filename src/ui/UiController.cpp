@@ -204,6 +204,7 @@ void UiController::begin() {
         {objects.card_voc, on_card_voc_event_cb, LV_EVENT_CLICKED},
         {objects.card_nox, on_card_nox_event_cb, LV_EVENT_CLICKED},
         {objects.card_hcho, on_card_hcho_event_cb, LV_EVENT_CLICKED},
+        {objects.card_co2, on_card_co2_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
@@ -1310,6 +1311,18 @@ void UiController::update_sensor_info_ui() {
             }
             lv_color_t hcho_col = getHCHOColor(currentData.hcho, currentData.hcho_valid);
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(hcho_col));
+            break;
+        }
+        case INFO_CO2: {
+            if (currentData.co2_valid) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%d", currentData.co2);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            lv_color_t co2_col = currentData.co2_valid ? getCO2Color(currentData.co2) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(co2_col));
             break;
         }
         case INFO_NONE:
