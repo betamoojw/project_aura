@@ -262,7 +262,7 @@ constexpr const char *kStringsEn[] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
@@ -518,7 +518,7 @@ constexpr const char *kStringsDe[] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
@@ -778,7 +778,7 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
@@ -1038,7 +1038,7 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
@@ -1298,7 +1298,7 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
@@ -1558,7 +1558,7 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
@@ -1818,7 +1818,7 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
@@ -2078,7 +2078,7 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Uncomfortable: 5-8 C (41-46 F) or 18-21 C (64-70 F)\nDry or muggy, noticeable discomfort",
     "Poor: <5 C (<41 F) or >21 C (>70 F)\nToo dry or oppressive, health discomfort",
     "TEMPERATURE",
-    "FORMALDEHYD",
+    "FORMALDEHYDE",
     "RELATIVE HUMIDITY",
     "ABSOLUTE HUMIDITY",
     "DEW POINT"
