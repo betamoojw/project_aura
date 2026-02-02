@@ -1731,6 +1731,11 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_hcho_acceptable) safe_label_set_text(objects.label_hcho_acceptable, UiText::InfoHchoAcceptable());
     if (objects.label_hcho_uncomfortable) safe_label_set_text(objects.label_hcho_uncomfortable, UiText::InfoHchoUncomfortable());
     if (objects.label_hcho_poor) safe_label_set_text(objects.label_hcho_poor, UiText::InfoHchoPoor());
+    if (objects.label_co2_text) safe_label_set_text(objects.label_co2_text, UiText::InfoCo2Text());
+    if (objects.label_co2_excellent) safe_label_set_text(objects.label_co2_excellent, UiText::InfoCo2Excellent());
+    if (objects.label_co2_acceptable) safe_label_set_text(objects.label_co2_acceptable, UiText::InfoCo2Acceptable());
+    if (objects.label_co2_uncomfortable) safe_label_set_text(objects.label_co2_uncomfortable, UiText::InfoCo2Uncomfortable());
+    if (objects.label_co2_poor) safe_label_set_text(objects.label_co2_poor, UiText::InfoCo2Poor());
 }
 
 void UiController::update_confirm_texts() {

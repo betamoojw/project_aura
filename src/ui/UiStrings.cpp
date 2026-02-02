@@ -220,7 +220,12 @@ constexpr const char *kStringsEn[] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -431,7 +436,12 @@ constexpr const char *kStringsDe[] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -646,7 +656,12 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -861,7 +876,12 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -1076,7 +1096,12 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1291,7 +1316,12 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1506,7 +1536,12 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -1721,7 +1756,12 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <30 ppb\nVery low formaldehyde",
     "Acceptable: 30-60 ppb\nLow level, keep ventilating",
     "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
-    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate",
+    "CO2 affects alertness, decision-making, and sleep quality. Outdoor air is about 420 ppm. Higher indoor levels indicate poor ventilation. Sustained exposure above 1000 ppm can reduce focus and cause drowsiness. Ventilate when elevated.",
+    "Excellent: <800 ppm\nGood ventilation, optimal performance",
+    "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
+    "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==

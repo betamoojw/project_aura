@@ -222,6 +222,11 @@ enum class TextId : uint16_t {
     InfoHchoAcceptable,
     InfoHchoUncomfortable,
     InfoHchoPoor,
+    InfoCo2Text,
+    InfoCo2Excellent,
+    InfoCo2Acceptable,
+    InfoCo2Uncomfortable,
+    InfoCo2Poor,
     Count
 };
 
