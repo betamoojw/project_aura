@@ -1716,6 +1716,16 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_temperature_acceptable) safe_label_set_text(objects.label_temperature_acceptable, UiText::InfoTempAcceptable());
     if (objects.label_temperature_uncomfortable) safe_label_set_text(objects.label_temperature_uncomfortable, UiText::InfoTempUncomfortable());
     if (objects.label_temperature_poor) safe_label_set_text(objects.label_temperature_poor, UiText::InfoTempPoor());
+    if (objects.label_voc_text) safe_label_set_text(objects.label_voc_text, UiText::InfoVocText());
+    if (objects.label_voc_excellent) safe_label_set_text(objects.label_voc_excellent, UiText::InfoVocExcellent());
+    if (objects.label_voc_acceptable) safe_label_set_text(objects.label_voc_acceptable, UiText::InfoVocAcceptable());
+    if (objects.label_voc_uncomfortable) safe_label_set_text(objects.label_voc_uncomfortable, UiText::InfoVocUncomfortable());
+    if (objects.label_voc_poor) safe_label_set_text(objects.label_voc_poor, UiText::InfoVocPoor());
+    if (objects.label_nox_text) safe_label_set_text(objects.label_nox_text, UiText::InfoNoxText());
+    if (objects.label_nox_excellent) safe_label_set_text(objects.label_nox_excellent, UiText::InfoNoxExcellent());
+    if (objects.label_nox_acceptable) safe_label_set_text(objects.label_nox_acceptable, UiText::InfoNoxAcceptable());
+    if (objects.label_nox_uncomfortable) safe_label_set_text(objects.label_nox_uncomfortable, UiText::InfoNoxUncomfortable());
+    if (objects.label_nox_poor) safe_label_set_text(objects.label_nox_poor, UiText::InfoNoxPoor());
 }
 
 void UiController::update_confirm_texts() {

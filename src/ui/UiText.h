@@ -175,5 +175,15 @@ inline const char *InfoTempExcellent() { return UiStrings::text(UiStrings::TextI
 inline const char *InfoTempAcceptable() { return UiStrings::text(UiStrings::TextId::InfoTempAcceptable); }
 inline const char *InfoTempUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoTempUncomfortable); }
 inline const char *InfoTempPoor() { return UiStrings::text(UiStrings::TextId::InfoTempPoor); }
+inline const char *InfoVocText() { return UiStrings::text(UiStrings::TextId::InfoVocText); }
+inline const char *InfoVocExcellent() { return UiStrings::text(UiStrings::TextId::InfoVocExcellent); }
+inline const char *InfoVocAcceptable() { return UiStrings::text(UiStrings::TextId::InfoVocAcceptable); }
+inline const char *InfoVocUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoVocUncomfortable); }
+inline const char *InfoVocPoor() { return UiStrings::text(UiStrings::TextId::InfoVocPoor); }
+inline const char *InfoNoxText() { return UiStrings::text(UiStrings::TextId::InfoNoxText); }
+inline const char *InfoNoxExcellent() { return UiStrings::text(UiStrings::TextId::InfoNoxExcellent); }
+inline const char *InfoNoxAcceptable() { return UiStrings::text(UiStrings::TextId::InfoNoxAcceptable); }
+inline const char *InfoNoxUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoNoxUncomfortable); }
+inline const char *InfoNoxPoor() { return UiStrings::text(UiStrings::TextId::InfoNoxPoor); }
 
 } // namespace UiText

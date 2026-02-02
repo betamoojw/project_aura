@@ -205,7 +205,17 @@ constexpr const char *kStringsEn[] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -401,7 +411,17 @@ constexpr const char *kStringsDe[] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -601,7 +621,17 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -801,7 +831,17 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -1001,7 +1041,17 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1201,7 +1251,17 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1401,7 +1461,17 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -1601,7 +1671,17 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Excellent: 20-25°C (68-77°F)\nIdeal range for comfort and productivity.",
     "Acceptable: 18-20°C or 25-26°C (64-68°F / 77-79°F)\nSlight discomfort possible.",
     "Uncomfortable: 16-18°C or 26-28°C (61-64°F / 79-82°F)\nNoticeable discomfort, lower productivity.",
-    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust."
+    "Poor: <16°C or >28°C (<61°F / >82°F)\nSignificant discomfort, take action to adjust.",
+    "VOC Index measures volatile organic compounds from paints, furniture, cleaning products, and cosmetics. Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased VOC concentration. Prolonged exposure may cause headaches, eye irritation, and fatigue. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=150\nNormal indoor air, no action needed",
+    "Acceptable: 151-250\nSlight VOC elevation, consider ventilation",
+    "Uncomfortable: 251-350\nNoticeable odors possible, ventilate recommended",
+    "Poor: >350\nHeadaches and irritation likely, ventilate immediately",
+    "NOx Index measures nitrogen oxides from combustion (traffic, gas stoves, heaters). Based on Sensirion SGP algorithm (1-500 scale). Index 100 represents baseline air. Higher values indicate increased NOx. Exposure can irritate lungs and worsen asthma. Ventilate when elevated. Blue indicator = sensor warming up.",
+    "Excellent: <=50\nVery clean air",
+    "Acceptable: 51-100\nSlight NOx elevation",
+    "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==

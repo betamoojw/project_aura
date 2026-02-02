@@ -207,6 +207,16 @@ enum class TextId : uint16_t {
     InfoTempAcceptable,
     InfoTempUncomfortable,
     InfoTempPoor,
+    InfoVocText,
+    InfoVocExcellent,
+    InfoVocAcceptable,
+    InfoVocUncomfortable,
+    InfoVocPoor,
+    InfoNoxText,
+    InfoNoxExcellent,
+    InfoNoxAcceptable,
+    InfoNoxUncomfortable,
+    InfoNoxPoor,
     Count
 };
 
