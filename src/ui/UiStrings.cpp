@@ -225,7 +225,17 @@ constexpr const char *kStringsEn[] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -441,7 +451,17 @@ constexpr const char *kStringsDe[] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -661,7 +681,17 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -881,7 +911,17 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -1101,7 +1141,17 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1321,7 +1371,17 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1541,7 +1601,17 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -1761,7 +1831,17 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <800 ppm\nGood ventilation, optimal performance",
     "Acceptable: 800-1000 ppm\nSlightly elevated, consider airing",
     "Uncomfortable: 1001-1500 ppm\nDrowsiness possible, ventilate",
-    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now"
+    "Poor: >1500 ppm\nHeadaches and low focus likely, ventilate now",
+    "PM2.5 measures fine particles from combustion, smoke, and indoor sources. These particles penetrate deep into lungs and can affect heart health. High levels can worsen asthma and cause irritation. Use filtration and reduce sources when elevated.",
+    "Excellent: <=12 ug/m3\nVery clean air",
+    "Acceptable: 12-35 ug/m3\nSlight elevation, consider filtration",
+    "Uncomfortable: 35-55 ug/m3\nRespiratory irritation possible",
+    "Poor: >55 ug/m3\nHealth risk, reduce exposure",
+    "PM10 measures coarse particles like dust, pollen, and road debris. High levels can irritate eyes, nose, and throat and worsen respiratory symptoms. Ventilate with clean air and reduce dust sources when elevated.",
+    "Excellent: <=54 ug/m3\nClean air",
+    "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
+    "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==

@@ -195,5 +195,15 @@ inline const char *InfoCo2Excellent() { return UiStrings::text(UiStrings::TextId
 inline const char *InfoCo2Acceptable() { return UiStrings::text(UiStrings::TextId::InfoCo2Acceptable); }
 inline const char *InfoCo2Uncomfortable() { return UiStrings::text(UiStrings::TextId::InfoCo2Uncomfortable); }
 inline const char *InfoCo2Poor() { return UiStrings::text(UiStrings::TextId::InfoCo2Poor); }
+inline const char *InfoPm25Text() { return UiStrings::text(UiStrings::TextId::InfoPm25Text); }
+inline const char *InfoPm25Excellent() { return UiStrings::text(UiStrings::TextId::InfoPm25Excellent); }
+inline const char *InfoPm25Acceptable() { return UiStrings::text(UiStrings::TextId::InfoPm25Acceptable); }
+inline const char *InfoPm25Uncomfortable() { return UiStrings::text(UiStrings::TextId::InfoPm25Uncomfortable); }
+inline const char *InfoPm25Poor() { return UiStrings::text(UiStrings::TextId::InfoPm25Poor); }
+inline const char *InfoPm10Text() { return UiStrings::text(UiStrings::TextId::InfoPm10Text); }
+inline const char *InfoPm10Excellent() { return UiStrings::text(UiStrings::TextId::InfoPm10Excellent); }
+inline const char *InfoPm10Acceptable() { return UiStrings::text(UiStrings::TextId::InfoPm10Acceptable); }
+inline const char *InfoPm10Uncomfortable() { return UiStrings::text(UiStrings::TextId::InfoPm10Uncomfortable); }
+inline const char *InfoPm10Poor() { return UiStrings::text(UiStrings::TextId::InfoPm10Poor); }
 
 } // namespace UiText

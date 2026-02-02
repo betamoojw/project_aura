@@ -1736,6 +1736,16 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_co2_acceptable) safe_label_set_text(objects.label_co2_acceptable, UiText::InfoCo2Acceptable());
     if (objects.label_co2_uncomfortable) safe_label_set_text(objects.label_co2_uncomfortable, UiText::InfoCo2Uncomfortable());
     if (objects.label_co2_poor) safe_label_set_text(objects.label_co2_poor, UiText::InfoCo2Poor());
+    if (objects.label_pm25_text) safe_label_set_text(objects.label_pm25_text, UiText::InfoPm25Text());
+    if (objects.label_pm25_excellent) safe_label_set_text(objects.label_pm25_excellent, UiText::InfoPm25Excellent());
+    if (objects.label_pm25_acceptable) safe_label_set_text(objects.label_pm25_acceptable, UiText::InfoPm25Acceptable());
+    if (objects.label_pm25_uncomfortable) safe_label_set_text(objects.label_pm25_uncomfortable, UiText::InfoPm25Uncomfortable());
+    if (objects.label_pm25_poor) safe_label_set_text(objects.label_pm25_poor, UiText::InfoPm25Poor());
+    if (objects.label_pm10_text) safe_label_set_text(objects.label_pm10_text, UiText::InfoPm10Text());
+    if (objects.label_pm10_excellent) safe_label_set_text(objects.label_pm10_excellent, UiText::InfoPm10Excellent());
+    if (objects.label_pm10_acceptable) safe_label_set_text(objects.label_pm10_acceptable, UiText::InfoPm10Acceptable());
+    if (objects.label_pm10_uncomfortable) safe_label_set_text(objects.label_pm10_uncomfortable, UiText::InfoPm10Uncomfortable());
+    if (objects.label_pm10_poor) safe_label_set_text(objects.label_pm10_poor, UiText::InfoPm10Poor());
 }
 
 void UiController::update_confirm_texts() {
