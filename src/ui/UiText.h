@@ -185,5 +185,10 @@ inline const char *InfoNoxExcellent() { return UiStrings::text(UiStrings::TextId
 inline const char *InfoNoxAcceptable() { return UiStrings::text(UiStrings::TextId::InfoNoxAcceptable); }
 inline const char *InfoNoxUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoNoxUncomfortable); }
 inline const char *InfoNoxPoor() { return UiStrings::text(UiStrings::TextId::InfoNoxPoor); }
+inline const char *InfoHchoText() { return UiStrings::text(UiStrings::TextId::InfoHchoText); }
+inline const char *InfoHchoExcellent() { return UiStrings::text(UiStrings::TextId::InfoHchoExcellent); }
+inline const char *InfoHchoAcceptable() { return UiStrings::text(UiStrings::TextId::InfoHchoAcceptable); }
+inline const char *InfoHchoUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoHchoUncomfortable); }
+inline const char *InfoHchoPoor() { return UiStrings::text(UiStrings::TextId::InfoHchoPoor); }
 
 } // namespace UiText

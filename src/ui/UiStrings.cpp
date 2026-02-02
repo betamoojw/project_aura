@@ -215,7 +215,12 @@ constexpr const char *kStringsEn[] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -421,7 +426,12 @@ constexpr const char *kStringsDe[] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -631,7 +641,12 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -841,7 +856,12 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -1051,7 +1071,12 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1261,7 +1286,12 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1471,7 +1501,12 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -1681,7 +1716,12 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=50\nVery clean air",
     "Acceptable: 51-100\nSlight NOx elevation",
     "Uncomfortable: 101-200\nIrritation possible, ventilate recommended",
-    "Poor: >200\nBreathing discomfort likely, ventilate immediately"
+    "Poor: >200\nBreathing discomfort likely, ventilate immediately",
+    "HCHO measures formaldehyde from furniture, pressed wood, fabrics, and some cleaners. Units in ppb. Higher levels can irritate eyes, nose, and throat. Prolonged exposure may affect breathing. Ventilate and reduce sources when elevated.",
+    "Excellent: <30 ppb\nVery low formaldehyde",
+    "Acceptable: 30-60 ppb\nLow level, keep ventilating",
+    "Uncomfortable: 61-100 ppb\nIrritation possible, ventilate",
+    "Poor: >100 ppb\nHealth risk, reduce sources and ventilate"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==
