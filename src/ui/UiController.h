@@ -71,6 +71,8 @@ private:
         INFO_DP,
         INFO_PM25,
         INFO_PM10,
+        INFO_PRESSURE_3H,
+        INFO_PRESSURE_24H,
     };
 
     void update_temp_offset_label();
@@ -82,6 +84,7 @@ private:
     void update_sensor_info_ui();
     void select_humidity_info(InfoSensor sensor);
     void select_pm_info(InfoSensor sensor);
+    void select_pressure_info(InfoSensor sensor);
     void update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar);
     void update_settings_header();
     void update_theme_custom_info(bool presets);
@@ -243,6 +246,9 @@ private:
     void on_card_pm10_event(lv_event_t *e);
     void on_pm25_info_event(lv_event_t *e);
     void on_pm10_info_event(lv_event_t *e);
+    void on_card_pressure_event(lv_event_t *e);
+    void on_pressure_3h_info_event(lv_event_t *e);
+    void on_pressure_24h_info_event(lv_event_t *e);
     void on_sensors_info_back_event(lv_event_t *e);
     void on_temp_offset_minus(lv_event_t *e);
     void on_temp_offset_plus(lv_event_t *e);
@@ -338,6 +344,9 @@ private:
     static void on_card_pm10_event_cb(lv_event_t *e);
     static void on_pm25_info_event_cb(lv_event_t *e);
     static void on_pm10_info_event_cb(lv_event_t *e);
+    static void on_card_pressure_event_cb(lv_event_t *e);
+    static void on_pressure_3h_info_event_cb(lv_event_t *e);
+    static void on_pressure_24h_info_event_cb(lv_event_t *e);
     static void on_sensors_info_back_event_cb(lv_event_t *e);
     static void on_temp_offset_minus_cb(lv_event_t *e);
     static void on_temp_offset_plus_cb(lv_event_t *e);

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 28 px
  * Bpp: 4
- * Opts: --bpp 4 --size 28 --no-compress --font ..\..\Downloads\JetBrains_Mono,Montserrat\JetBrains_Mono\static\JetBrainsMono-Medium.ttf --symbols 0123456789. --format lvgl
+ * Opts: --bpp 4 --size 28 --no-compress --font ..\..\Downloads\JetBrains_Mono,Montserrat\JetBrains_Mono\static\JetBrainsMono-Medium.ttf --symbols 0123456789.- --format lvgl
  ******************************************************************************/
 
 #ifdef __has_include
@@ -30,6 +30,10 @@
 
 /*Store the image of the glyphs*/
 static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
+    /* U+002D "-" */
+    0x1c, 0xcc, 0xcc, 0xcc, 0xcb, 0x1f, 0xff, 0xff,
+    0xff, 0xfe, 0x1f, 0xff, 0xff, 0xff, 0xfe,
+
     /* U+002E "." */
     0x0, 0x0, 0x0, 0x4, 0xef, 0xc2, 0xe, 0xff,
     0xfa, 0xf, 0xff, 0xfd, 0xe, 0xff, 0xfa, 0x3,
@@ -252,17 +256,18 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
 
 static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 0, .adv_w = 0, .box_w = 0, .box_h = 0, .ofs_x = 0, .ofs_y = 0} /* id = 0 reserved */,
-    {.bitmap_index = 0, .adv_w = 269, .box_w = 6, .box_h = 6, .ofs_x = 5, .ofs_y = 0},
-    {.bitmap_index = 18, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
-    {.bitmap_index = 155, .adv_w = 269, .box_w = 14, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
-    {.bitmap_index = 302, .adv_w = 269, .box_w = 14, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
-    {.bitmap_index = 449, .adv_w = 269, .box_w = 14, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
-    {.bitmap_index = 596, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
-    {.bitmap_index = 733, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
-    {.bitmap_index = 870, .adv_w = 269, .box_w = 15, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
-    {.bitmap_index = 1028, .adv_w = 269, .box_w = 15, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
-    {.bitmap_index = 1186, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
-    {.bitmap_index = 1323, .adv_w = 269, .box_w = 15, .box_h = 21, .ofs_x = 1, .ofs_y = 0}
+    {.bitmap_index = 0, .adv_w = 269, .box_w = 10, .box_h = 3, .ofs_x = 3, .ofs_y = 8},
+    {.bitmap_index = 15, .adv_w = 269, .box_w = 6, .box_h = 6, .ofs_x = 5, .ofs_y = 0},
+    {.bitmap_index = 33, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
+    {.bitmap_index = 170, .adv_w = 269, .box_w = 14, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
+    {.bitmap_index = 317, .adv_w = 269, .box_w = 14, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
+    {.bitmap_index = 464, .adv_w = 269, .box_w = 14, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
+    {.bitmap_index = 611, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
+    {.bitmap_index = 748, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
+    {.bitmap_index = 885, .adv_w = 269, .box_w = 15, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
+    {.bitmap_index = 1043, .adv_w = 269, .box_w = 15, .box_h = 21, .ofs_x = 1, .ofs_y = 0},
+    {.bitmap_index = 1201, .adv_w = 269, .box_w = 13, .box_h = 21, .ofs_x = 2, .ofs_y = 0},
+    {.bitmap_index = 1338, .adv_w = 269, .box_w = 15, .box_h = 21, .ofs_x = 1, .ofs_y = 0}
 };
 
 /*---------------------
@@ -270,16 +275,16 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
  *--------------------*/
 
 static const uint8_t glyph_id_ofs_list_0[] = {
-    0, 0, 1, 2, 3, 4, 5, 6,
-    7, 8, 9, 10
+    0, 1, 0, 2, 3, 4, 5, 6,
+    7, 8, 9, 10, 11
 };
 
 /*Collect the unicode lists and glyph_id offsets*/
 static const lv_font_fmt_txt_cmap_t cmaps[] =
 {
     {
-        .range_start = 46, .range_length = 12, .glyph_id_start = 1,
-        .unicode_list = NULL, .glyph_id_ofs_list = glyph_id_ofs_list_0, .list_length = 12, .type = LV_FONT_FMT_TXT_CMAP_FORMAT0_FULL
+        .range_start = 45, .range_length = 13, .glyph_id_start = 1,
+        .unicode_list = NULL, .glyph_id_ofs_list = glyph_id_ofs_list_0, .list_length = 13, .type = LV_FONT_FMT_TXT_CMAP_FORMAT0_FULL
     }
 };
 

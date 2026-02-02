@@ -209,12 +209,15 @@ void UiController::begin() {
         {objects.card_hum, on_card_hum_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm25, on_card_pm25_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm10, on_card_pm10_event_cb, LV_EVENT_CLICKED},
+        {objects.card_pressure, on_card_pressure_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_rh_info, on_rh_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_ah_info, on_ah_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_dp_info, on_dp_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_pm25, on_pm25_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_pm10, on_pm10_info_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_3h_pressure_info, on_pressure_3h_info_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_24h_pressure_info, on_pressure_24h_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_mqtt, on_mqtt_settings_event_cb, LV_EVENT_CLICKED},
@@ -327,6 +330,8 @@ void UiController::begin() {
         objects.btn_dp_info,
         objects.btn_pm25,
         objects.btn_pm10,
+        objects.btn_3h_pressure_info,
+        objects.btn_24h_pressure_info,
     };
 
     for (lv_obj_t *btn : toggle_buttons) {
@@ -352,6 +357,7 @@ void UiController::begin() {
     set_checked(objects.btn_co2_calib_asc, co2_asc_enabled);
     set_checked(objects.btn_rh_info, true);
     set_checked(objects.btn_pm25, true);
+    set_checked(objects.btn_3h_pressure_info, true);
 
     bind_events(click_bindings, sizeof(click_bindings) / sizeof(click_bindings[0]));
     bind_events(value_bindings, sizeof(value_bindings) / sizeof(value_bindings[0]));
@@ -1437,6 +1443,59 @@ void UiController::update_sensor_info_ui() {
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm10_col));
             break;
         }
+        case INFO_PRESSURE_3H:
+        case INFO_PRESSURE_24H: {
+            char buf[16];
+            if (currentData.pressure_valid) {
+                snprintf(buf, sizeof(buf), "%.0f", currentData.pressure);
+            } else {
+                strcpy(buf, UiText::ValueMissing());
+            }
+            safe_label_set_text(objects.label_sensor_value, buf);
+            safe_label_set_text(objects.label_pressure_value, buf);
+
+            const char *unit = objects.label_pressure_unit
+                ? lv_label_get_text(objects.label_pressure_unit)
+                : "hPa";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+
+            if (currentData.pressure_delta_3h_valid) {
+                if (currentData.pressure_delta_3h > 0.05f) {
+                    snprintf(buf, sizeof(buf), "+%.1f", currentData.pressure_delta_3h);
+                } else {
+                    snprintf(buf, sizeof(buf), "%.1f", currentData.pressure_delta_3h);
+                }
+            } else {
+                strcpy(buf, UiText::ValueMissingShort());
+            }
+            safe_label_set_text(objects.label_delta_3h_value, buf);
+            safe_label_set_text(objects.label_delta_3h_value_1, buf);
+
+            if (currentData.pressure_delta_24h_valid) {
+                if (currentData.pressure_delta_24h > 0.05f) {
+                    snprintf(buf, sizeof(buf), "+%.1f", currentData.pressure_delta_24h);
+                } else {
+                    snprintf(buf, sizeof(buf), "%.1f", currentData.pressure_delta_24h);
+                }
+            } else {
+                strcpy(buf, UiText::ValueMissingShort());
+            }
+            safe_label_set_text(objects.label_delta_24h_value, buf);
+            safe_label_set_text(objects.label_delta_24h_value_1, buf);
+
+            lv_color_t delta_3h_color = night_mode
+                ? color_card_border()
+                : getPressureDeltaColor(currentData.pressure_delta_3h, currentData.pressure_delta_3h_valid, false);
+            lv_color_t delta_24h_color = night_mode
+                ? color_card_border()
+                : getPressureDeltaColor(currentData.pressure_delta_24h, currentData.pressure_delta_24h_valid, true);
+            set_chip_color(objects.chip_delta_3h, delta_3h_color);
+            set_chip_color(objects.chip_delta_24h, delta_24h_color);
+            set_chip_color(objects.chip_delta_3h_1, delta_3h_color);
+            set_chip_color(objects.chip_delta_24h_1, delta_24h_color);
+            set_dot_color(objects.dot_sensor_info, delta_3h_color);
+            break;
+        }
         case INFO_NONE:
         default:
             break;
@@ -1497,6 +1556,29 @@ void UiController::select_pm_info(InfoSensor sensor) {
     update_sensor_info_ui();
 }
 
+void UiController::select_pressure_info(InfoSensor sensor) {
+    info_sensor = sensor;
+    hide_all_sensor_info_containers();
+    set_visible(objects.pressure_info, true);
+    set_visible(objects.pressure_3h_info, sensor == INFO_PRESSURE_3H);
+    set_visible(objects.pressure_24h_info, sensor == INFO_PRESSURE_24H);
+
+    auto set_checked = [](lv_obj_t *btn, bool checked) {
+        if (!btn) return;
+        if (checked) lv_obj_add_state(btn, LV_STATE_CHECKED);
+        else lv_obj_clear_state(btn, LV_STATE_CHECKED);
+    };
+    set_checked(objects.btn_3h_pressure_info, sensor == INFO_PRESSURE_3H);
+    set_checked(objects.btn_24h_pressure_info, sensor == INFO_PRESSURE_24H);
+
+    const char *title = objects.label_pressure_title
+        ? lv_label_get_text(objects.label_pressure_title)
+        : "PRESSURE";
+    safe_label_set_text(objects.label_sensor_info_title, title);
+
+    update_sensor_info_ui();
+}
+
 void UiController::set_visible(lv_obj_t *obj, bool visible) {
     ::set_visible(obj, visible);
 }
@@ -1512,6 +1594,8 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.ah_info, false);
     set_visible(objects.dp_info, false);
     set_visible(objects.pressure_info, false);
+    set_visible(objects.pressure_3h_info, false);
+    set_visible(objects.pressure_24h_info, false);
     set_visible(objects.pm_info, false);
     set_visible(objects.pm10_info, false);
     set_visible(objects.pm25_info, false);

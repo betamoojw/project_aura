@@ -571,6 +571,12 @@ typedef struct _objects_t {
     lv_obj_t *label_btn_3h_pressure_info;
     lv_obj_t *btn_24h_pressure_info;
     lv_obj_t *label_btn_24h_pressure_info;
+    lv_obj_t *chip_delta_3h_1;
+    lv_obj_t *chip_delta_24h_1;
+    lv_obj_t *label_delta_3h_title_1;
+    lv_obj_t *label_delta_24h_title_1;
+    lv_obj_t *label_delta_24h_value_1;
+    lv_obj_t *label_delta_3h_value_1;
     lv_obj_t *pm_info;
     lv_obj_t *pm10_info;
     lv_obj_t *label_pm10_text;
