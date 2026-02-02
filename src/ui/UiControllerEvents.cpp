@@ -105,6 +105,10 @@ void UiController::on_card_voc_event_cb(lv_event_t *e) { if (instance_) instance
 void UiController::on_card_nox_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_nox_event(e); }
 void UiController::on_card_hcho_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_hcho_event(e); }
 void UiController::on_card_co2_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_co2_event(e); }
+void UiController::on_card_hum_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_hum_event(e); }
+void UiController::on_rh_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_rh_info_event(e); }
+void UiController::on_ah_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_ah_info_event(e); }
+void UiController::on_dp_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_dp_info_event(e); }
 void UiController::on_sensors_info_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_sensors_info_back_event(e); }
 void UiController::on_temp_offset_minus_cb(lv_event_t *e) { if (instance_) instance_->on_temp_offset_minus(e); }
 void UiController::on_temp_offset_plus_cb(lv_event_t *e) { if (instance_) instance_->on_temp_offset_plus(e); }
@@ -684,6 +688,35 @@ void UiController::on_card_co2_event(lv_event_t *e) {
     safe_label_set_text(objects.label_sensor_info_unit, unit);
     update_sensor_info_ui();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+}
+
+void UiController::on_card_hum_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_humidity_info(INFO_RH);
+    pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+}
+
+void UiController::on_rh_info_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_humidity_info(INFO_RH);
+}
+
+void UiController::on_ah_info_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_humidity_info(INFO_AH);
+}
+
+void UiController::on_dp_info_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_humidity_info(INFO_DP);
 }
 
 void UiController::on_sensors_info_back_event(lv_event_t *e) {

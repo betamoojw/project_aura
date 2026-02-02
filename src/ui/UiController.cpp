@@ -6,6 +6,7 @@
 
 #include "ui/UiController.h"
 #include "ui/UiText.h"
+#include "core/MathUtils.h"
 #include "ui/fonts.h"
 
 #include <math.h>
@@ -205,7 +206,11 @@ void UiController::begin() {
         {objects.card_nox, on_card_nox_event_cb, LV_EVENT_CLICKED},
         {objects.card_hcho, on_card_hcho_event_cb, LV_EVENT_CLICKED},
         {objects.card_co2, on_card_co2_event_cb, LV_EVENT_CLICKED},
+        {objects.card_hum, on_card_hum_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_rh_info, on_rh_info_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_ah_info, on_ah_info_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dp_info, on_dp_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_mqtt, on_mqtt_settings_event_cb, LV_EVENT_CLICKED},
@@ -313,6 +318,9 @@ void UiController::begin() {
         objects.btn_backlight_1m,
         objects.btn_backlight_5m,
         objects.btn_auto_night_toggle,
+        objects.btn_rh_info,
+        objects.btn_ah_info,
+        objects.btn_dp_info,
     };
 
     for (lv_obj_t *btn : toggle_buttons) {
@@ -336,6 +344,7 @@ void UiController::begin() {
     set_checked(objects.btn_led_indicators, led_indicators_enabled);
     set_checked(objects.btn_alert_blink, alert_blink_enabled);
     set_checked(objects.btn_co2_calib_asc, co2_asc_enabled);
+    set_checked(objects.btn_rh_info, true);
 
     bind_events(click_bindings, sizeof(click_bindings) / sizeof(click_bindings[0]));
     bind_events(value_bindings, sizeof(value_bindings) / sizeof(value_bindings[0]));
@@ -1325,10 +1334,101 @@ void UiController::update_sensor_info_ui() {
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(co2_col));
             break;
         }
+        case INFO_RH: {
+            if (currentData.hum_valid) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%.0f", currentData.humidity);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            const char *unit = objects.label_hum_unit
+                ? lv_label_get_text(objects.label_hum_unit)
+                : "%";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            lv_color_t hum_col = currentData.hum_valid ? getHumidityColor(currentData.humidity) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(hum_col));
+            break;
+        }
+        case INFO_AH: {
+            float ah_gm3 = NAN;
+            if (currentData.temp_valid && currentData.hum_valid) {
+                ah_gm3 = MathUtils::compute_absolute_humidity_gm3(currentData.temperature, currentData.humidity);
+            }
+            if (isfinite(ah_gm3)) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%.0f", ah_gm3);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            const char *unit = objects.label_ah_unit
+                ? lv_label_get_text(objects.label_ah_unit)
+                : "g/m3";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            lv_color_t ah_col = getAbsoluteHumidityColor(ah_gm3);
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(ah_col));
+            break;
+        }
+        case INFO_DP: {
+            float dew_c = NAN;
+            float dew_c_rounded = NAN;
+            if (currentData.temp_valid && currentData.hum_valid) {
+                dew_c = MathUtils::compute_dew_point_c(currentData.temperature, currentData.humidity);
+                if (isfinite(dew_c)) {
+                    dew_c_rounded = roundf(dew_c);
+                }
+            }
+            if (isfinite(dew_c)) {
+                float dew_display = dew_c;
+                if (!temp_units_c) {
+                    dew_display = (dew_display * 9.0f / 5.0f) + 32.0f;
+                }
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%.1f", dew_display);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            safe_label_set_text(objects.label_sensor_info_unit, temp_units_c ? UiText::UnitC() : UiText::UnitF());
+            float dp_color_c = isfinite(dew_c_rounded) ? dew_c_rounded : dew_c;
+            lv_color_t dp_col = getDewPointColor(dp_color_c);
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(dp_col));
+            break;
+        }
         case INFO_NONE:
         default:
             break;
     }
+}
+
+void UiController::select_humidity_info(InfoSensor sensor) {
+    info_sensor = sensor;
+    hide_all_sensor_info_containers();
+    set_visible(objects.humidity_info, true);
+    set_visible(objects.rh_info, sensor == INFO_RH);
+    set_visible(objects.ah_info, sensor == INFO_AH);
+    set_visible(objects.dp_info, sensor == INFO_DP);
+
+    auto set_checked = [](lv_obj_t *btn, bool checked) {
+        if (!btn) return;
+        if (checked) lv_obj_add_state(btn, LV_STATE_CHECKED);
+        else lv_obj_clear_state(btn, LV_STATE_CHECKED);
+    };
+    set_checked(objects.btn_rh_info, sensor == INFO_RH);
+    set_checked(objects.btn_ah_info, sensor == INFO_AH);
+    set_checked(objects.btn_dp_info, sensor == INFO_DP);
+
+    if (objects.label_sensor_info_title) {
+        if (sensor == INFO_RH) {
+            safe_label_set_text(objects.label_sensor_info_title, "RELATIVE HUMIDITY");
+        } else if (sensor == INFO_AH) {
+            safe_label_set_text(objects.label_sensor_info_title, "ABSOLUTE HUMIDITY");
+        } else if (sensor == INFO_DP) {
+            safe_label_set_text(objects.label_sensor_info_title, "DEW POINT");
+        }
+    }
+    update_sensor_info_ui();
 }
 
 void UiController::set_visible(lv_obj_t *obj, bool visible) {
