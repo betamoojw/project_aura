@@ -235,7 +235,17 @@ constexpr const char *kStringsEn[] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 constexpr const char *kStringsDe[] = {
@@ -461,7 +471,17 @@ constexpr const char *kStringsDe[] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 static_assert(sizeof(kStringsDe) / sizeof(kStringsDe[0]) ==
@@ -691,7 +711,17 @@ constexpr const char *kStringsFr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 static_assert(sizeof(kStringsFr) / sizeof(kStringsFr[0]) ==
@@ -921,7 +951,17 @@ constexpr const char *kStringsIt[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 static_assert(sizeof(kStringsIt) / sizeof(kStringsIt[0]) ==
@@ -1151,7 +1191,17 @@ constexpr const char *kStringsPtBr[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 static_assert(sizeof(kStringsPtBr) / sizeof(kStringsPtBr[0]) ==
@@ -1381,7 +1431,17 @@ constexpr const char *kStringsNl[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 static_assert(sizeof(kStringsNl) / sizeof(kStringsNl[0]) ==
@@ -1611,7 +1671,17 @@ constexpr const char *kStringsZh[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 static_assert(sizeof(kStringsZh) / sizeof(kStringsZh[0]) ==
@@ -1841,7 +1911,17 @@ constexpr const char *kStringsEs[static_cast<size_t>(TextId::Count)] = {
     "Excellent: <=54 ug/m3\nClean air",
     "Acceptable: 54-154 ug/m3\nSome dust, sensitive groups may react",
     "Uncomfortable: 154-254 ug/m3\nIrritation likely, reduce exposure",
-    "Poor: >254 ug/m3\nHigh pollution, stay indoors"
+    "Poor: >254 ug/m3\nHigh pollution, stay indoors",
+    "3h pressure trend shows short-term changes that can signal approaching weather. Rapid drops often precede storms; rapid rises indicate clearing. Use the delta below to judge how fast conditions are changing.",
+    "Excellent: <1 hPa\nStable pressure",
+    "Acceptable: 1-3 hPa\nMinor change",
+    "Uncomfortable: 3-6 hPa\nNoticeable change",
+    "Poor: >6 hPa\nRapid change, weather shift likely",
+    "24h pressure trend shows daily change. Large swings suggest unstable weather; steady values mean stable conditions. Use the delta below to judge intensity.",
+    "Excellent: <2 hPa\nStable conditions",
+    "Acceptable: 2-6 hPa\nSmall change",
+    "Uncomfortable: 6-10 hPa\nSignificant change",
+    "Poor: >10 hPa\nMajor change, storms possible"
 };
 
 static_assert(sizeof(kStringsEn) / sizeof(kStringsEn[0]) ==

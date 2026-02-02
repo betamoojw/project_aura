@@ -237,6 +237,16 @@ enum class TextId : uint16_t {
     InfoPm10Acceptable,
     InfoPm10Uncomfortable,
     InfoPm10Poor,
+    InfoPressure3hText,
+    InfoPressure3hExcellent,
+    InfoPressure3hAcceptable,
+    InfoPressure3hUncomfortable,
+    InfoPressure3hPoor,
+    InfoPressure24hText,
+    InfoPressure24hExcellent,
+    InfoPressure24hAcceptable,
+    InfoPressure24hUncomfortable,
+    InfoPressure24hPoor,
     Count
 };
 

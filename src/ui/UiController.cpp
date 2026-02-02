@@ -1746,6 +1746,16 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_pm10_acceptable) safe_label_set_text(objects.label_pm10_acceptable, UiText::InfoPm10Acceptable());
     if (objects.label_pm10_uncomfortable) safe_label_set_text(objects.label_pm10_uncomfortable, UiText::InfoPm10Uncomfortable());
     if (objects.label_pm10_poor) safe_label_set_text(objects.label_pm10_poor, UiText::InfoPm10Poor());
+    if (objects.label_3h_pressure_text) safe_label_set_text(objects.label_3h_pressure_text, UiText::InfoPressure3hText());
+    if (objects.label_3h_pressure_excellent) safe_label_set_text(objects.label_3h_pressure_excellent, UiText::InfoPressure3hExcellent());
+    if (objects.label_3h_pressure_acceptable) safe_label_set_text(objects.label_3h_pressure_acceptable, UiText::InfoPressure3hAcceptable());
+    if (objects.label_3h_pressure_uncomfortable) safe_label_set_text(objects.label_3h_pressure_uncomfortable, UiText::InfoPressure3hUncomfortable());
+    if (objects.label_3h_pressure_poor) safe_label_set_text(objects.label_3h_pressure_poor, UiText::InfoPressure3hPoor());
+    if (objects.label_24h_pressure_text) safe_label_set_text(objects.label_24h_pressure_text, UiText::InfoPressure24hText());
+    if (objects.label_24h_pressure_excellent) safe_label_set_text(objects.label_24h_pressure_excellent, UiText::InfoPressure24hExcellent());
+    if (objects.label_24h_pressure_acceptable) safe_label_set_text(objects.label_24h_pressure_acceptable, UiText::InfoPressure24hAcceptable());
+    if (objects.label_24h_pressure_uncomfortable) safe_label_set_text(objects.label_24h_pressure_uncomfortable, UiText::InfoPressure24hUncomfortable());
+    if (objects.label_24h_pressure_poor) safe_label_set_text(objects.label_24h_pressure_poor, UiText::InfoPressure24hPoor());
 }
 
 void UiController::update_confirm_texts() {
