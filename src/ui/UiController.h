@@ -62,6 +62,7 @@ private:
     enum InfoSensor {
         INFO_NONE = 0,
         INFO_TEMP,
+        INFO_VOC,
     };
 
     void update_temp_offset_label();
@@ -220,6 +221,7 @@ private:
     void on_factory_reset_event(lv_event_t *e);
     void on_voc_reset_event(lv_event_t *e);
     void on_card_temp_event(lv_event_t *e);
+    void on_card_voc_event(lv_event_t *e);
     void on_sensors_info_back_event(lv_event_t *e);
     void on_temp_offset_minus(lv_event_t *e);
     void on_temp_offset_plus(lv_event_t *e);
@@ -303,6 +305,7 @@ private:
     static void on_factory_reset_event_cb(lv_event_t *e);
     static void on_voc_reset_event_cb(lv_event_t *e);
     static void on_card_temp_event_cb(lv_event_t *e);
+    static void on_card_voc_event_cb(lv_event_t *e);
     static void on_sensors_info_back_event_cb(lv_event_t *e);
     static void on_temp_offset_minus_cb(lv_event_t *e);
     static void on_temp_offset_plus_cb(lv_event_t *e);

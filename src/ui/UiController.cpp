@@ -201,6 +201,7 @@ void UiController::begin() {
         {objects.btn_about, on_about_event_cb, LV_EVENT_CLICKED},
         {objects.btn_about_back, on_about_back_event_cb, LV_EVENT_CLICKED},
         {objects.card_temp, on_card_temp_event_cb, LV_EVENT_CLICKED},
+        {objects.card_voc, on_card_voc_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
@@ -1263,6 +1264,22 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_value, buf);
             lv_color_t temp_col = currentData.temp_valid ? getTempColor(currentData.temperature) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(temp_col));
+            break;
+        }
+        case INFO_VOC: {
+            const bool gas_warmup = sensorManager.isWarmupActive();
+            if (gas_warmup) {
+                safe_label_set_text(objects.label_sensor_value, "---");
+            } else if (currentData.voc_valid) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%d", currentData.voc_index);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            lv_color_t voc_col = gas_warmup ? color_blue()
+                                            : (currentData.voc_valid ? getVOCColor(currentData.voc_index) : color_inactive());
+            set_dot_color(objects.dot_sensor_info, gas_warmup ? voc_col : alert_color_for_mode(voc_col));
             break;
         }
         case INFO_NONE:

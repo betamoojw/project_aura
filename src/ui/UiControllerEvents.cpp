@@ -101,6 +101,7 @@ void UiController::on_restart_event_cb(lv_event_t *e) { if (instance_) instance_
 void UiController::on_factory_reset_event_cb(lv_event_t *e) { if (instance_) instance_->on_factory_reset_event(e); }
 void UiController::on_voc_reset_event_cb(lv_event_t *e) { if (instance_) instance_->on_voc_reset_event(e); }
 void UiController::on_card_temp_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_temp_event(e); }
+void UiController::on_card_voc_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_voc_event(e); }
 void UiController::on_sensors_info_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_sensors_info_back_event(e); }
 void UiController::on_temp_offset_minus_cb(lv_event_t *e) { if (instance_) instance_->on_temp_offset_minus(e); }
 void UiController::on_temp_offset_plus_cb(lv_event_t *e) { if (instance_) instance_->on_temp_offset_plus(e); }
@@ -606,12 +607,25 @@ void UiController::on_card_temp_event(lv_event_t *e) {
         ? lv_label_get_text(objects.label_temp_unit)
         : "";
     safe_label_set_text(objects.label_sensor_info_unit, unit);
-    if (objects.dot_temp && objects.dot_sensor_info) {
-        lv_color_t dot_color = lv_obj_get_style_bg_color(objects.dot_temp, LV_PART_MAIN);
-        lv_color_t shadow_color = lv_obj_get_style_shadow_color(objects.dot_temp, LV_PART_MAIN);
-        lv_obj_set_style_bg_color(objects.dot_sensor_info, dot_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_color(objects.dot_sensor_info, shadow_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    update_sensor_info_ui();
+    pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+}
+
+void UiController::on_card_voc_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
     }
+    info_sensor = INFO_VOC;
+    hide_all_sensor_info_containers();
+    set_visible(objects.voc_info, true);
+    if (objects.label_sensor_info_title) {
+        safe_label_set_text(objects.label_sensor_info_title, "VOC");
+    }
+    const char *unit = objects.label_voc_unit
+        ? lv_label_get_text(objects.label_voc_unit)
+        : "";
+    safe_label_set_text(objects.label_sensor_info_unit, unit);
+    update_sensor_info_ui();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
 }
 
