@@ -200,6 +200,8 @@ void UiController::begin() {
         {objects.btn_back, on_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_about, on_about_event_cb, LV_EVENT_CLICKED},
         {objects.btn_about_back, on_about_back_event_cb, LV_EVENT_CLICKED},
+        {objects.card_temp, on_card_temp_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_mqtt, on_mqtt_settings_event_cb, LV_EVENT_CLICKED},
@@ -1235,6 +1237,26 @@ void UiController::update_ui() {
     }
 
     update_sensor_cards(aq, gas_warmup, show_co2_bar);
+}
+
+void UiController::set_visible(lv_obj_t *obj, bool visible) {
+    ::set_visible(obj, visible);
+}
+
+void UiController::hide_all_sensor_info_containers() {
+    set_visible(objects.temperature_info, false);
+    set_visible(objects.co2_info, false);
+    set_visible(objects.voc_info, false);
+    set_visible(objects.nox_info, false);
+    set_visible(objects.hcho_info, false);
+    set_visible(objects.humidity_info, false);
+    set_visible(objects.rh_info, false);
+    set_visible(objects.ah_info, false);
+    set_visible(objects.dp_info, false);
+    set_visible(objects.pressure_info, false);
+    set_visible(objects.pm_info, false);
+    set_visible(objects.pm10_info, false);
+    set_visible(objects.pm25_info, false);
 }
 
 void UiController::update_settings_header() {

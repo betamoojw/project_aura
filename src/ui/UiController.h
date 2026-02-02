@@ -91,6 +91,8 @@ private:
     void update_led_indicators();
     void update_co2_bar(int co2, bool valid);
     void init_ui_defaults();
+    void set_visible(lv_obj_t *obj, bool visible);
+    void hide_all_sensor_info_containers();
 
     void safe_label_set_text(lv_obj_t *obj, const char *new_text);
     lv_color_t color_inactive();
@@ -212,6 +214,8 @@ private:
     void on_restart_event(lv_event_t *e);
     void on_factory_reset_event(lv_event_t *e);
     void on_voc_reset_event(lv_event_t *e);
+    void on_card_temp_event(lv_event_t *e);
+    void on_sensors_info_back_event(lv_event_t *e);
     void on_temp_offset_minus(lv_event_t *e);
     void on_temp_offset_plus(lv_event_t *e);
     void on_hum_offset_minus(lv_event_t *e);
@@ -293,6 +297,8 @@ private:
     static void on_restart_event_cb(lv_event_t *e);
     static void on_factory_reset_event_cb(lv_event_t *e);
     static void on_voc_reset_event_cb(lv_event_t *e);
+    static void on_card_temp_event_cb(lv_event_t *e);
+    static void on_sensors_info_back_event_cb(lv_event_t *e);
     static void on_temp_offset_minus_cb(lv_event_t *e);
     static void on_temp_offset_plus_cb(lv_event_t *e);
     static void on_hum_offset_minus_cb(lv_event_t *e);
