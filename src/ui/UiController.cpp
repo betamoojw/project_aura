@@ -202,6 +202,8 @@ void UiController::begin() {
         {objects.btn_about_back, on_about_back_event_cb, LV_EVENT_CLICKED},
         {objects.card_temp, on_card_temp_event_cb, LV_EVENT_CLICKED},
         {objects.card_voc, on_card_voc_event_cb, LV_EVENT_CLICKED},
+        {objects.card_nox, on_card_nox_event_cb, LV_EVENT_CLICKED},
+        {objects.card_hcho, on_card_hcho_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi_back, on_wifi_back_event_cb, LV_EVENT_CLICKED},
@@ -1280,6 +1282,34 @@ void UiController::update_sensor_info_ui() {
             lv_color_t voc_col = gas_warmup ? color_blue()
                                             : (currentData.voc_valid ? getVOCColor(currentData.voc_index) : color_inactive());
             set_dot_color(objects.dot_sensor_info, gas_warmup ? voc_col : alert_color_for_mode(voc_col));
+            break;
+        }
+        case INFO_NOX: {
+            const bool gas_warmup = sensorManager.isWarmupActive();
+            if (gas_warmup) {
+                safe_label_set_text(objects.label_sensor_value, "---");
+            } else if (currentData.nox_valid) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%d", currentData.nox_index);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            lv_color_t nox_col = gas_warmup ? color_blue()
+                                            : (currentData.nox_valid ? getNOxColor(currentData.nox_index) : color_inactive());
+            set_dot_color(objects.dot_sensor_info, gas_warmup ? nox_col : alert_color_for_mode(nox_col));
+            break;
+        }
+        case INFO_HCHO: {
+            if (currentData.hcho_valid) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%d", static_cast<int>(lroundf(currentData.hcho)));
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            lv_color_t hcho_col = getHCHOColor(currentData.hcho, currentData.hcho_valid);
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(hcho_col));
             break;
         }
         case INFO_NONE:
