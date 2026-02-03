@@ -1660,6 +1660,7 @@ void UiController::update_language_fonts() {
         objects.page_auto_night_mode,
         objects.page_backlight,
         objects.page_mqtt,
+        objects.page_sensors_info,
     };
 
     for (lv_obj_t *root : roots) {
