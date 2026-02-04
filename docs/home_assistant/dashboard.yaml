@@ -4,6 +4,16 @@ views:
     path: kitchen
     icon: mdi:air-filter
     cards:
+      - type: gauge
+        entity: sensor.project_aura_project_aura_co2
+        name: CO2
+        min: 400
+        max: 2000
+        needle: true
+        severity:
+          green: 900
+          yellow: 1200
+          red: 1500
       - type: grid
         columns: 2
         square: false
@@ -38,16 +48,16 @@ views:
             name: HCHO
             vertical: false
             features_position: bottom
-      - type: gauge
-        entity: sensor.project_aura_project_aura_co2
-        name: CO2
-        min: 400
-        max: 2000
-        needle: true
-        severity:
-          green: 900
-          yellow: 1200
-          red: 1500
+          - type: tile
+            entity: sensor.project_aura_project_aura_pressure_delta_3h
+            name: Pressure Delta 3h
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_project_aura_pressure_delta_24h
+            name: Pressure Delta 24h
+            vertical: false
+            features_position: bottom
       - type: grid
         columns: 2
         square: false
@@ -73,13 +83,13 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_pressure_delta_3h
-            name: Pressure Delta 3h
+            entity: sensor.project_aura_pm1_0
+            name: PM1.0
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_pressure_delta_24h
-            name: Pressure Delta 24h
+            entity: sensor.project_aura_pm4_0
+            name: PM4.0
             vertical: false
             features_position: bottom
       - chart_type: line
