@@ -6,6 +6,7 @@
 
 #include "modules/MqttManager.h"
 
+#include <ctype.h>
 #include <math.h>
 #include <string.h>
 #include <WiFi.h>
@@ -21,6 +22,7 @@ MqttManager *g_mqtt = nullptr;
 constexpr uint8_t kMqttRetryStages = 3;
 constexpr uint8_t kMqttRetryStageAttempts = Config::MQTT_CONNECT_MAX_FAILS;
 constexpr uint8_t kMqttRetryMaxAttempts = kMqttRetryStages * kMqttRetryStageAttempts;
+constexpr size_t kTopicBufferSize = 256;
 
 uint8_t retry_stage_for_attempts(uint32_t attempts) {
     return static_cast<uint8_t>(attempts / kMqttRetryStageAttempts);
@@ -42,6 +44,61 @@ const char *retry_delay_label(uint32_t delay_ms) {
         return "10 minutes";
     }
     return "1 hour";
+}
+
+void build_state_topic(char *out, size_t out_size, const String &base) {
+    snprintf(out, out_size, "%s/state", base.c_str());
+}
+
+void build_availability_topic(char *out, size_t out_size, const String &base) {
+    snprintf(out, out_size, "%s/status", base.c_str());
+}
+
+void build_night_mode_availability_topic(char *out, size_t out_size, const String &base) {
+    snprintf(out, out_size, "%s/availability/night_mode", base.c_str());
+}
+
+void build_command_topic(char *out, size_t out_size, const String &base, const char *command) {
+    snprintf(out, out_size, "%s/command/%s", base.c_str(), command);
+}
+
+void build_discovery_topic(char *out, size_t out_size, const char *component,
+                           const String &device_id, const char *object_id) {
+    snprintf(out, out_size, "homeassistant/%s/%s_%s/config",
+             component, device_id.c_str(), object_id);
+}
+
+bool equals_ignore_case(const char *a, const char *b) {
+    if (!a || !b) {
+        return false;
+    }
+    while (*a && *b) {
+        if (tolower(static_cast<unsigned char>(*a)) != tolower(static_cast<unsigned char>(*b))) {
+            return false;
+        }
+        ++a;
+        ++b;
+    }
+    return (*a == '\0' && *b == '\0');
+}
+
+void trim_ascii(char *text) {
+    if (!text) {
+        return;
+    }
+    char *start = text;
+    while (*start && isspace(static_cast<unsigned char>(*start))) {
+        ++start;
+    }
+    char *end = start + strlen(start);
+    while (end > start && isspace(static_cast<unsigned char>(*(end - 1)))) {
+        --end;
+    }
+    size_t len = static_cast<size_t>(end - start);
+    if (start != text) {
+        memmove(text, start, len);
+    }
+    text[len] = '\0';
 }
 
 } // namespace
@@ -95,34 +152,6 @@ void MqttManager::setupClient() {
     client_.setCallback(MqttManager::staticCallback);
 }
 
-String MqttManager::stateTopic() const {
-    return mqtt_base_topic_ + "/state";
-}
-
-String MqttManager::availabilityTopic() const {
-    return mqtt_base_topic_ + "/status";
-}
-
-String MqttManager::nightModeAvailabilityTopic() const {
-    return mqtt_base_topic_ + "/availability/night_mode";
-}
-
-String MqttManager::discoveryTopic(const char *object_id) const {
-    String topic = "homeassistant/sensor/";
-    topic += mqtt_device_id_;
-    topic += "_";
-    topic += object_id;
-    topic += "/config";
-    return topic;
-}
-
-String MqttManager::commandTopic(const char *command) const {
-    String topic = mqtt_base_topic_;
-    topic += "/command/";
-    topic += command;
-    return topic;
-}
-
 void MqttManager::publishDiscoverySensor(const char *object_id, const char *name,
                                          const char *unit, const char *device_class,
                                          const char *state_class, const char *value_template,
@@ -130,7 +159,9 @@ void MqttManager::publishDiscoverySensor(const char *object_id, const char *name
     if (!client_.connected()) {
         return;
     }
-    String payload = "{";
+    String payload;
+    payload.reserve(520); // Discovery sensor payload ~450 bytes; keep headroom for long IDs.
+    payload = "{";
     payload += "\"name\":\"";
     payload += name;
     payload += "\",\"unique_id\":\"";
@@ -138,9 +169,12 @@ void MqttManager::publishDiscoverySensor(const char *object_id, const char *name
     payload += "_";
     payload += object_id;
     payload += "\",\"state_topic\":\"";
-    payload += stateTopic();
+    char topic[kTopicBufferSize];
+    build_state_topic(topic, sizeof(topic), mqtt_base_topic_);
+    payload += topic;
     payload += "\",\"availability_topic\":\"";
-    payload += availabilityTopic();
+    build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+    payload += topic;
     payload += "\",\"payload_available\":\"";
     payload += Config::MQTT_AVAIL_ONLINE;
     payload += "\",\"payload_not_available\":\"";
@@ -178,8 +212,8 @@ void MqttManager::publishDiscoverySensor(const char *object_id, const char *name
     payload += "\",\"manufacturer\":\"21CNCStudio\",\"model\":\"Project Aura\"}";
     payload += "}";
 
-    String topic = discoveryTopic(object_id);
-    client_.publish(topic.c_str(), payload.c_str(), true);
+    build_discovery_topic(topic, sizeof(topic), "sensor", mqtt_device_id_, object_id);
+    client_.publish(topic, payload.c_str(), true);
 }
 
 void MqttManager::publishDiscoverySwitch(const char *object_id, const char *name,
@@ -187,7 +221,9 @@ void MqttManager::publishDiscoverySwitch(const char *object_id, const char *name
     if (!client_.connected()) {
         return;
     }
-    String payload = "{";
+    String payload;
+    payload.reserve(640); // Switch payload includes availability array; keep headroom.
+    payload = "{";
     payload += "\"name\":\"";
     payload += name;
     payload += "\",\"unique_id\":\"";
@@ -195,18 +231,23 @@ void MqttManager::publishDiscoverySwitch(const char *object_id, const char *name
     payload += "_";
     payload += object_id;
     payload += "\",\"state_topic\":\"";
-    payload += stateTopic();
+    char topic[kTopicBufferSize];
+    build_state_topic(topic, sizeof(topic), mqtt_base_topic_);
+    payload += topic;
     payload += "\",\"command_topic\":\"";
-    payload += commandTopic(object_id);
+    build_command_topic(topic, sizeof(topic), mqtt_base_topic_, object_id);
+    payload += topic;
     if (strcmp(object_id, "night_mode") == 0) {
         payload += "\",\"availability\":[{\"topic\":\"";
-        payload += availabilityTopic();
+        build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+        payload += topic;
         payload += "\",\"payload_available\":\"";
         payload += Config::MQTT_AVAIL_ONLINE;
         payload += "\",\"payload_not_available\":\"";
         payload += Config::MQTT_AVAIL_OFFLINE;
         payload += "\"},{\"topic\":\"";
-        payload += nightModeAvailabilityTopic();
+        build_night_mode_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+        payload += topic;
         payload += "\",\"payload_available\":\"";
         payload += Config::MQTT_AVAIL_ONLINE;
         payload += "\",\"payload_not_available\":\"";
@@ -215,7 +256,8 @@ void MqttManager::publishDiscoverySwitch(const char *object_id, const char *name
         payload += ",\"availability_mode\":\"all\"";
     } else {
         payload += "\",\"availability_topic\":\"";
-        payload += availabilityTopic();
+        build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+        payload += topic;
         payload += "\",\"payload_available\":\"";
         payload += Config::MQTT_AVAIL_ONLINE;
         payload += "\",\"payload_not_available\":\"";
@@ -241,12 +283,8 @@ void MqttManager::publishDiscoverySwitch(const char *object_id, const char *name
     payload += "\",\"manufacturer\":\"21CNCStudio\",\"model\":\"Project Aura\"}";
     payload += "}";
 
-    String topic = "homeassistant/switch/";
-    topic += mqtt_device_id_;
-    topic += "_";
-    topic += object_id;
-    topic += "/config";
-    client_.publish(topic.c_str(), payload.c_str(), true);
+    build_discovery_topic(topic, sizeof(topic), "switch", mqtt_device_id_, object_id);
+    client_.publish(topic, payload.c_str(), true);
 }
 
 void MqttManager::publishDiscoveryButton(const char *object_id, const char *name,
@@ -254,7 +292,9 @@ void MqttManager::publishDiscoveryButton(const char *object_id, const char *name
     if (!client_.connected()) {
         return;
     }
-    String payload = "{";
+    String payload;
+    payload.reserve(420); // Button payload is smaller but still avoid reallocs.
+    payload = "{";
     payload += "\"name\":\"";
     payload += name;
     payload += "\",\"unique_id\":\"";
@@ -262,11 +302,14 @@ void MqttManager::publishDiscoveryButton(const char *object_id, const char *name
     payload += "_";
     payload += object_id;
     payload += "\",\"command_topic\":\"";
-    payload += commandTopic(object_id);
+    char topic[kTopicBufferSize];
+    build_command_topic(topic, sizeof(topic), mqtt_base_topic_, object_id);
+    payload += topic;
     payload += "\",\"payload_press\":\"";
     payload += payload_press;
     payload += "\",\"availability_topic\":\"";
-    payload += availabilityTopic();
+    build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+    payload += topic;
     payload += "\"";
     if (icon && icon[0] != '\0') {
         payload += ",\"icon\":\"";
@@ -280,12 +323,8 @@ void MqttManager::publishDiscoveryButton(const char *object_id, const char *name
     payload += "\",\"manufacturer\":\"21CNCStudio\",\"model\":\"Project Aura\"}";
     payload += "}";
 
-    String topic = "homeassistant/button/";
-    topic += mqtt_device_id_;
-    topic += "_";
-    topic += object_id;
-    topic += "/config";
-    client_.publish(topic.c_str(), payload.c_str(), true);
+    build_discovery_topic(topic, sizeof(topic), "button", mqtt_device_id_, object_id);
+    client_.publish(topic, payload.c_str(), true);
 }
 
 void MqttManager::publishDiscovery() {
@@ -331,9 +370,10 @@ void MqttManager::publishNightModeAvailability() {
     if (!client_.connected()) {
         return;
     }
-    String topic = nightModeAvailabilityTopic();
+    char topic[kTopicBufferSize];
+    build_night_mode_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
     const char *payload = auto_night_enabled_ ? Config::MQTT_AVAIL_OFFLINE : Config::MQTT_AVAIL_ONLINE;
-    client_.publish(topic.c_str(), payload, true);
+    client_.publish(topic, payload, true);
 }
 
 void MqttManager::publishState(const SensorData &data, bool night_mode, bool alert_blink, bool backlight_on) {
@@ -341,7 +381,7 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
         return;
     }
     String payload;
-    payload.reserve(560);
+    payload.reserve(560); // State payload ~500 bytes for all fields.
     payload += "{";
     bool first = true;
     auto add_int = [&](const char *key, bool valid, int value) {
@@ -350,7 +390,7 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
         payload += "\"";
         payload += key;
         payload += "\":";
-        if (valid) payload += String(value);
+        if (valid) payload.concat(value);
         else payload += "null";
     };
     auto add_float = [&](const char *key, bool valid, float value, int decimals) {
@@ -359,8 +399,13 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
         payload += "\"";
         payload += key;
         payload += "\":";
-        if (valid) payload += String(value, decimals);
-        else payload += "null";
+        if (valid) {
+            char buf[24];
+            snprintf(buf, sizeof(buf), "%.*f", decimals, static_cast<double>(value));
+            payload += buf;
+        } else {
+            payload += "null";
+        }
     };
     auto add_bool = [&](const char *key, bool value) {
         if (!first) payload += ",";
@@ -403,8 +448,9 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
     add_bool("backlight", backlight_on);
     payload += "}";
 
-    String topic = stateTopic();
-    bool published = client_.publish(topic.c_str(), payload.c_str(), true);
+    char topic[kTopicBufferSize];
+    build_state_topic(topic, sizeof(topic), mqtt_base_topic_);
+    bool published = client_.publish(topic, payload.c_str(), true);
 
     if (published) {
         mqtt_fail_count_ = 0;
@@ -476,18 +522,19 @@ bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool al
                 local_ip.toString().c_str(),
                 static_cast<long>(rssi));
 
-    String client_id = mqtt_device_id_;
-    String will_topic = availabilityTopic();
+    const char *client_id = mqtt_device_id_.c_str();
+    char will_topic[kTopicBufferSize];
+    build_availability_topic(will_topic, sizeof(will_topic), mqtt_base_topic_);
     bool ok = false;
     if (mqtt_anonymous_) {
-        ok = client_.connect(client_id.c_str(), nullptr, nullptr,
-                             will_topic.c_str(), 0, true, Config::MQTT_AVAIL_OFFLINE);
+        ok = client_.connect(client_id, nullptr, nullptr,
+                             will_topic, 0, true, Config::MQTT_AVAIL_OFFLINE);
     } else if (mqtt_user_.length()) {
-        ok = client_.connect(client_id.c_str(), mqtt_user_.c_str(), mqtt_pass_.c_str(),
-                             will_topic.c_str(), 0, true, Config::MQTT_AVAIL_OFFLINE);
+        ok = client_.connect(client_id, mqtt_user_.c_str(), mqtt_pass_.c_str(),
+                             will_topic, 0, true, Config::MQTT_AVAIL_OFFLINE);
     } else {
-        ok = client_.connect(client_id.c_str(), nullptr, nullptr,
-                             will_topic.c_str(), 0, true, Config::MQTT_AVAIL_OFFLINE);
+        ok = client_.connect(client_id, nullptr, nullptr,
+                             will_topic, 0, true, Config::MQTT_AVAIL_OFFLINE);
     }
     if (!ok) {
         note_connect_failure(client_.state(), true);
@@ -499,8 +546,10 @@ bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool al
     mqtt_connect_attempts_ = 0;
     mqtt_retry_exhausted_ = false;
     ui_dirty_ = true;
-    client_.subscribe((mqtt_base_topic_ + "/command/#").c_str());
-    client_.publish(will_topic.c_str(), Config::MQTT_AVAIL_ONLINE, true);
+    char subscribe_topic[kTopicBufferSize];
+    snprintf(subscribe_topic, sizeof(subscribe_topic), "%s/command/#", mqtt_base_topic_.c_str());
+    client_.subscribe(subscribe_topic);
+    client_.publish(will_topic, Config::MQTT_AVAIL_ONLINE, true);
     publishNightModeAvailability();
     mqtt_discovery_sent_ = false;
     publishDiscovery();
@@ -508,16 +557,23 @@ bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool al
     return true;
 }
 
-bool MqttManager::payloadIsOn(const String &payload) {
-    if (payload.equalsIgnoreCase("ON") || payload == "1" || payload.equalsIgnoreCase("TRUE") ||
-        payload.equalsIgnoreCase("PRESS")) {
+bool MqttManager::payloadIsOn(const char *payload) {
+    if (!payload) {
+        return false;
+    }
+    if (equals_ignore_case(payload, "ON") || strcmp(payload, "1") == 0 ||
+        equals_ignore_case(payload, "TRUE") || equals_ignore_case(payload, "PRESS")) {
         return true;
     }
     return false;
 }
 
-bool MqttManager::payloadIsOff(const String &payload) {
-    if (payload.equalsIgnoreCase("OFF") || payload == "0" || payload.equalsIgnoreCase("FALSE")) {
+bool MqttManager::payloadIsOff(const char *payload) {
+    if (!payload) {
+        return false;
+    }
+    if (equals_ignore_case(payload, "OFF") || strcmp(payload, "0") == 0 ||
+        equals_ignore_case(payload, "FALSE")) {
         return true;
     }
     return false;
@@ -525,12 +581,13 @@ bool MqttManager::payloadIsOff(const String &payload) {
 
 void MqttManager::handleCallback(char *topic, uint8_t *payload, unsigned int length) {
     String t(topic ? topic : "");
-    String msg;
-    msg.reserve(length);
-    for (unsigned int i = 0; i < length; ++i) {
-        msg += static_cast<char>(payload[i]);
+    char msg[32];
+    size_t copy_len = length < (sizeof(msg) - 1) ? length : (sizeof(msg) - 1);
+    if (payload && copy_len > 0) {
+        memcpy(msg, payload, copy_len);
     }
-    msg.trim();
+    msg[copy_len] = '\0';
+    trim_ascii(msg);
     if (!t.startsWith(mqtt_base_topic_)) {
         return;
     }
@@ -588,8 +645,9 @@ float MqttManager::computeDewPointC(float temp_c, float rh) {
 void MqttManager::poll(const SensorData &data, bool night_mode, bool alert_blink, bool backlight_on) {
     if (!mqtt_enabled_) {
         if (client_.connected()) {
-            String topic = availabilityTopic();
-            client_.publish(topic.c_str(), Config::MQTT_AVAIL_OFFLINE, true);
+            char topic[kTopicBufferSize];
+            build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+            client_.publish(topic, Config::MQTT_AVAIL_OFFLINE, true);
             client_.disconnect();
             mqtt_fail_count_ = 0;
             if (!mqtt_user_enabled_) {
@@ -607,8 +665,9 @@ void MqttManager::poll(const SensorData &data, bool night_mode, bool alert_blink
     if (!network_ || !network_->isConnected()) {
         if (client_.connected()) {
             LOGW("MQTT", "network unavailable, disconnecting gracefully");
-            String topic = availabilityTopic();
-            client_.publish(topic.c_str(), Config::MQTT_AVAIL_OFFLINE, true);
+            char topic[kTopicBufferSize];
+            build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+            client_.publish(topic, Config::MQTT_AVAIL_OFFLINE, true);
             client_.disconnect();
             mqtt_fail_count_ = 0;
         }
@@ -668,8 +727,9 @@ void MqttManager::syncWithWifi() {
         } else {
             if (client_.connected()) {
                 if (wifi_ready) {
-                    String topic = availabilityTopic();
-                    client_.publish(topic.c_str(), Config::MQTT_AVAIL_OFFLINE, true);
+                    char topic[kTopicBufferSize];
+                    build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+                    client_.publish(topic, Config::MQTT_AVAIL_OFFLINE, true);
                 }
                 client_.disconnect();
             }

@@ -86,17 +86,11 @@ private:
     void publishNightModeAvailability();
     void publishState(const SensorData &data, bool night_mode, bool alert_blink, bool backlight_on);
 
-    String stateTopic() const;
-    String availabilityTopic() const;
-    String nightModeAvailabilityTopic() const;
-    String discoveryTopic(const char *object_id) const;
-    String commandTopic(const char *command) const;
-
     void handleCallback(char *topic, uint8_t *payload, unsigned int length);
     static void staticCallback(char *topic, uint8_t *payload, unsigned int length);
     static float computeDewPointC(float temp_c, float rh);
-    static bool payloadIsOn(const String &payload);
-    static bool payloadIsOff(const String &payload);
+    static bool payloadIsOn(const char *payload);
+    static bool payloadIsOff(const char *payload);
 
     StorageManager *storage_ = nullptr;
     AuraNetworkManager *network_ = nullptr;
