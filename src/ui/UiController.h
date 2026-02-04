@@ -115,6 +115,7 @@ private:
     void hide_all_sensor_info_containers();
 
     void safe_label_set_text(lv_obj_t *obj, const char *new_text);
+    void safe_label_set_text_static(lv_obj_t *obj, const char *new_text);
     lv_color_t color_inactive();
     lv_color_t color_green();
     lv_color_t color_yellow();

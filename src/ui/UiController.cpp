@@ -576,6 +576,11 @@ void UiController::safe_label_set_text(lv_obj_t *obj, const char *new_text) {
     lv_label_set_text(obj, new_text);
 }
 
+void UiController::safe_label_set_text_static(lv_obj_t *obj, const char *new_text) {
+    if (!obj) return;
+    lv_label_set_text_static(obj, new_text);
+}
+
 lv_color_t UiController::color_inactive() { return lv_color_hex(0x3a3a3a); }
 
 lv_color_t UiController::color_green() { return lv_color_hex(0x00c853); }
@@ -1712,66 +1717,66 @@ void UiController::update_main_texts() {
 }
 
 void UiController::update_sensor_info_texts() {
-    if (objects.label_temperature_text) safe_label_set_text(objects.label_temperature_text, UiText::InfoTempText());
-    if (objects.label_temperature_excellent) safe_label_set_text(objects.label_temperature_excellent, UiText::InfoTempExcellent());
-    if (objects.label_temperature_acceptable) safe_label_set_text(objects.label_temperature_acceptable, UiText::InfoTempAcceptable());
-    if (objects.label_temperature_uncomfortable) safe_label_set_text(objects.label_temperature_uncomfortable, UiText::InfoTempUncomfortable());
-    if (objects.label_temperature_poor) safe_label_set_text(objects.label_temperature_poor, UiText::InfoTempPoor());
-    if (objects.label_voc_text) safe_label_set_text(objects.label_voc_text, UiText::InfoVocText());
-    if (objects.label_voc_excellent) safe_label_set_text(objects.label_voc_excellent, UiText::InfoVocExcellent());
-    if (objects.label_voc_acceptable) safe_label_set_text(objects.label_voc_acceptable, UiText::InfoVocAcceptable());
-    if (objects.label_voc_uncomfortable) safe_label_set_text(objects.label_voc_uncomfortable, UiText::InfoVocUncomfortable());
-    if (objects.label_voc_poor) safe_label_set_text(objects.label_voc_poor, UiText::InfoVocPoor());
-    if (objects.label_nox_text) safe_label_set_text(objects.label_nox_text, UiText::InfoNoxText());
-    if (objects.label_nox_excellent) safe_label_set_text(objects.label_nox_excellent, UiText::InfoNoxExcellent());
-    if (objects.label_nox_acceptable) safe_label_set_text(objects.label_nox_acceptable, UiText::InfoNoxAcceptable());
-    if (objects.label_nox_uncomfortable) safe_label_set_text(objects.label_nox_uncomfortable, UiText::InfoNoxUncomfortable());
-    if (objects.label_nox_poor) safe_label_set_text(objects.label_nox_poor, UiText::InfoNoxPoor());
-    if (objects.label_hcho_text) safe_label_set_text(objects.label_hcho_text, UiText::InfoHchoText());
-    if (objects.label_hcho_excellent) safe_label_set_text(objects.label_hcho_excellent, UiText::InfoHchoExcellent());
-    if (objects.label_hcho_acceptable) safe_label_set_text(objects.label_hcho_acceptable, UiText::InfoHchoAcceptable());
-    if (objects.label_hcho_uncomfortable) safe_label_set_text(objects.label_hcho_uncomfortable, UiText::InfoHchoUncomfortable());
-    if (objects.label_hcho_poor) safe_label_set_text(objects.label_hcho_poor, UiText::InfoHchoPoor());
-    if (objects.label_co2_text) safe_label_set_text(objects.label_co2_text, UiText::InfoCo2Text());
-    if (objects.label_co2_excellent) safe_label_set_text(objects.label_co2_excellent, UiText::InfoCo2Excellent());
-    if (objects.label_co2_acceptable) safe_label_set_text(objects.label_co2_acceptable, UiText::InfoCo2Acceptable());
-    if (objects.label_co2_uncomfortable) safe_label_set_text(objects.label_co2_uncomfortable, UiText::InfoCo2Uncomfortable());
-    if (objects.label_co2_poor) safe_label_set_text(objects.label_co2_poor, UiText::InfoCo2Poor());
-    if (objects.label_pm25_text) safe_label_set_text(objects.label_pm25_text, UiText::InfoPm25Text());
-    if (objects.label_pm25_excellent) safe_label_set_text(objects.label_pm25_excellent, UiText::InfoPm25Excellent());
-    if (objects.label_pm25_acceptable) safe_label_set_text(objects.label_pm25_acceptable, UiText::InfoPm25Acceptable());
-    if (objects.label_pm25_uncomfortable) safe_label_set_text(objects.label_pm25_uncomfortable, UiText::InfoPm25Uncomfortable());
-    if (objects.label_pm25_poor) safe_label_set_text(objects.label_pm25_poor, UiText::InfoPm25Poor());
-    if (objects.label_pm10_text) safe_label_set_text(objects.label_pm10_text, UiText::InfoPm10Text());
-    if (objects.label_pm10_excellent) safe_label_set_text(objects.label_pm10_excellent, UiText::InfoPm10Excellent());
-    if (objects.label_pm10_acceptable) safe_label_set_text(objects.label_pm10_acceptable, UiText::InfoPm10Acceptable());
-    if (objects.label_pm10_uncomfortable) safe_label_set_text(objects.label_pm10_uncomfortable, UiText::InfoPm10Uncomfortable());
-    if (objects.label_pm10_poor) safe_label_set_text(objects.label_pm10_poor, UiText::InfoPm10Poor());
-    if (objects.label_3h_pressure_text) safe_label_set_text(objects.label_3h_pressure_text, UiText::InfoPressure3hText());
-    if (objects.label_3h_pressure_excellent) safe_label_set_text(objects.label_3h_pressure_excellent, UiText::InfoPressure3hExcellent());
-    if (objects.label_3h_pressure_acceptable) safe_label_set_text(objects.label_3h_pressure_acceptable, UiText::InfoPressure3hAcceptable());
-    if (objects.label_3h_pressure_uncomfortable) safe_label_set_text(objects.label_3h_pressure_uncomfortable, UiText::InfoPressure3hUncomfortable());
-    if (objects.label_3h_pressure_poor) safe_label_set_text(objects.label_3h_pressure_poor, UiText::InfoPressure3hPoor());
-    if (objects.label_24h_pressure_text) safe_label_set_text(objects.label_24h_pressure_text, UiText::InfoPressure24hText());
-    if (objects.label_24h_pressure_excellent) safe_label_set_text(objects.label_24h_pressure_excellent, UiText::InfoPressure24hExcellent());
-    if (objects.label_24h_pressure_acceptable) safe_label_set_text(objects.label_24h_pressure_acceptable, UiText::InfoPressure24hAcceptable());
-    if (objects.label_24h_pressure_uncomfortable) safe_label_set_text(objects.label_24h_pressure_uncomfortable, UiText::InfoPressure24hUncomfortable());
-    if (objects.label_24h_pressure_poor) safe_label_set_text(objects.label_24h_pressure_poor, UiText::InfoPressure24hPoor());
-    if (objects.label_rh_text) safe_label_set_text(objects.label_rh_text, UiText::InfoRhText());
-    if (objects.label_rh_excellent) safe_label_set_text(objects.label_rh_excellent, UiText::InfoRhExcellent());
-    if (objects.label_rh_acceptable) safe_label_set_text(objects.label_rh_acceptable, UiText::InfoRhAcceptable());
-    if (objects.label_rh_uncomfortable) safe_label_set_text(objects.label_rh_uncomfortable, UiText::InfoRhUncomfortable());
-    if (objects.label_rh_poor) safe_label_set_text(objects.label_rh_poor, UiText::InfoRhPoor());
-    if (objects.label_ah_text) safe_label_set_text(objects.label_ah_text, UiText::InfoAhText());
-    if (objects.label_ah_excellent) safe_label_set_text(objects.label_ah_excellent, UiText::InfoAhExcellent());
-    if (objects.label_ah_acceptable) safe_label_set_text(objects.label_ah_acceptable, UiText::InfoAhAcceptable());
-    if (objects.label_ah_uncomfortable) safe_label_set_text(objects.label_ah_uncomfortable, UiText::InfoAhUncomfortable());
-    if (objects.label_ah_poor) safe_label_set_text(objects.label_ah_poor, UiText::InfoAhPoor());
-    if (objects.label_dp_text) safe_label_set_text(objects.label_dp_text, UiText::InfoDpText());
-    if (objects.label_dp_excellent) safe_label_set_text(objects.label_dp_excellent, UiText::InfoDpExcellent());
-    if (objects.label_dp_acceptable) safe_label_set_text(objects.label_dp_acceptable, UiText::InfoDpAcceptable());
-    if (objects.label_dp_uncomfortable) safe_label_set_text(objects.label_dp_uncomfortable, UiText::InfoDpUncomfortable());
-    if (objects.label_dp_poor) safe_label_set_text(objects.label_dp_poor, UiText::InfoDpPoor());
+    if (objects.label_temperature_text) safe_label_set_text_static(objects.label_temperature_text, UiText::InfoTempText());
+    if (objects.label_temperature_excellent) safe_label_set_text_static(objects.label_temperature_excellent, UiText::InfoTempExcellent());
+    if (objects.label_temperature_acceptable) safe_label_set_text_static(objects.label_temperature_acceptable, UiText::InfoTempAcceptable());
+    if (objects.label_temperature_uncomfortable) safe_label_set_text_static(objects.label_temperature_uncomfortable, UiText::InfoTempUncomfortable());
+    if (objects.label_temperature_poor) safe_label_set_text_static(objects.label_temperature_poor, UiText::InfoTempPoor());
+    if (objects.label_voc_text) safe_label_set_text_static(objects.label_voc_text, UiText::InfoVocText());
+    if (objects.label_voc_excellent) safe_label_set_text_static(objects.label_voc_excellent, UiText::InfoVocExcellent());
+    if (objects.label_voc_acceptable) safe_label_set_text_static(objects.label_voc_acceptable, UiText::InfoVocAcceptable());
+    if (objects.label_voc_uncomfortable) safe_label_set_text_static(objects.label_voc_uncomfortable, UiText::InfoVocUncomfortable());
+    if (objects.label_voc_poor) safe_label_set_text_static(objects.label_voc_poor, UiText::InfoVocPoor());
+    if (objects.label_nox_text) safe_label_set_text_static(objects.label_nox_text, UiText::InfoNoxText());
+    if (objects.label_nox_excellent) safe_label_set_text_static(objects.label_nox_excellent, UiText::InfoNoxExcellent());
+    if (objects.label_nox_acceptable) safe_label_set_text_static(objects.label_nox_acceptable, UiText::InfoNoxAcceptable());
+    if (objects.label_nox_uncomfortable) safe_label_set_text_static(objects.label_nox_uncomfortable, UiText::InfoNoxUncomfortable());
+    if (objects.label_nox_poor) safe_label_set_text_static(objects.label_nox_poor, UiText::InfoNoxPoor());
+    if (objects.label_hcho_text) safe_label_set_text_static(objects.label_hcho_text, UiText::InfoHchoText());
+    if (objects.label_hcho_excellent) safe_label_set_text_static(objects.label_hcho_excellent, UiText::InfoHchoExcellent());
+    if (objects.label_hcho_acceptable) safe_label_set_text_static(objects.label_hcho_acceptable, UiText::InfoHchoAcceptable());
+    if (objects.label_hcho_uncomfortable) safe_label_set_text_static(objects.label_hcho_uncomfortable, UiText::InfoHchoUncomfortable());
+    if (objects.label_hcho_poor) safe_label_set_text_static(objects.label_hcho_poor, UiText::InfoHchoPoor());
+    if (objects.label_co2_text) safe_label_set_text_static(objects.label_co2_text, UiText::InfoCo2Text());
+    if (objects.label_co2_excellent) safe_label_set_text_static(objects.label_co2_excellent, UiText::InfoCo2Excellent());
+    if (objects.label_co2_acceptable) safe_label_set_text_static(objects.label_co2_acceptable, UiText::InfoCo2Acceptable());
+    if (objects.label_co2_uncomfortable) safe_label_set_text_static(objects.label_co2_uncomfortable, UiText::InfoCo2Uncomfortable());
+    if (objects.label_co2_poor) safe_label_set_text_static(objects.label_co2_poor, UiText::InfoCo2Poor());
+    if (objects.label_pm25_text) safe_label_set_text_static(objects.label_pm25_text, UiText::InfoPm25Text());
+    if (objects.label_pm25_excellent) safe_label_set_text_static(objects.label_pm25_excellent, UiText::InfoPm25Excellent());
+    if (objects.label_pm25_acceptable) safe_label_set_text_static(objects.label_pm25_acceptable, UiText::InfoPm25Acceptable());
+    if (objects.label_pm25_uncomfortable) safe_label_set_text_static(objects.label_pm25_uncomfortable, UiText::InfoPm25Uncomfortable());
+    if (objects.label_pm25_poor) safe_label_set_text_static(objects.label_pm25_poor, UiText::InfoPm25Poor());
+    if (objects.label_pm10_text) safe_label_set_text_static(objects.label_pm10_text, UiText::InfoPm10Text());
+    if (objects.label_pm10_excellent) safe_label_set_text_static(objects.label_pm10_excellent, UiText::InfoPm10Excellent());
+    if (objects.label_pm10_acceptable) safe_label_set_text_static(objects.label_pm10_acceptable, UiText::InfoPm10Acceptable());
+    if (objects.label_pm10_uncomfortable) safe_label_set_text_static(objects.label_pm10_uncomfortable, UiText::InfoPm10Uncomfortable());
+    if (objects.label_pm10_poor) safe_label_set_text_static(objects.label_pm10_poor, UiText::InfoPm10Poor());
+    if (objects.label_3h_pressure_text) safe_label_set_text_static(objects.label_3h_pressure_text, UiText::InfoPressure3hText());
+    if (objects.label_3h_pressure_excellent) safe_label_set_text_static(objects.label_3h_pressure_excellent, UiText::InfoPressure3hExcellent());
+    if (objects.label_3h_pressure_acceptable) safe_label_set_text_static(objects.label_3h_pressure_acceptable, UiText::InfoPressure3hAcceptable());
+    if (objects.label_3h_pressure_uncomfortable) safe_label_set_text_static(objects.label_3h_pressure_uncomfortable, UiText::InfoPressure3hUncomfortable());
+    if (objects.label_3h_pressure_poor) safe_label_set_text_static(objects.label_3h_pressure_poor, UiText::InfoPressure3hPoor());
+    if (objects.label_24h_pressure_text) safe_label_set_text_static(objects.label_24h_pressure_text, UiText::InfoPressure24hText());
+    if (objects.label_24h_pressure_excellent) safe_label_set_text_static(objects.label_24h_pressure_excellent, UiText::InfoPressure24hExcellent());
+    if (objects.label_24h_pressure_acceptable) safe_label_set_text_static(objects.label_24h_pressure_acceptable, UiText::InfoPressure24hAcceptable());
+    if (objects.label_24h_pressure_uncomfortable) safe_label_set_text_static(objects.label_24h_pressure_uncomfortable, UiText::InfoPressure24hUncomfortable());
+    if (objects.label_24h_pressure_poor) safe_label_set_text_static(objects.label_24h_pressure_poor, UiText::InfoPressure24hPoor());
+    if (objects.label_rh_text) safe_label_set_text_static(objects.label_rh_text, UiText::InfoRhText());
+    if (objects.label_rh_excellent) safe_label_set_text_static(objects.label_rh_excellent, UiText::InfoRhExcellent());
+    if (objects.label_rh_acceptable) safe_label_set_text_static(objects.label_rh_acceptable, UiText::InfoRhAcceptable());
+    if (objects.label_rh_uncomfortable) safe_label_set_text_static(objects.label_rh_uncomfortable, UiText::InfoRhUncomfortable());
+    if (objects.label_rh_poor) safe_label_set_text_static(objects.label_rh_poor, UiText::InfoRhPoor());
+    if (objects.label_ah_text) safe_label_set_text_static(objects.label_ah_text, UiText::InfoAhText());
+    if (objects.label_ah_excellent) safe_label_set_text_static(objects.label_ah_excellent, UiText::InfoAhExcellent());
+    if (objects.label_ah_acceptable) safe_label_set_text_static(objects.label_ah_acceptable, UiText::InfoAhAcceptable());
+    if (objects.label_ah_uncomfortable) safe_label_set_text_static(objects.label_ah_uncomfortable, UiText::InfoAhUncomfortable());
+    if (objects.label_ah_poor) safe_label_set_text_static(objects.label_ah_poor, UiText::InfoAhPoor());
+    if (objects.label_dp_text) safe_label_set_text_static(objects.label_dp_text, UiText::InfoDpText());
+    if (objects.label_dp_excellent) safe_label_set_text_static(objects.label_dp_excellent, UiText::InfoDpExcellent());
+    if (objects.label_dp_acceptable) safe_label_set_text_static(objects.label_dp_acceptable, UiText::InfoDpAcceptable());
+    if (objects.label_dp_uncomfortable) safe_label_set_text_static(objects.label_dp_uncomfortable, UiText::InfoDpUncomfortable());
+    if (objects.label_dp_poor) safe_label_set_text_static(objects.label_dp_poor, UiText::InfoDpPoor());
 }
 
 void UiController::update_confirm_texts() {
