@@ -1717,6 +1717,7 @@ void UiController::update_main_texts() {
 }
 
 void UiController::update_sensor_info_texts() {
+    if (objects.label_btn_back_1) safe_label_set_text_static(objects.label_btn_back_1, UiText::LabelSettingsBack());
     if (objects.label_temperature_text) safe_label_set_text_static(objects.label_temperature_text, UiText::InfoTempText());
     if (objects.label_temperature_excellent) safe_label_set_text_static(objects.label_temperature_excellent, UiText::InfoTempExcellent());
     if (objects.label_temperature_acceptable) safe_label_set_text_static(objects.label_temperature_acceptable, UiText::InfoTempAcceptable());

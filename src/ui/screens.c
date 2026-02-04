@@ -7304,24 +7304,6 @@ void create_screen_page_sensors_info() {
                     }
                 }
                 {
-                    // wifi_status_icon_4
-                    lv_obj_t *obj = lv_img_create(parent_obj);
-                    objects.wifi_status_icon_4 = obj;
-                    lv_obj_set_pos(obj, 604, 14);
-                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-                    lv_img_set_src(obj, &img_wifi_green);
-                    lv_obj_set_style_img_opa(obj, 240, LV_PART_MAIN | LV_STATE_DEFAULT);
-                }
-                {
-                    // mqtt_status_icon_4
-                    lv_obj_t *obj = lv_img_create(parent_obj);
-                    objects.mqtt_status_icon_4 = obj;
-                    lv_obj_set_pos(obj, 574, 14);
-                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-                    lv_img_set_src(obj, &img_home_green);
-                    lv_obj_set_style_img_opa(obj, 240, LV_PART_MAIN | LV_STATE_DEFAULT);
-                }
-                {
                     // label_sensor_value
                     lv_obj_t *obj = lv_label_create(parent_obj);
                     objects.label_sensor_value = obj;

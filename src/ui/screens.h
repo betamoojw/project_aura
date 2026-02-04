@@ -494,8 +494,6 @@ typedef struct _objects_t {
     lv_obj_t *label_sensor_info_title;
     lv_obj_t *btn_back_1;
     lv_obj_t *label_btn_back_1;
-    lv_obj_t *wifi_status_icon_4;
-    lv_obj_t *mqtt_status_icon_4;
     lv_obj_t *label_sensor_value;
     lv_obj_t *dot_sensor_info;
     lv_obj_t *label_sensor_info_unit;
