@@ -146,8 +146,19 @@ void loadScreen(enum ScreensEnum screenId) {
 }
 
 void ui_init() {
+    lv_disp_t *dispp = lv_disp_get_default();
+    lv_theme_t *theme = lv_theme_default_init(dispp,
+                                              lv_palette_main(LV_PALETTE_BLUE),
+                                              lv_palette_main(LV_PALETTE_RED),
+                                              false,
+                                              LV_FONT_DEFAULT);
+    lv_disp_set_theme(dispp, theme);
+
     memset(createdScreens, 0, sizeof(createdScreens));
-    create_screens();
+    createScreenById(SCREEN_ID_PAGE_BOOT_LOGO);
+    createScreenById(SCREEN_ID_PAGE_BOOT_DIAG);
+    createScreenById(SCREEN_ID_PAGE_MAIN);
+    createScreenById(SCREEN_ID_PAGE_SETTINGS);
     markCreatedScreensFromObjects();
     loadScreen(SCREEN_ID_PAGE_BOOT_LOGO);
 
