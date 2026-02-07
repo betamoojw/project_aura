@@ -420,13 +420,59 @@ void UiController::bind_screen_events_once(int screen_id) {
     bind_available_events();
     apply_toggle_styles_for_available_objects();
     apply_checked_states_for_available_objects();
+    refresh_texts_for_screen(screen_id);
     init_theme_controls_if_available();
     if (screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
-        update_sensor_info_texts();
         restore_sensor_info_selection();
     }
 
     screen_events_bound_[screen_id] = true;
+}
+
+void UiController::refresh_texts_for_screen(int screen_id) {
+    switch (screen_id) {
+        case SCREEN_ID_PAGE_MAIN:
+            update_main_texts();
+            break;
+        case SCREEN_ID_PAGE_SETTINGS:
+            update_settings_texts();
+            update_confirm_texts();
+            break;
+        case SCREEN_ID_PAGE_WIFI:
+            update_wifi_texts();
+            break;
+        case SCREEN_ID_PAGE_THEME:
+            update_theme_texts();
+            break;
+        case SCREEN_ID_PAGE_CLOCK:
+            update_datetime_texts();
+            break;
+        case SCREEN_ID_PAGE_CO2_CALIB:
+            update_co2_calib_texts();
+            break;
+        case SCREEN_ID_PAGE_AUTO_NIGHT_MODE:
+            update_auto_night_texts();
+            break;
+        case SCREEN_ID_PAGE_BACKLIGHT:
+            update_backlight_texts();
+            break;
+        case SCREEN_ID_PAGE_MQTT:
+            update_mqtt_texts();
+            break;
+        case SCREEN_ID_PAGE_SENSORS_INFO:
+            update_sensor_info_texts();
+            break;
+        case SCREEN_ID_PAGE_BOOT_DIAG:
+            update_boot_diag_texts();
+            break;
+        case SCREEN_ID_PAGE_BOOT_LOGO:
+        default:
+            break;
+    }
+
+    if (ui_language == Config::Language::ZH) {
+        update_language_fonts();
+    }
 }
 
 void UiController::begin() {
