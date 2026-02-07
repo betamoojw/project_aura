@@ -421,6 +421,9 @@ void UiController::bind_screen_events_once(int screen_id) {
     apply_toggle_styles_for_available_objects();
     apply_checked_states_for_available_objects();
     init_theme_controls_if_available();
+    if (screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
+        update_sensor_info_texts();
+    }
 
     screen_events_bound_[screen_id] = true;
 }
