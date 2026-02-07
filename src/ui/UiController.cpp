@@ -444,6 +444,8 @@ void UiController::begin() {
     pending_screen_id = SCREEN_ID_PAGE_MAIN;
     memset(screen_events_bound_, 0, sizeof(screen_events_bound_));
     theme_events_bound_ = false;
+    boot_release_at_ms = 0;
+    boot_ui_released = false;
     if (objects.page_boot_logo) {
         loadScreen(SCREEN_ID_PAGE_BOOT_LOGO);
         bind_screen_events_once(SCREEN_ID_PAGE_BOOT_LOGO);
@@ -454,6 +456,67 @@ void UiController::begin() {
     }
     lvgl_port_unlock();
     last_clock_tick_ms = millis();
+}
+
+void UiController::clear_boot_object_refs() {
+    objects.page_boot_logo = nullptr;
+    objects.page_boot_diag = nullptr;
+    objects.label_boot_ver = nullptr;
+    objects.background_boot_diag = nullptr;
+    objects.btn_diag_continue = nullptr;
+    objects.label_btn_diag_continue = nullptr;
+    objects.lbl_diag_title = nullptr;
+    objects.lbl_diag_system_title = nullptr;
+    objects.lbl_diag_app_label = nullptr;
+    objects.lbl_diag_mac_label = nullptr;
+    objects.lbl_diag_reason_label = nullptr;
+    objects.lbl_diag_heap_label = nullptr;
+    objects.lbl_diag_storage_label = nullptr;
+    objects.lbl_diag_app_ver = nullptr;
+    objects.lbl_diag_mac = nullptr;
+    objects.lbl_diag_reason = nullptr;
+    objects.lbl_diag_heap = nullptr;
+    objects.lbl_diag_storage = nullptr;
+    objects.lbl_diag_sensors_title = nullptr;
+    objects.lbl_diag_i2c_label = nullptr;
+    objects.lbl_diag_touch_label = nullptr;
+    objects.lbl_diag_sen_label = nullptr;
+    objects.lbl_diag_dps_label = nullptr;
+    objects.lbl_diag_sfa_label = nullptr;
+    objects.lbl_diag_i2c = nullptr;
+    objects.lbl_diag_touch = nullptr;
+    objects.lbl_diag_sen = nullptr;
+    objects.lbl_diag_dps = nullptr;
+    objects.lbl_diag_sfa = nullptr;
+    objects.lbl_diag_rtc_label = nullptr;
+    objects.lbl_diag_rtc = nullptr;
+    objects.lbl_diag_error = nullptr;
+}
+
+void UiController::release_boot_screens() {
+    if (boot_ui_released) {
+        return;
+    }
+
+    lv_obj_t *boot_logo = objects.page_boot_logo;
+    lv_obj_t *boot_diag = objects.page_boot_diag;
+    if (boot_logo && lv_obj_is_valid(boot_logo)) {
+        lv_obj_del_async(boot_logo);
+    }
+    if (boot_diag && lv_obj_is_valid(boot_diag)) {
+        lv_obj_del_async(boot_diag);
+    }
+
+    clear_boot_object_refs();
+    screen_events_bound_[SCREEN_ID_PAGE_BOOT_LOGO] = false;
+    screen_events_bound_[SCREEN_ID_PAGE_BOOT_DIAG] = false;
+    boot_logo_active = false;
+    boot_diag_active = false;
+    boot_diag_has_error = false;
+    boot_release_at_ms = 0;
+    boot_ui_released = true;
+
+    LOGI("UI", "boot screens released");
 }
 
 void UiController::onSensorPoll(const SensorManager::PollResult &poll) {
@@ -577,7 +640,22 @@ void UiController::poll(uint32_t now) {
         } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
             nightModeManager.markUiDirty();
         }
+
+        if (current_screen_id == SCREEN_ID_PAGE_MAIN &&
+            !boot_ui_released &&
+            (objects.page_boot_logo || objects.page_boot_diag)) {
+            boot_release_at_ms = now + 500;
+        }
     }
+
+    if (!boot_ui_released &&
+        boot_release_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id == SCREEN_ID_PAGE_MAIN &&
+        now >= boot_release_at_ms) {
+        release_boot_screens();
+    }
+
     if (allow_ui_update &&
         current_screen_id == SCREEN_ID_PAGE_BOOT_DIAG &&
         (now - last_boot_diag_update_ms) >= 200) {

@@ -82,6 +82,8 @@ private:
     void update_status_icons();
     void update_ui();
     void update_sensor_info_ui();
+    void release_boot_screens();
+    void clear_boot_object_refs();
     void select_humidity_info(InfoSensor sensor);
     void select_pm_info(InfoSensor sensor);
     void select_pressure_info(InfoSensor sensor);
@@ -430,5 +432,7 @@ private:
     bool boot_diag_has_error = false;
     uint32_t boot_diag_start_ms = 0;
     uint32_t last_boot_diag_update_ms = 0;
+    uint32_t boot_release_at_ms = 0;
+    bool boot_ui_released = false;
     InfoSensor info_sensor = INFO_NONE;
 };
