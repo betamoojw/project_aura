@@ -112,6 +112,37 @@ void set_visible(lv_obj_t *obj, bool visible) {
     }
 }
 
+lv_obj_t *screen_root_by_id(int screen_id) {
+    switch (screen_id) {
+        case SCREEN_ID_PAGE_BOOT_LOGO:
+            return objects.page_boot_logo;
+        case SCREEN_ID_PAGE_BOOT_DIAG:
+            return objects.page_boot_diag;
+        case SCREEN_ID_PAGE_MAIN:
+            return objects.page_main;
+        case SCREEN_ID_PAGE_SETTINGS:
+            return objects.page_settings;
+        case SCREEN_ID_PAGE_WIFI:
+            return objects.page_wifi;
+        case SCREEN_ID_PAGE_THEME:
+            return objects.page_theme;
+        case SCREEN_ID_PAGE_CLOCK:
+            return objects.page_clock;
+        case SCREEN_ID_PAGE_CO2_CALIB:
+            return objects.page_co2_calib;
+        case SCREEN_ID_PAGE_AUTO_NIGHT_MODE:
+            return objects.page_auto_night_mode;
+        case SCREEN_ID_PAGE_BACKLIGHT:
+            return objects.page_backlight;
+        case SCREEN_ID_PAGE_MQTT:
+            return objects.page_mqtt;
+        case SCREEN_ID_PAGE_SENSORS_INFO:
+            return objects.page_sensors_info;
+        default:
+            return nullptr;
+    }
+}
+
 constexpr uint32_t STATUS_ROTATE_MS = 5000;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
@@ -171,25 +202,7 @@ void UiController::setLvglReady(bool ready) {
     lvgl_ready = ready;
 }
 
-void UiController::begin() {
-    instance_ = this;
-    if (!lvgl_ready) {
-        return;
-    }
-    lvgl_port_lock(-1);
-    ui_init();
-    themeManager.initAfterUi(storage, night_mode, datetime_ui_dirty);
-    if (night_mode) {
-        night_mode_on_enter();
-    }
-    init_ui_defaults();
-    if (objects.label_boot_ver) {
-        char version_text[24];
-        snprintf(version_text, sizeof(version_text), "v%s", APP_VERSION);
-        safe_label_set_text(objects.label_boot_ver, version_text);
-    }
-    current_screen_id = SCREEN_ID_PAGE_MAIN;
-    pending_screen_id = SCREEN_ID_PAGE_MAIN;
+void UiController::bind_available_events() {
     struct EventBinding {
         lv_obj_t *obj;
         lv_event_cb_t cb;
@@ -300,12 +313,19 @@ void UiController::begin() {
     auto bind_events = [](const EventBinding *bindings, size_t count) {
         for (size_t i = 0; i < count; ++i) {
             const EventBinding &binding = bindings[i];
-            if (binding.obj) {
-                lv_obj_add_event_cb(binding.obj, binding.cb, binding.code, nullptr);
+            if (!binding.obj || !binding.cb) {
+                continue;
             }
+            lv_obj_remove_event_cb(binding.obj, binding.cb);
+            lv_obj_add_event_cb(binding.obj, binding.cb, binding.code, nullptr);
         }
     };
 
+    bind_events(click_bindings, sizeof(click_bindings) / sizeof(click_bindings[0]));
+    bind_events(value_bindings, sizeof(value_bindings) / sizeof(value_bindings[0]));
+}
+
+void UiController::apply_toggle_styles_for_available_objects() {
     lv_obj_t *toggle_buttons[] = {
         objects.btn_night_mode,
         objects.btn_auto_dim,
@@ -337,7 +357,9 @@ void UiController::begin() {
     for (lv_obj_t *btn : toggle_buttons) {
         apply_toggle_style(btn);
     }
+}
 
+void UiController::apply_checked_states_for_available_objects() {
     auto set_checked = [](lv_obj_t *btn, bool checked) {
         if (!btn) {
             return;
@@ -358,24 +380,73 @@ void UiController::begin() {
     set_checked(objects.btn_rh_info, true);
     set_checked(objects.btn_pm25, true);
     set_checked(objects.btn_3h_pressure_info, true);
+}
 
-    bind_events(click_bindings, sizeof(click_bindings) / sizeof(click_bindings[0]));
-    bind_events(value_bindings, sizeof(value_bindings) / sizeof(value_bindings[0]));
-    themeManager.registerEvents(apply_toggle_style_cb, on_theme_swatch_event_cb, on_theme_tab_event_cb);
-    {
-        bool presets = themeManager.isCurrentPreset();
-        if (objects.btn_theme_presets) {
-            if (presets) lv_obj_add_state(objects.btn_theme_presets, LV_STATE_CHECKED);
-            else lv_obj_clear_state(objects.btn_theme_presets, LV_STATE_CHECKED);
-        }
-        if (objects.btn_theme_custom) {
-            if (presets) lv_obj_clear_state(objects.btn_theme_custom, LV_STATE_CHECKED);
-            else lv_obj_add_state(objects.btn_theme_custom, LV_STATE_CHECKED);
-        }
-        update_theme_custom_info(presets);
+void UiController::init_theme_controls_if_available() {
+    if (!objects.page_theme) {
+        return;
     }
+
+    if (!theme_events_bound_) {
+        themeManager.registerEvents(apply_toggle_style_cb, on_theme_swatch_event_cb, on_theme_tab_event_cb);
+        theme_events_bound_ = true;
+    }
+
+    bool presets = themeManager.isCurrentPreset();
+    if (objects.btn_theme_presets) {
+        if (presets) lv_obj_add_state(objects.btn_theme_presets, LV_STATE_CHECKED);
+        else lv_obj_clear_state(objects.btn_theme_presets, LV_STATE_CHECKED);
+    }
+    if (objects.btn_theme_custom) {
+        if (presets) lv_obj_clear_state(objects.btn_theme_custom, LV_STATE_CHECKED);
+        else lv_obj_add_state(objects.btn_theme_custom, LV_STATE_CHECKED);
+    }
+    update_theme_custom_info(presets);
+}
+
+void UiController::bind_screen_events_once(int screen_id) {
+    if (screen_id <= 0 || screen_id >= static_cast<int>(kScreenSlotCount)) {
+        return;
+    }
+    if (!screen_root_by_id(screen_id)) {
+        return;
+    }
+    if (screen_events_bound_[screen_id]) {
+        return;
+    }
+
+    bind_available_events();
+    apply_toggle_styles_for_available_objects();
+    apply_checked_states_for_available_objects();
+    init_theme_controls_if_available();
+
+    screen_events_bound_[screen_id] = true;
+}
+
+void UiController::begin() {
+    instance_ = this;
+    if (!lvgl_ready) {
+        return;
+    }
+    lvgl_port_lock(-1);
+    ui_init();
+    themeManager.initAfterUi(storage, night_mode, datetime_ui_dirty);
+    if (night_mode) {
+        night_mode_on_enter();
+    }
+    init_ui_defaults();
+    if (objects.label_boot_ver) {
+        char version_text[24];
+        snprintf(version_text, sizeof(version_text), "v%s", APP_VERSION);
+        safe_label_set_text(objects.label_boot_ver, version_text);
+    }
+    current_screen_id = SCREEN_ID_PAGE_MAIN;
+    pending_screen_id = SCREEN_ID_PAGE_MAIN;
+    memset(screen_events_bound_, 0, sizeof(screen_events_bound_));
+    theme_events_bound_ = false;
     if (objects.page_boot_logo) {
         loadScreen(SCREEN_ID_PAGE_BOOT_LOGO);
+        bind_screen_events_once(SCREEN_ID_PAGE_BOOT_LOGO);
         current_screen_id = SCREEN_ID_PAGE_BOOT_LOGO;
         pending_screen_id = 0;
         boot_logo_active = true;
@@ -481,25 +552,27 @@ void UiController::poll(uint32_t now) {
     }
     backlightManager.poll(lvgl_ready);
     update_status_icons();
-        if (pending_screen_id != 0) {
-            int next_screen = pending_screen_id;
-            loadScreen(static_cast<ScreensEnum>(next_screen));
-            current_screen_id = next_screen;
-            pending_screen_id = 0;
-            if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
-                temp_offset_ui_dirty = true;
-                hum_offset_ui_dirty = true;
-                data_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
-                data_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
-                data_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
-                datetime_ui_dirty = true;
-                clock_ui_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
-                networkManager.markUiDirty();
-            } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
+    if (pending_screen_id != 0) {
+        int next_screen = pending_screen_id;
+        ScreensEnum next_screen_enum = static_cast<ScreensEnum>(next_screen);
+        loadScreen(next_screen_enum);
+        bind_screen_events_once(next_screen);
+        current_screen_id = next_screen;
+        pending_screen_id = 0;
+        if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
+            temp_offset_ui_dirty = true;
+            hum_offset_ui_dirty = true;
+            data_dirty = true;
+        } else if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
+            data_dirty = true;
+        } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
+            data_dirty = true;
+        } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
+            datetime_ui_dirty = true;
+            clock_ui_dirty = true;
+        } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
+            networkManager.markUiDirty();
+        } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
             backlightManager.markUiDirty();
         } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
             nightModeManager.markUiDirty();

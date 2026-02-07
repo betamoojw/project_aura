@@ -159,6 +159,11 @@ private:
     void set_night_mode_state(bool enabled, bool save_pref);
 
     void mqtt_apply_pending();
+    void bind_screen_events_once(int screen_id);
+    void bind_available_events();
+    void apply_toggle_styles_for_available_objects();
+    void apply_checked_states_for_available_objects();
+    void init_theme_controls_if_available();
 
     void on_settings_event(lv_event_t *e);
     void on_back_event(lv_event_t *e);
@@ -380,6 +385,9 @@ private:
 
     bool data_dirty = true;
     bool lvgl_ready = false;
+    static constexpr size_t kScreenSlotCount = 13; // screen ids are 1..12
+    bool screen_events_bound_[kScreenSlotCount] = {};
+    bool theme_events_bound_ = false;
     int pending_screen_id = 0;
     int current_screen_id = 0;
     bool header_status_enabled = true;
