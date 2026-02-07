@@ -392,6 +392,8 @@ void UiController::init_theme_controls_if_available() {
         theme_events_bound_ = true;
     }
 
+    // Theme screen can be created lazily; refresh selected swatch against current active colors.
+    themeManager.selectSwatchByCurrent();
     bool presets = themeManager.isCurrentPreset();
     if (objects.btn_theme_presets) {
         if (presets) lv_obj_add_state(objects.btn_theme_presets, LV_STATE_CHECKED);
