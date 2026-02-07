@@ -7,6 +7,7 @@
 #include "core/MemoryMonitor.h"
 
 #include <string.h>
+#include <esp_heap_caps.h>
 #include "core/Logger.h"
 
 void MemoryMonitor::begin(uint32_t interval_ms) {
@@ -31,6 +32,9 @@ void MemoryMonitor::logNow(const char *reason) {
     uint32_t heap_free = ESP.getFreeHeap();
     uint32_t heap_min = ESP.getMinFreeHeap();
     uint32_t heap_max = ESP.getMaxAllocHeap();
+    uint32_t cap_free = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    uint32_t cap_min = heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT);
+    uint32_t cap_largest = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
     uint32_t psram_free = ESP.getFreePsram();
     uint32_t psram_min = ESP.getMinFreePsram();
     uint32_t psram_max = ESP.getMaxAllocPsram();
@@ -44,13 +48,16 @@ void MemoryMonitor::logNow(const char *reason) {
 
     if (psram_free == 0 && psram_min == 0 && psram_max == 0) {
         Logger::log(level, tag,
-                    "%s heap free=%u min=%u max=%u",
-                    reason_text, heap_free, heap_min, heap_max);
-    } else {
-        Logger::log(level, tag,
-                    "%s heap free=%u min=%u max=%u psram free=%u min=%u max=%u",
+                    "%s heap free=%u min=%u max=%u cap free=%u min=%u largest=%u",
                     reason_text,
                     heap_free, heap_min, heap_max,
+                    cap_free, cap_min, cap_largest);
+    } else {
+        Logger::log(level, tag,
+                    "%s heap free=%u min=%u max=%u cap free=%u min=%u largest=%u psram free=%u min=%u max=%u",
+                    reason_text,
+                    heap_free, heap_min, heap_max,
+                    cap_free, cap_min, cap_largest,
                     psram_free, psram_min, psram_max);
     }
 }

@@ -15,3 +15,6 @@ include/secrets.h
 *.log
 tmpclaude-*
 nul
+
+# Local web installer artifacts and site files
+web-installer/
