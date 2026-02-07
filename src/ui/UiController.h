@@ -82,6 +82,7 @@ private:
     void update_status_icons();
     void update_ui();
     void update_sensor_info_ui();
+    void restore_sensor_info_selection();
     void release_boot_screens();
     void clear_boot_object_refs();
     void select_humidity_info(InfoSensor sensor);

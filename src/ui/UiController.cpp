@@ -423,6 +423,7 @@ void UiController::bind_screen_events_once(int screen_id) {
     init_theme_controls_if_available();
     if (screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
         update_sensor_info_texts();
+        restore_sensor_info_selection();
     }
 
     screen_events_bound_[screen_id] = true;
@@ -1659,6 +1660,97 @@ void UiController::update_sensor_info_ui() {
         }
         case INFO_NONE:
         default:
+            break;
+    }
+}
+
+void UiController::restore_sensor_info_selection() {
+    switch (info_sensor) {
+        case INFO_TEMP: {
+            hide_all_sensor_info_containers();
+            set_visible(objects.temperature_info, true);
+            if (objects.label_sensor_info_title) {
+                safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleTemperature());
+            }
+            const char *value = objects.label_temp_value
+                ? lv_label_get_text(objects.label_temp_value)
+                : UiText::ValueMissing();
+            safe_label_set_text(objects.label_sensor_value, value);
+            const char *unit = objects.label_temp_unit
+                ? lv_label_get_text(objects.label_temp_unit)
+                : "";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            update_sensor_info_ui();
+            break;
+        }
+        case INFO_VOC: {
+            hide_all_sensor_info_containers();
+            set_visible(objects.voc_info, true);
+            if (objects.label_sensor_info_title) {
+                safe_label_set_text(objects.label_sensor_info_title, "VOC");
+            }
+            const char *unit = objects.label_voc_unit
+                ? lv_label_get_text(objects.label_voc_unit)
+                : "";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            update_sensor_info_ui();
+            break;
+        }
+        case INFO_NOX: {
+            hide_all_sensor_info_containers();
+            set_visible(objects.nox_info, true);
+            if (objects.label_sensor_info_title) {
+                safe_label_set_text(objects.label_sensor_info_title, "NOx");
+            }
+            const char *unit = objects.label_nox_unit
+                ? lv_label_get_text(objects.label_nox_unit)
+                : "";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            update_sensor_info_ui();
+            break;
+        }
+        case INFO_HCHO: {
+            hide_all_sensor_info_containers();
+            set_visible(objects.hcho_info, true);
+            if (objects.label_sensor_info_title) {
+                safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleFormaldehyde());
+            }
+            const char *unit = objects.label_hcho_unit
+                ? lv_label_get_text(objects.label_hcho_unit)
+                : "";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            update_sensor_info_ui();
+            break;
+        }
+        case INFO_CO2: {
+            hide_all_sensor_info_containers();
+            set_visible(objects.co2_info, true);
+            if (objects.label_sensor_info_title) {
+                safe_label_set_text(objects.label_sensor_info_title, "CO2");
+            }
+            const char *unit = objects.label_co2_unit
+                ? lv_label_get_text(objects.label_co2_unit)
+                : "";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            update_sensor_info_ui();
+            break;
+        }
+        case INFO_RH:
+        case INFO_AH:
+        case INFO_DP:
+            select_humidity_info(info_sensor);
+            break;
+        case INFO_PM25:
+        case INFO_PM10:
+            select_pm_info(info_sensor);
+            break;
+        case INFO_PRESSURE_3H:
+        case INFO_PRESSURE_24H:
+            select_pressure_info(info_sensor);
+            break;
+        case INFO_NONE:
+        default:
+            hide_all_sensor_info_containers();
             break;
     }
 }
