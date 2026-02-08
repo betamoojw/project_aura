@@ -221,17 +221,16 @@ void UiController::bind_available_events() {
         {objects.card_co2_pro, on_card_co2_event_cb, LV_EVENT_CLICKED},
         {objects.card_hum_pro, on_card_hum_event_cb, LV_EVENT_CLICKED},
         {objects.card_hum_2, on_dp_info_event_cb, LV_EVENT_CLICKED},
+        {objects.card_pm1_pro, on_card_pm1_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm25_pro, on_card_pm25_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm10_pro, on_card_pm10_event_cb, LV_EVENT_CLICKED},
-        {objects.card_co_pro, on_card_pm10_event_cb, LV_EVENT_CLICKED},
+        {objects.card_co_pro, on_card_pm4_event_cb, LV_EVENT_CLICKED},
         {objects.card_pressure_pro, on_card_pressure_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_rh_info, on_rh_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_ah_info, on_ah_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_mr_info, on_mr_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_dp_info, on_dp_info_event_cb, LV_EVENT_CLICKED},
-        {objects.btn_pm25, on_pm25_info_event_cb, LV_EVENT_CLICKED},
-        {objects.btn_pm10, on_pm10_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_3h_pressure_info, on_pressure_3h_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_24h_pressure_info, on_pressure_24h_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_wifi, on_wifi_settings_event_cb, LV_EVENT_CLICKED},
@@ -352,8 +351,6 @@ void UiController::apply_toggle_styles_for_available_objects() {
         objects.btn_ah_info,
         objects.btn_mr_info,
         objects.btn_dp_info,
-        objects.btn_pm25,
-        objects.btn_pm10,
         objects.btn_3h_pressure_info,
         objects.btn_24h_pressure_info,
     };
@@ -382,7 +379,6 @@ void UiController::apply_checked_states_for_available_objects() {
     set_checked(objects.btn_alert_blink, alert_blink_enabled);
     set_checked(objects.btn_co2_calib_asc, co2_asc_enabled);
     set_checked(objects.btn_rh_info, true);
-    set_checked(objects.btn_pm25, true);
     set_checked(objects.btn_3h_pressure_info, true);
 }
 
@@ -1744,6 +1740,48 @@ void UiController::update_sensor_info_ui() {
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm10_col));
             break;
         }
+        case INFO_PM1: {
+            const bool pm1_available = currentData.pm_valid && isfinite(currentData.pm1) && currentData.pm1 >= 0.0f;
+            if (pm1_available) {
+                char buf[16];
+                if (currentData.pm1 < 10.0f) snprintf(buf, sizeof(buf), "%.1f", currentData.pm1);
+                else snprintf(buf, sizeof(buf), "%.0f", currentData.pm1);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            const char *unit = objects.label_pm1_unit
+                ? lv_label_get_text(objects.label_pm1_unit)
+                : "ug/m3";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            lv_color_t pm1_col = color_inactive();
+            if (objects.dot_pm1) {
+                pm1_col = lv_obj_get_style_bg_color(objects.dot_pm1, LV_PART_MAIN);
+            }
+            set_dot_color(objects.dot_sensor_info, pm1_col);
+            break;
+        }
+        case INFO_PM4: {
+            const bool pm4_available = currentData.pm_valid && isfinite(currentData.pm4) && currentData.pm4 >= 0.0f;
+            if (pm4_available) {
+                char buf[16];
+                if (currentData.pm4 < 10.0f) snprintf(buf, sizeof(buf), "%.1f", currentData.pm4);
+                else snprintf(buf, sizeof(buf), "%.0f", currentData.pm4);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            const char *unit = objects.label_co_unit
+                ? lv_label_get_text(objects.label_co_unit)
+                : "ug/m3";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            lv_color_t pm4_col = color_inactive();
+            if (objects.dot_co) {
+                pm4_col = lv_obj_get_style_bg_color(objects.dot_co, LV_PART_MAIN);
+            }
+            set_dot_color(objects.dot_sensor_info, pm4_col);
+            break;
+        }
         case INFO_PRESSURE_3H:
         case INFO_PRESSURE_24H: {
             char buf[16];
@@ -1917,6 +1955,8 @@ void UiController::restore_sensor_info_selection() {
             break;
         case INFO_PM25:
         case INFO_PM10:
+        case INFO_PM1:
+        case INFO_PM4:
             select_pm_info(info_sensor);
             break;
         case INFO_PRESSURE_3H:
@@ -1973,20 +2013,18 @@ void UiController::select_pm_info(InfoSensor sensor) {
     set_visible(objects.pm_info, true);
     set_visible(objects.pm25_info, sensor == INFO_PM25);
     set_visible(objects.pm10_info, sensor == INFO_PM10);
-
-    auto set_checked = [](lv_obj_t *btn, bool checked) {
-        if (!btn) return;
-        if (checked) lv_obj_add_state(btn, LV_STATE_CHECKED);
-        else lv_obj_clear_state(btn, LV_STATE_CHECKED);
-    };
-    set_checked(objects.btn_pm25, sensor == INFO_PM25);
-    set_checked(objects.btn_pm10, sensor == INFO_PM10);
+    set_visible(objects.pm1_info, sensor == INFO_PM1);
+    set_visible(objects.pm4_info, sensor == INFO_PM4);
 
     if (objects.label_sensor_info_title) {
         if (sensor == INFO_PM25) {
             safe_label_set_text(objects.label_sensor_info_title, "PM2.5");
         } else if (sensor == INFO_PM10) {
             safe_label_set_text(objects.label_sensor_info_title, "PM10");
+        } else if (sensor == INFO_PM1) {
+            safe_label_set_text(objects.label_sensor_info_title, "PM1");
+        } else if (sensor == INFO_PM4) {
+            safe_label_set_text(objects.label_sensor_info_title, "PM4");
         }
     }
     update_sensor_info_ui();
@@ -2042,6 +2080,8 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.pm_info, false);
     set_visible(objects.pm10_info, false);
     set_visible(objects.pm25_info, false);
+    set_visible(objects.pm1_info, false);
+    set_visible(objects.pm4_info, false);
 }
 
 void UiController::update_settings_header() {
@@ -2191,6 +2231,16 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_pm10_acceptable) safe_label_set_text_static(objects.label_pm10_acceptable, UiText::InfoPm10Acceptable());
     if (objects.label_pm10_uncomfortable) safe_label_set_text_static(objects.label_pm10_uncomfortable, UiText::InfoPm10Uncomfortable());
     if (objects.label_pm10_poor) safe_label_set_text_static(objects.label_pm10_poor, UiText::InfoPm10Poor());
+    if (objects.label_pm1_text) safe_label_set_text_static(objects.label_pm1_text, UiText::InfoPm1Text());
+    if (objects.label_pm1_excellent) safe_label_set_text_static(objects.label_pm1_excellent, UiText::InfoPm1Excellent());
+    if (objects.label_pm1_acceptable) safe_label_set_text_static(objects.label_pm1_acceptable, UiText::InfoPm1Acceptable());
+    if (objects.label_pm1_uncomfortable) safe_label_set_text_static(objects.label_pm1_uncomfortable, UiText::InfoPm1Uncomfortable());
+    if (objects.label_pm1_poor) safe_label_set_text_static(objects.label_pm1_poor, UiText::InfoPm1Poor());
+    if (objects.label_pm4_text) safe_label_set_text_static(objects.label_pm4_text, UiText::InfoPm4Text());
+    if (objects.label_pm4_excellent) safe_label_set_text_static(objects.label_pm4_excellent, UiText::InfoPm4Excellent());
+    if (objects.label_pm4_acceptable) safe_label_set_text_static(objects.label_pm4_acceptable, UiText::InfoPm4Acceptable());
+    if (objects.label_pm4_uncomfortable) safe_label_set_text_static(objects.label_pm4_uncomfortable, UiText::InfoPm4Uncomfortable());
+    if (objects.label_pm4_poor) safe_label_set_text_static(objects.label_pm4_poor, UiText::InfoPm4Poor());
     if (objects.label_3h_pressure_text) safe_label_set_text_static(objects.label_3h_pressure_text, UiText::InfoPressure3hText());
     if (objects.label_3h_pressure_excellent) safe_label_set_text_static(objects.label_3h_pressure_excellent, UiText::InfoPressure3hExcellent());
     if (objects.label_3h_pressure_acceptable) safe_label_set_text_static(objects.label_3h_pressure_acceptable, UiText::InfoPressure3hAcceptable());
