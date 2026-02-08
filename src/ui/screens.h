@@ -610,6 +610,12 @@ typedef struct _objects_t {
     lv_obj_t *label_pm4_acceptable;
     lv_obj_t *label_pm4_uncomfortable;
     lv_obj_t *label_pm4_poor;
+    lv_obj_t *co_info;
+    lv_obj_t *label_co_text;
+    lv_obj_t *label_co_excellent;
+    lv_obj_t *label_co_acceptable;
+    lv_obj_t *label_co_uncomfortable;
+    lv_obj_t *label_co_poor;
     lv_obj_t *background_pro;
     lv_obj_t *container_content_pro;
     lv_obj_t *container_header_pro;
