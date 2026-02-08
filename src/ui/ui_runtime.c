@@ -22,10 +22,24 @@ void ui_tick() {
 #else
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <string.h>
 
-// Keep this mapping in sync with screens.h when EEZ adds/removes pages.
-enum { UI_MAX_SCREEN_ID = SCREEN_ID_PAGE_MAIN_PRO };
+enum { UI_KNOWN_SCREEN_COUNT = 13 };
+enum { UI_PAGE_SLOT_COUNT = (int)(offsetof(objects_t, label_boot_ver) / sizeof(lv_obj_t *)) };
+
+#if defined(__cplusplus)
+#define UI_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
+#else
+#define UI_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
+#endif
+
+UI_STATIC_ASSERT(UI_PAGE_SLOT_COUNT == UI_KNOWN_SCREEN_COUNT,
+                 "EEZ page layout changed: update ui_runtime screen tables.");
+UI_STATIC_ASSERT(SCREEN_ID_PAGE_MAIN_PRO == UI_KNOWN_SCREEN_COUNT,
+                 "Expected MAIN_PRO to be last screen id; update ui_runtime mapping.");
+
+enum { UI_MAX_SCREEN_ID = UI_KNOWN_SCREEN_COUNT };
 
 static int16_t currentScreen = -1;
 static uint8_t createdScreens[UI_MAX_SCREEN_ID + 1];
@@ -43,76 +57,39 @@ static bool isScreenIdValid(enum ScreensEnum screenId) {
 }
 
 static lv_obj_t *getLvglObjectFromScreenId(enum ScreensEnum screenId) {
-    switch (screenId) {
-        case SCREEN_ID_PAGE_BOOT_LOGO:
-            return objects.page_boot_logo;
-        case SCREEN_ID_PAGE_BOOT_DIAG:
-            return objects.page_boot_diag;
-        case SCREEN_ID_PAGE_SETTINGS:
-            return objects.page_settings;
-        case SCREEN_ID_PAGE_WIFI:
-            return objects.page_wifi;
-        case SCREEN_ID_PAGE_THEME:
-            return objects.page_theme;
-        case SCREEN_ID_PAGE_CLOCK:
-            return objects.page_clock;
-        case SCREEN_ID_PAGE_CO2_CALIB:
-            return objects.page_co2_calib;
-        case SCREEN_ID_PAGE_AUTO_NIGHT_MODE:
-            return objects.page_auto_night_mode;
-        case SCREEN_ID_PAGE_BACKLIGHT:
-            return objects.page_backlight;
-        case SCREEN_ID_PAGE_MQTT:
-            return objects.page_mqtt;
-        case SCREEN_ID_PAGE_SENSORS_INFO:
-            return objects.page_sensors_info;
-        case SCREEN_ID_PAGE_MAIN_PRO:
-            return objects.page_main_pro;
-        default:
-            return 0;
+    if (!isScreenIdValid(screenId)) {
+        return 0;
     }
+    lv_obj_t **page_slots = (lv_obj_t **)&objects;
+    return page_slots[screenId - 1];
 }
 
+typedef void (*create_screen_func_t)(void);
+
+static const create_screen_func_t screen_create_funcs[UI_MAX_SCREEN_ID + 1] = {
+    NULL,
+    create_screen_page_boot_logo,
+    create_screen_page_boot_diag,
+    create_screen_page_main,
+    create_screen_page_settings,
+    create_screen_page_wifi,
+    create_screen_page_theme,
+    create_screen_page_clock,
+    create_screen_page_co2_calib,
+    create_screen_page_auto_night_mode,
+    create_screen_page_backlight,
+    create_screen_page_mqtt,
+    create_screen_page_sensors_info,
+    create_screen_page_main_pro,
+};
+
 static void createScreenById(enum ScreensEnum screenId) {
-    switch (screenId) {
-        case SCREEN_ID_PAGE_BOOT_LOGO:
-            create_screen_page_boot_logo();
-            break;
-        case SCREEN_ID_PAGE_BOOT_DIAG:
-            create_screen_page_boot_diag();
-            break;
-        case SCREEN_ID_PAGE_SETTINGS:
-            create_screen_page_settings();
-            break;
-        case SCREEN_ID_PAGE_WIFI:
-            create_screen_page_wifi();
-            break;
-        case SCREEN_ID_PAGE_THEME:
-            create_screen_page_theme();
-            break;
-        case SCREEN_ID_PAGE_CLOCK:
-            create_screen_page_clock();
-            break;
-        case SCREEN_ID_PAGE_CO2_CALIB:
-            create_screen_page_co2_calib();
-            break;
-        case SCREEN_ID_PAGE_AUTO_NIGHT_MODE:
-            create_screen_page_auto_night_mode();
-            break;
-        case SCREEN_ID_PAGE_BACKLIGHT:
-            create_screen_page_backlight();
-            break;
-        case SCREEN_ID_PAGE_MQTT:
-            create_screen_page_mqtt();
-            break;
-        case SCREEN_ID_PAGE_SENSORS_INFO:
-            create_screen_page_sensors_info();
-            break;
-        case SCREEN_ID_PAGE_MAIN_PRO:
-            create_screen_page_main_pro();
-            break;
-        default:
-            break;
+    if (!isScreenIdValid(screenId)) {
+        return;
+    }
+    create_screen_func_t create_fn = screen_create_funcs[screenId];
+    if (create_fn) {
+        create_fn();
     }
 }
 

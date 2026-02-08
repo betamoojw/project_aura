@@ -408,6 +408,8 @@ private:
     bool header_status_enabled = true;
     int wifi_icon_state = -1;
     int mqtt_icon_state = -1;
+    int wifi_icon_state_main = -1;
+    int mqtt_icon_state_main = -1;
     bool clock_ui_dirty = true;
     bool datetime_ui_dirty = true;
     bool ntp_toggle_syncing = false;

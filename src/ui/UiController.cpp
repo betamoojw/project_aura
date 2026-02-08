@@ -502,6 +502,10 @@ void UiController::begin() {
     theme_events_bound_ = false;
     boot_release_at_ms = 0;
     boot_ui_released = false;
+    wifi_icon_state = -1;
+    mqtt_icon_state = -1;
+    wifi_icon_state_main = -1;
+    mqtt_icon_state_main = -1;
     if (objects.page_boot_logo) {
         loadScreen(SCREEN_ID_PAGE_BOOT_LOGO);
         bind_screen_events_once(SCREEN_ID_PAGE_BOOT_LOGO);
@@ -671,15 +675,20 @@ void UiController::poll(uint32_t now) {
     }
     backlightManager.poll(lvgl_ready);
     update_status_icons();
+    bool refresh_status_icons_after_switch = false;
     if (pending_screen_id != 0) {
         int next_screen = pending_screen_id;
         // Keep compatibility with stale references to old MAIN screen id.
         if (next_screen == SCREEN_ID_PAGE_MAIN) {
             next_screen = SCREEN_ID_PAGE_MAIN_PRO;
         }
+        bool was_bound = (next_screen > 0 && next_screen < static_cast<int>(kScreenSlotCount))
+            ? screen_events_bound_[next_screen]
+            : true;
         ScreensEnum next_screen_enum = static_cast<ScreensEnum>(next_screen);
         loadScreen(next_screen_enum);
         bind_screen_events_once(next_screen);
+        refresh_status_icons_after_switch = !was_bound;
         current_screen_id = next_screen;
         pending_screen_id = 0;
         if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
@@ -706,6 +715,13 @@ void UiController::poll(uint32_t now) {
             (objects.page_boot_logo || objects.page_boot_diag)) {
             boot_release_at_ms = now + 500;
         }
+    }
+    if (refresh_status_icons_after_switch) {
+        wifi_icon_state = -1;
+        mqtt_icon_state = -1;
+        wifi_icon_state_main = -1;
+        mqtt_icon_state_main = -1;
+        update_status_icons();
     }
 
     if (!boot_ui_released &&

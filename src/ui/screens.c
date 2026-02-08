@@ -8868,7 +8868,7 @@ void create_screen_page_sensors_info() {
             }
         }
     }
-    
+
     tick_screen_page_sensors_info();
 }
 
@@ -10297,7 +10297,7 @@ void create_screen_page_main_pro() {
             }
         }
     }
-    
+
     tick_screen_page_main_pro();
 }
 

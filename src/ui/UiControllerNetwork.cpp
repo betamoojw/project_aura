@@ -252,7 +252,6 @@ void UiController::update_status_icons() {
     if (night_mode && main_wifi_state != 4) {
         main_wifi_state = 0;
     }
-    static int wifi_icon_state_main = -1;
     if (main_wifi_state != wifi_icon_state_main) {
         wifi_icon_state_main = main_wifi_state;
         lv_obj_t *main_wifi_icons[] = {
@@ -335,7 +334,6 @@ void UiController::update_status_icons() {
     if (night_mode && main_mqtt_state != 3) {
         main_mqtt_state = 0;
     }
-    static int mqtt_icon_state_main = -1;
     if (main_mqtt_state != mqtt_icon_state_main) {
         mqtt_icon_state_main = main_mqtt_state;
         lv_obj_t *main_mqtt_icons[] = {
