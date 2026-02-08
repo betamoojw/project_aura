@@ -7,6 +7,7 @@
 #include "ui/UiController.h"
 #include "ui/UiText.h"
 #include "ui/ui.h"
+#include "ui/fonts.h"
 #include "core/MathUtils.h"
 
 #include <math.h>
@@ -375,6 +376,10 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         safe_label_set_text_static(objects.label_co_title, co_available ? "CO" : "PM4");
     }
     if (objects.label_co_unit) {
+        const lv_font_t *unit_font = (ui_language == Config::Language::ZH)
+            ? &ui_font_noto_sans_sc_reg_14
+            : &ui_font_jet_reg_14;
+        lv_obj_set_style_text_font(objects.label_co_unit, unit_font, LV_PART_MAIN | LV_STATE_DEFAULT);
         safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : "ug/m³");
     }
     if (objects.label_co_value) {
