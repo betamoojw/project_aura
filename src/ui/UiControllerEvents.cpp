@@ -614,15 +614,18 @@ void UiController::on_card_temp_event(lv_event_t *e) {
     if (objects.label_sensor_info_title) {
         safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleTemperature());
     }
-    const char *value = objects.label_temp_value
-        ? lv_label_get_text(objects.label_temp_value)
-        : UiText::ValueMissing();
+    const char *value = UiText::ValueMissing();
+    if (objects.label_temp_value_1) {
+        value = lv_label_get_text(objects.label_temp_value_1);
+    } else if (objects.label_temp_value) {
+        value = lv_label_get_text(objects.label_temp_value);
+    }
     safe_label_set_text(objects.label_sensor_value, value);
     const char *unit = nullptr;
-    if (objects.label_temp_unit) {
-        unit = lv_label_get_text(objects.label_temp_unit);
-    } else if (objects.label_temp_unit_1) {
+    if (objects.label_temp_unit_1) {
         unit = lv_label_get_text(objects.label_temp_unit_1);
+    } else if (objects.label_temp_unit) {
+        unit = lv_label_get_text(objects.label_temp_unit);
     } else {
         unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
     }
@@ -642,10 +645,10 @@ void UiController::on_card_voc_event(lv_event_t *e) {
         safe_label_set_text(objects.label_sensor_info_title, "VOC");
     }
     const char *unit = nullptr;
-    if (objects.label_voc_unit) {
-        unit = lv_label_get_text(objects.label_voc_unit);
-    } else if (objects.label_voc_unit_1) {
+    if (objects.label_voc_unit_1) {
         unit = lv_label_get_text(objects.label_voc_unit_1);
+    } else if (objects.label_voc_unit) {
+        unit = lv_label_get_text(objects.label_voc_unit);
     } else {
         unit = UiText::UnitIndex();
     }
@@ -665,10 +668,10 @@ void UiController::on_card_nox_event(lv_event_t *e) {
         safe_label_set_text(objects.label_sensor_info_title, "NOx");
     }
     const char *unit = nullptr;
-    if (objects.label_nox_unit) {
-        unit = lv_label_get_text(objects.label_nox_unit);
-    } else if (objects.label_nox_unit_1) {
+    if (objects.label_nox_unit_1) {
         unit = lv_label_get_text(objects.label_nox_unit_1);
+    } else if (objects.label_nox_unit) {
+        unit = lv_label_get_text(objects.label_nox_unit);
     } else {
         unit = UiText::UnitIndex();
     }
@@ -688,10 +691,10 @@ void UiController::on_card_hcho_event(lv_event_t *e) {
         safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleFormaldehyde());
     }
     const char *unit = nullptr;
-    if (objects.label_hcho_unit) {
-        unit = lv_label_get_text(objects.label_hcho_unit);
-    } else if (objects.label_hcho_unit_1) {
+    if (objects.label_hcho_unit_1) {
         unit = lv_label_get_text(objects.label_hcho_unit_1);
+    } else if (objects.label_hcho_unit) {
+        unit = lv_label_get_text(objects.label_hcho_unit);
     } else {
         unit = UiText::UnitPpb();
     }
@@ -711,10 +714,10 @@ void UiController::on_card_co2_event(lv_event_t *e) {
         safe_label_set_text(objects.label_sensor_info_title, "CO2");
     }
     const char *unit = nullptr;
-    if (objects.label_co2_unit) {
-        unit = lv_label_get_text(objects.label_co2_unit);
-    } else if (objects.label_co2_unit_1) {
+    if (objects.label_co2_unit_1) {
         unit = lv_label_get_text(objects.label_co2_unit_1);
+    } else if (objects.label_co2_unit) {
+        unit = lv_label_get_text(objects.label_co2_unit);
     } else {
         unit = "ppm";
     }

@@ -118,8 +118,6 @@ lv_obj_t *screen_root_by_id(int screen_id) {
             return objects.page_boot_logo;
         case SCREEN_ID_PAGE_BOOT_DIAG:
             return objects.page_boot_diag;
-        case SCREEN_ID_PAGE_MAIN:
-            return objects.page_main_pro ? objects.page_main_pro : objects.page_main;
         case SCREEN_ID_PAGE_MAIN_PRO:
             return objects.page_main_pro;
         case SCREEN_ID_PAGE_SETTINGS:
@@ -212,30 +210,20 @@ void UiController::bind_available_events() {
     };
 
     const EventBinding click_bindings[] = {
-        {objects.btn_settings, on_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_settings_1, on_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back, on_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_about, on_about_event_cb, LV_EVENT_CLICKED},
         {objects.btn_about_back, on_about_back_event_cb, LV_EVENT_CLICKED},
-        {objects.card_temp, on_card_temp_event_cb, LV_EVENT_CLICKED},
         {objects.card_temp_pro, on_card_temp_event_cb, LV_EVENT_CLICKED},
-        {objects.card_voc, on_card_voc_event_cb, LV_EVENT_CLICKED},
         {objects.card_voc_pro, on_card_voc_event_cb, LV_EVENT_CLICKED},
-        {objects.card_nox, on_card_nox_event_cb, LV_EVENT_CLICKED},
         {objects.card_nox_pro, on_card_nox_event_cb, LV_EVENT_CLICKED},
-        {objects.card_hcho, on_card_hcho_event_cb, LV_EVENT_CLICKED},
         {objects.card_hcho_pro, on_card_hcho_event_cb, LV_EVENT_CLICKED},
-        {objects.card_co2, on_card_co2_event_cb, LV_EVENT_CLICKED},
         {objects.card_co2_pro, on_card_co2_event_cb, LV_EVENT_CLICKED},
-        {objects.card_hum, on_card_hum_event_cb, LV_EVENT_CLICKED},
         {objects.card_hum_pro, on_card_hum_event_cb, LV_EVENT_CLICKED},
         {objects.card_hum_2, on_dp_info_event_cb, LV_EVENT_CLICKED},
-        {objects.card_pm25, on_card_pm25_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm25_pro, on_card_pm25_event_cb, LV_EVENT_CLICKED},
-        {objects.card_pm10, on_card_pm10_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm10_pro, on_card_pm10_event_cb, LV_EVENT_CLICKED},
         {objects.card_co_pro, on_card_pm10_event_cb, LV_EVENT_CLICKED},
-        {objects.card_pressure, on_card_pressure_event_cb, LV_EVENT_CLICKED},
         {objects.card_pressure_pro, on_card_pressure_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_rh_info, on_rh_info_event_cb, LV_EVENT_CLICKED},
@@ -422,6 +410,10 @@ void UiController::init_theme_controls_if_available() {
 }
 
 void UiController::bind_screen_events_once(int screen_id) {
+    // Keep compatibility with stale references to old MAIN screen id.
+    if (screen_id == SCREEN_ID_PAGE_MAIN) {
+        screen_id = SCREEN_ID_PAGE_MAIN_PRO;
+    }
     if (screen_id <= 0 || screen_id >= static_cast<int>(kScreenSlotCount)) {
         return;
     }
@@ -446,7 +438,6 @@ void UiController::bind_screen_events_once(int screen_id) {
 
 void UiController::refresh_texts_for_screen(int screen_id) {
     switch (screen_id) {
-        case SCREEN_ID_PAGE_MAIN:
         case SCREEN_ID_PAGE_MAIN_PRO:
             update_main_texts();
             break;
@@ -685,6 +676,10 @@ void UiController::poll(uint32_t now) {
     update_status_icons();
     if (pending_screen_id != 0) {
         int next_screen = pending_screen_id;
+        // Keep compatibility with stale references to old MAIN screen id.
+        if (next_screen == SCREEN_ID_PAGE_MAIN) {
+            next_screen = SCREEN_ID_PAGE_MAIN_PRO;
+        }
         ScreensEnum next_screen_enum = static_cast<ScreensEnum>(next_screen);
         loadScreen(next_screen_enum);
         bind_screen_events_once(next_screen);
@@ -808,11 +803,11 @@ lv_color_t UiController::color_orange() { return lv_color_hex(0xff9800); }
 lv_color_t UiController::color_red() { return lv_color_hex(0xff1100); }
 lv_color_t UiController::color_blue() { return lv_color_hex(0x2196f3); }
 lv_color_t UiController::color_card_border() {
-    if (objects.card_co2) {
-        return lv_obj_get_style_border_color(objects.card_co2, LV_PART_MAIN);
-    }
     if (objects.card_co2_pro) {
         return lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
+    }
+    if (objects.card_co2) {
+        return lv_obj_get_style_border_color(objects.card_co2, LV_PART_MAIN);
     }
     return lv_color_hex(0xffe19756);
 }
@@ -1017,8 +1012,6 @@ void UiController::update_clock_labels() {
     char buf[16];
     tm local_tm = {};
     if (!timeManager.getLocalTime(local_tm)) {
-        if (objects.label_time_value) safe_label_set_text(objects.label_time_value, UiText::TimeMissing());
-        if (objects.label_date_value) safe_label_set_text(objects.label_date_value, UiText::DateMissing());
         if (objects.label_time_value_1) safe_label_set_text(objects.label_time_value_1, UiText::TimeMissing());
         if (objects.label_date_value_1) safe_label_set_text(objects.label_date_value_1, UiText::DateMissing());
         if (objects.label_time_value_2) safe_label_set_text(objects.label_time_value_2, UiText::TimeMissing());
@@ -1026,14 +1019,12 @@ void UiController::update_clock_labels() {
         return;
     }
     snprintf(buf, sizeof(buf), "%02d:%02d", local_tm.tm_hour, local_tm.tm_min);
-    if (objects.label_time_value) safe_label_set_text(objects.label_time_value, buf);
     if (objects.label_time_value_1) safe_label_set_text(objects.label_time_value_1, buf);
     if (objects.label_time_value_2) safe_label_set_text(objects.label_time_value_2, buf);
     snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
              local_tm.tm_mday,
              local_tm.tm_mon + 1,
              local_tm.tm_year + 1900);
-    if (objects.label_date_value) safe_label_set_text(objects.label_date_value, buf);
     if (objects.label_date_value_1) safe_label_set_text(objects.label_date_value_1, buf);
     if (objects.label_date_value_2) safe_label_set_text(objects.label_date_value_2, buf);
 }
@@ -1517,11 +1508,6 @@ void UiController::update_ui() {
         header_col = night_alert_color(aq.color);
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
-    if (objects.container_header) {
-        lv_obj_set_style_border_color(objects.container_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_color(objects.container_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_shadow_opa(objects.container_header, header_shadow, LV_PART_MAIN | LV_STATE_DEFAULT);
-    }
     if (objects.container_header_pro) {
         lv_obj_set_style_border_color(objects.container_header_pro, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_color(objects.container_header_pro, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1598,10 +1584,10 @@ void UiController::update_sensor_info_ui() {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
             const char *unit = nullptr;
-            if (objects.label_hcho_unit) {
-                unit = lv_label_get_text(objects.label_hcho_unit);
-            } else if (objects.label_hcho_unit_1) {
+            if (objects.label_hcho_unit_1) {
                 unit = lv_label_get_text(objects.label_hcho_unit_1);
+            } else if (objects.label_hcho_unit) {
+                unit = lv_label_get_text(objects.label_hcho_unit);
             } else {
                 unit = UiText::UnitPpb();
             }
@@ -1619,10 +1605,10 @@ void UiController::update_sensor_info_ui() {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
             const char *unit = nullptr;
-            if (objects.label_co2_unit) {
-                unit = lv_label_get_text(objects.label_co2_unit);
-            } else if (objects.label_co2_unit_1) {
+            if (objects.label_co2_unit_1) {
                 unit = lv_label_get_text(objects.label_co2_unit_1);
+            } else if (objects.label_co2_unit) {
+                unit = lv_label_get_text(objects.label_co2_unit);
             } else {
                 unit = "ppm";
             }
@@ -1703,10 +1689,10 @@ void UiController::update_sensor_info_ui() {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
             const char *unit = nullptr;
-            if (objects.label_pm25_unit) {
-                unit = lv_label_get_text(objects.label_pm25_unit);
-            } else if (objects.label_pm25_unit_1) {
+            if (objects.label_pm25_unit_1) {
                 unit = lv_label_get_text(objects.label_pm25_unit_1);
+            } else if (objects.label_pm25_unit) {
+                unit = lv_label_get_text(objects.label_pm25_unit);
             } else {
                 unit = "ug/m3";
             }
@@ -1725,10 +1711,10 @@ void UiController::update_sensor_info_ui() {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
             const char *unit = nullptr;
-            if (objects.label_pm10_unit) {
-                unit = lv_label_get_text(objects.label_pm10_unit);
-            } else if (objects.label_pm10_unit_pro) {
+            if (objects.label_pm10_unit_pro) {
                 unit = lv_label_get_text(objects.label_pm10_unit_pro);
+            } else if (objects.label_pm10_unit) {
+                unit = lv_label_get_text(objects.label_pm10_unit);
             } else {
                 unit = "ug/m3";
             }
@@ -1749,10 +1735,10 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_pressure_value, buf);
 
             const char *unit = nullptr;
-            if (objects.label_pressure_unit) {
-                unit = lv_label_get_text(objects.label_pressure_unit);
-            } else if (objects.label_pressure_unit_1) {
+            if (objects.label_pressure_unit_1) {
                 unit = lv_label_get_text(objects.label_pressure_unit_1);
+            } else if (objects.label_pressure_unit) {
+                unit = lv_label_get_text(objects.label_pressure_unit);
             } else {
                 unit = "hPa";
             }
@@ -1810,19 +1796,19 @@ void UiController::restore_sensor_info_selection() {
                 safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleTemperature());
             }
             const char *value = nullptr;
-            if (objects.label_temp_value) {
-                value = lv_label_get_text(objects.label_temp_value);
-            } else if (objects.label_temp_value_1) {
+            if (objects.label_temp_value_1) {
                 value = lv_label_get_text(objects.label_temp_value_1);
+            } else if (objects.label_temp_value) {
+                value = lv_label_get_text(objects.label_temp_value);
             } else {
                 value = UiText::ValueMissing();
             }
             safe_label_set_text(objects.label_sensor_value, value);
             const char *unit = nullptr;
-            if (objects.label_temp_unit) {
-                unit = lv_label_get_text(objects.label_temp_unit);
-            } else if (objects.label_temp_unit_1) {
+            if (objects.label_temp_unit_1) {
                 unit = lv_label_get_text(objects.label_temp_unit_1);
+            } else if (objects.label_temp_unit) {
+                unit = lv_label_get_text(objects.label_temp_unit);
             } else {
                 unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
             }
@@ -1837,10 +1823,10 @@ void UiController::restore_sensor_info_selection() {
                 safe_label_set_text(objects.label_sensor_info_title, "VOC");
             }
             const char *unit = nullptr;
-            if (objects.label_voc_unit) {
-                unit = lv_label_get_text(objects.label_voc_unit);
-            } else if (objects.label_voc_unit_1) {
+            if (objects.label_voc_unit_1) {
                 unit = lv_label_get_text(objects.label_voc_unit_1);
+            } else if (objects.label_voc_unit) {
+                unit = lv_label_get_text(objects.label_voc_unit);
             } else {
                 unit = UiText::UnitIndex();
             }
@@ -1855,10 +1841,10 @@ void UiController::restore_sensor_info_selection() {
                 safe_label_set_text(objects.label_sensor_info_title, "NOx");
             }
             const char *unit = nullptr;
-            if (objects.label_nox_unit) {
-                unit = lv_label_get_text(objects.label_nox_unit);
-            } else if (objects.label_nox_unit_1) {
+            if (objects.label_nox_unit_1) {
                 unit = lv_label_get_text(objects.label_nox_unit_1);
+            } else if (objects.label_nox_unit) {
+                unit = lv_label_get_text(objects.label_nox_unit);
             } else {
                 unit = UiText::UnitIndex();
             }
@@ -1873,10 +1859,10 @@ void UiController::restore_sensor_info_selection() {
                 safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleFormaldehyde());
             }
             const char *unit = nullptr;
-            if (objects.label_hcho_unit) {
-                unit = lv_label_get_text(objects.label_hcho_unit);
-            } else if (objects.label_hcho_unit_1) {
+            if (objects.label_hcho_unit_1) {
                 unit = lv_label_get_text(objects.label_hcho_unit_1);
+            } else if (objects.label_hcho_unit) {
+                unit = lv_label_get_text(objects.label_hcho_unit);
             } else {
                 unit = UiText::UnitPpb();
             }
@@ -1891,10 +1877,10 @@ void UiController::restore_sensor_info_selection() {
                 safe_label_set_text(objects.label_sensor_info_title, "CO2");
             }
             const char *unit = nullptr;
-            if (objects.label_co2_unit) {
-                unit = lv_label_get_text(objects.label_co2_unit);
-            } else if (objects.label_co2_unit_1) {
+            if (objects.label_co2_unit_1) {
                 unit = lv_label_get_text(objects.label_co2_unit_1);
+            } else if (objects.label_co2_unit) {
+                unit = lv_label_get_text(objects.label_co2_unit);
             } else {
                 unit = "ppm";
             }
@@ -1996,10 +1982,10 @@ void UiController::select_pressure_info(InfoSensor sensor) {
     set_checked(objects.btn_24h_pressure_info, sensor == INFO_PRESSURE_24H);
 
     const char *title = nullptr;
-    if (objects.label_pressure_title) {
-        title = lv_label_get_text(objects.label_pressure_title);
-    } else if (objects.label_pressure_title_1) {
+    if (objects.label_pressure_title_1) {
         title = lv_label_get_text(objects.label_pressure_title_1);
+    } else if (objects.label_pressure_title) {
+        title = lv_label_get_text(objects.label_pressure_title);
     } else {
         title = "PRESSURE";
     }
@@ -2082,7 +2068,6 @@ void UiController::update_language_fonts() {
     lv_obj_t *roots[] = {
         objects.page_boot_logo,
         objects.page_boot_diag,
-        objects.page_main,
         objects.page_main_pro,
         objects.page_settings,
         objects.page_wifi,
@@ -2132,23 +2117,14 @@ void UiController::update_settings_texts() {
 }
 
 void UiController::update_main_texts() {
-    if (objects.label_status_title) safe_label_set_text(objects.label_status_title, UiText::LabelStatusTitle());
     if (objects.label_status_title_1) safe_label_set_text(objects.label_status_title_1, UiText::LabelStatusTitle());
-    if (objects.label_btn_settings) safe_label_set_text(objects.label_btn_settings, UiText::LabelSettingsButton());
     if (objects.label_btn_settings_1) safe_label_set_text(objects.label_btn_settings_1, UiText::LabelSettingsButton());
-    if (objects.label_temp_title) safe_label_set_text(objects.label_temp_title, UiText::LabelTemperatureTitle());
     if (objects.label_temp_title_1) safe_label_set_text(objects.label_temp_title_1, UiText::LabelTemperatureTitle());
-    if (objects.label_pressure_title) safe_label_set_text(objects.label_pressure_title, UiText::LabelPressureTitle());
     if (objects.label_pressure_title_1) safe_label_set_text(objects.label_pressure_title_1, UiText::LabelPressureTitle());
-    if (objects.label_time_title) safe_label_set_text(objects.label_time_title, UiText::LabelTimeCard());
     if (objects.label_time_title_2) safe_label_set_text(objects.label_time_title_2, UiText::LabelTimeCard());
-    if (objects.label_voc_warmup) safe_label_set_text(objects.label_voc_warmup, UiText::LabelWarmup());
     if (objects.label_voc_warmup_1) safe_label_set_text(objects.label_voc_warmup_1, UiText::LabelWarmup());
-    if (objects.label_nox_warmup) safe_label_set_text(objects.label_nox_warmup, UiText::LabelWarmup());
     if (objects.label_nox_warmup_1) safe_label_set_text(objects.label_nox_warmup_1, UiText::LabelWarmup());
-    if (objects.label_voc_unit) safe_label_set_text(objects.label_voc_unit, UiText::UnitIndex());
     if (objects.label_voc_unit_1) safe_label_set_text(objects.label_voc_unit_1, UiText::UnitIndex());
-    if (objects.label_nox_unit) safe_label_set_text(objects.label_nox_unit, UiText::UnitIndex());
     if (objects.label_nox_unit_1) safe_label_set_text(objects.label_nox_unit_1, UiText::UnitIndex());
 }
 
@@ -2340,9 +2316,6 @@ void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
         status_text = messages[status_msg_index].text;
     }
 
-    if (objects.label_status_value) {
-        safe_label_set_text(objects.label_status_value, status_text ? status_text : UiText::ValueMissing());
-    }
     if (objects.label_status_value_1) {
         safe_label_set_text(objects.label_status_value_1, status_text ? status_text : UiText::ValueMissing());
     }

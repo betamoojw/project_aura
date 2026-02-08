@@ -270,20 +270,24 @@ bool ThemeManager::readFromSwatch(const ThemeSwatch &swatch, ThemeColors &out) c
 }
 
 bool ThemeManager::readFromUi(ThemeColors &out) const {
-    if (!objects.background || !objects.card_co2 || !objects.label_co2_value) {
+    lv_obj_t *screen = objects.background_pro ? objects.background_pro : objects.background;
+    lv_obj_t *card = objects.card_co2_pro ? objects.card_co2_pro : objects.card_co2;
+    lv_obj_t *label = objects.label_co2_value_1 ? objects.label_co2_value_1 : objects.label_co2_value;
+
+    if (!screen || !card || !label) {
         return false;
     }
-    out.screen_bg = lv_obj_get_style_bg_color(objects.background, LV_PART_MAIN);
-    out.screen_gradient_color = lv_obj_get_style_bg_grad_color(objects.background, LV_PART_MAIN);
-    out.screen_gradient_direction = lv_obj_get_style_bg_grad_dir(objects.background, LV_PART_MAIN);
+    out.screen_bg = lv_obj_get_style_bg_color(screen, LV_PART_MAIN);
+    out.screen_gradient_color = lv_obj_get_style_bg_grad_color(screen, LV_PART_MAIN);
+    out.screen_gradient_direction = lv_obj_get_style_bg_grad_dir(screen, LV_PART_MAIN);
     out.screen_gradient_enabled = out.screen_gradient_direction != LV_GRAD_DIR_NONE;
-    out.card_bg = lv_obj_get_style_bg_color(objects.card_co2, LV_PART_MAIN);
-    out.card_border = lv_obj_get_style_border_color(objects.card_co2, LV_PART_MAIN);
-    out.text_primary = lv_obj_get_style_text_color(objects.label_co2_value, LV_PART_MAIN);
-    out.shadow_color = lv_obj_get_style_shadow_color(objects.card_co2, LV_PART_MAIN);
-    out.shadow_enabled = lv_obj_get_style_shadow_opa(objects.card_co2, LV_PART_MAIN) > 0;
-    out.gradient_color = lv_obj_get_style_bg_grad_color(objects.card_co2, LV_PART_MAIN);
-    out.gradient_direction = lv_obj_get_style_bg_grad_dir(objects.card_co2, LV_PART_MAIN);
+    out.card_bg = lv_obj_get_style_bg_color(card, LV_PART_MAIN);
+    out.card_border = lv_obj_get_style_border_color(card, LV_PART_MAIN);
+    out.text_primary = lv_obj_get_style_text_color(label, LV_PART_MAIN);
+    out.shadow_color = lv_obj_get_style_shadow_color(card, LV_PART_MAIN);
+    out.shadow_enabled = lv_obj_get_style_shadow_opa(card, LV_PART_MAIN) > 0;
+    out.gradient_color = lv_obj_get_style_bg_grad_color(card, LV_PART_MAIN);
+    out.gradient_direction = lv_obj_get_style_bg_grad_dir(card, LV_PART_MAIN);
     out.gradient_enabled = out.gradient_direction != LV_GRAD_DIR_NONE;
     return true;
 }

@@ -31,6 +31,7 @@ static int16_t currentScreen = -1;
 static uint8_t createdScreens[UI_MAX_SCREEN_ID + 1];
 
 static enum ScreensEnum normalizeScreenId(enum ScreensEnum screenId) {
+    // Old MAIN (id=3) is deprecated; keep compatibility by redirecting to MAIN_PRO.
     if (screenId == SCREEN_ID_PAGE_MAIN) {
         return SCREEN_ID_PAGE_MAIN_PRO;
     }
@@ -47,8 +48,6 @@ static lv_obj_t *getLvglObjectFromScreenId(enum ScreensEnum screenId) {
             return objects.page_boot_logo;
         case SCREEN_ID_PAGE_BOOT_DIAG:
             return objects.page_boot_diag;
-        case SCREEN_ID_PAGE_MAIN:
-            return objects.page_main_pro ? objects.page_main_pro : objects.page_main;
         case SCREEN_ID_PAGE_SETTINGS:
             return objects.page_settings;
         case SCREEN_ID_PAGE_WIFI:
@@ -81,9 +80,6 @@ static void createScreenById(enum ScreensEnum screenId) {
             break;
         case SCREEN_ID_PAGE_BOOT_DIAG:
             create_screen_page_boot_diag();
-            break;
-        case SCREEN_ID_PAGE_MAIN:
-            create_screen_page_main_pro();
             break;
         case SCREEN_ID_PAGE_SETTINGS:
             create_screen_page_settings();
