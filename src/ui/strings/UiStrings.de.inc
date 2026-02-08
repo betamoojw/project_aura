@@ -251,7 +251,7 @@
     "RELATIVE FEUCHTIGKEIT",
     "ABSOLUTE FEUCHTIGKEIT",
     "TAUPUNKT",
-    "Das Schimmelrisiko zeigt die Wahrscheinlichkeit von Schimmelwachstum anhand von Luftfeuchte und Temperaturbedingungen. Hohe Luftfeuchte ueber 70% zusammen mit warmen Temperaturen schafft ideale Bedingungen fuer Schimmel und Hausstaubmilben. Schimmelsporen verursachen Allergien, Atemwegsprobleme und Sachschaeden. Beobachte Ecken, Badezimmer und schlecht belueftete Bereiche. Halte die Luftfeuchte unter 60%, um Wachstum zu verhindern.",
+    "Schimmelrisiko basiert auf Luftfeuchte und Temperatur. Ueber 70% Feuchte und warme Luft erhoehen das Risiko stark, besonders in Ecken, Bad und schlecht beluefteten Raeumen. Halte die Luftfeuchte moeglichst unter 60%.",
     "Ausgezeichnet: 0-2\nNiedriges Risiko, Schimmel unwahrscheinlich",
     "Akzeptabel: 3-4\nMittleres Risiko, Feuchtewerte beobachten",
     "Unangenehm: 5-7\nHohes Risiko, entfeuchten und besser lueften",

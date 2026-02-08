@@ -251,7 +251,7 @@
     "HUMIDITÉ RELATIVE",
     "HUMIDITÉ ABSOLUE",
     "POINT DE ROSÉE",
-    "Le risque de moisissure indique la probabilite de croissance selon les conditions d humidite et de temperature. Une humidite elevee au-dessus de 70% combinee avec des temperatures chaudes cree des conditions ideales pour la moisissure et les acariens. Les spores de moisissure causent allergies, problemes respiratoires et degats materiels. Surveillez les coins, salles de bain et zones mal ventilees. Gardez l humidite sous 60% pour prevenir la croissance.",
+    "Le risque de moisissure depend de l humidite et de la temperature. Au-dessus de 70% avec de la chaleur, le risque augmente vite, surtout dans les coins, salles de bain et zones mal ventilees. Gardez l humidite sous 60%.",
     "Excellent: 0-2\nRisque faible, moisissure peu probable",
     "Acceptable: 3-4\nRisque modere, surveiller les niveaux d humidite",
     "Inconfortable: 5-7\nRisque eleve, deshumidifier et mieux ventiler",

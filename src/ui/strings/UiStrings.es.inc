@@ -251,7 +251,7 @@
     "HUMEDAD RELATIVA",
     "HUMEDAD ABSOLUTA",
     "PUNTO DE ROCÍO",
-    "El riesgo de moho indica la probabilidad de crecimiento segun las condiciones de humedad y temperatura. Una humedad alta por encima de 70% combinada con temperaturas calidas crea condiciones ideales para moho y acaros. Las esporas de moho causan alergias, problemas respiratorios y danos materiales. Vigila esquinas, banos y zonas con poca ventilacion. Manten la humedad por debajo de 60% para prevenir crecimiento.",
+    "El riesgo de moho depende de humedad y temperatura. Con mas de 70% de humedad y calor, el riesgo sube rapido, sobre todo en esquinas, banos y zonas con poca ventilacion. Mantenga la humedad por debajo de 60%.",
     "Excelente: 0-2\nRiesgo bajo, moho poco probable",
     "Aceptable: 3-4\nRiesgo moderado, vigilar niveles de humedad",
     "Incomodo: 5-7\nRiesgo alto, deshumidificar y ventilar mejor",
