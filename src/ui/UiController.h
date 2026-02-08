@@ -137,6 +137,8 @@ private:
     lv_color_t getCO2Color(int co2);
     lv_color_t getPM25Color(float pm);
     lv_color_t getPM10Color(float pm);
+    lv_color_t getPM1Color(float pm);
+    lv_color_t getPM4Color(float pm);
     lv_color_t getPressureDeltaColor(float delta, bool valid, bool is24h);
     lv_color_t getVOCColor(int voc);
     lv_color_t getNOxColor(int nox);

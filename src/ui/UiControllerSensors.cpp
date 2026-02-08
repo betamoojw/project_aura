@@ -250,7 +250,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         }
     }
     if (objects.dot_pm1) {
-        lv_color_t pm1_col = pm1_available ? getPM10Color(currentData.pm1) : color_inactive();
+        lv_color_t pm1_col = pm1_available ? getPM1Color(currentData.pm1) : color_inactive();
         set_dot_color(objects.dot_pm1, alert_color_for_mode(pm1_col));
     }
 
@@ -405,7 +405,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
                 co_card_col = getPM10Color(co_ppm);
             }
         } else if (pm4_available) {
-            co_card_col = getPM10Color(currentData.pm4);
+            co_card_col = getPM4Color(currentData.pm4);
         }
         set_dot_color(objects.dot_co, alert_color_for_mode(co_card_col));
     }

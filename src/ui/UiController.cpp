@@ -866,6 +866,20 @@ lv_color_t UiController::getPM10Color(float pm) {
     return color_red();
 }
 
+lv_color_t UiController::getPM1Color(float pm) {
+    if (pm <= 10.0f) return color_green();
+    if (pm <= 25.0f) return color_yellow();
+    if (pm <= 50.0f) return color_orange();
+    return color_red();
+}
+
+lv_color_t UiController::getPM4Color(float pm) {
+    if (pm <= 25.0f) return color_green();
+    if (pm <= 50.0f) return color_yellow();
+    if (pm <= 75.0f) return color_orange();
+    return color_red();
+}
+
 lv_color_t UiController::getPressureDeltaColor(float delta, bool valid, bool is24h) {
     if (!valid) return color_inactive();
     float d = fabsf(delta);
@@ -1754,11 +1768,8 @@ void UiController::update_sensor_info_ui() {
                 ? lv_label_get_text(objects.label_pm1_unit)
                 : "ug/m3";
             safe_label_set_text(objects.label_sensor_info_unit, unit);
-            lv_color_t pm1_col = color_inactive();
-            if (objects.dot_pm1) {
-                pm1_col = lv_obj_get_style_bg_color(objects.dot_pm1, LV_PART_MAIN);
-            }
-            set_dot_color(objects.dot_sensor_info, pm1_col);
+            lv_color_t pm1_col = pm1_available ? getPM1Color(currentData.pm1) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm1_col));
             break;
         }
         case INFO_PM4: {
@@ -1775,11 +1786,8 @@ void UiController::update_sensor_info_ui() {
                 ? lv_label_get_text(objects.label_co_unit)
                 : "ug/m3";
             safe_label_set_text(objects.label_sensor_info_unit, unit);
-            lv_color_t pm4_col = color_inactive();
-            if (objects.dot_co) {
-                pm4_col = lv_obj_get_style_bg_color(objects.dot_co, LV_PART_MAIN);
-            }
-            set_dot_color(objects.dot_sensor_info, pm4_col);
+            lv_color_t pm4_col = pm4_available ? getPM4Color(currentData.pm4) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm4_col));
             break;
         }
         case INFO_PRESSURE_3H:
