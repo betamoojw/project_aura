@@ -1959,11 +1959,7 @@ void UiController::select_humidity_info(InfoSensor sensor) {
         } else if (sensor == INFO_AH) {
             safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleAh());
         } else if (sensor == INFO_MR) {
-            const char *title = "MOLD RISK";
-            if (objects.label_mr_title) {
-                title = lv_label_get_text(objects.label_mr_title);
-            }
-            safe_label_set_text(objects.label_sensor_info_title, title);
+            safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleMr());
         } else if (sensor == INFO_DP) {
             safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleDp());
         }
@@ -2215,6 +2211,11 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_ah_acceptable) safe_label_set_text_static(objects.label_ah_acceptable, UiText::InfoAhAcceptable());
     if (objects.label_ah_uncomfortable) safe_label_set_text_static(objects.label_ah_uncomfortable, UiText::InfoAhUncomfortable());
     if (objects.label_ah_poor) safe_label_set_text_static(objects.label_ah_poor, UiText::InfoAhPoor());
+    if (objects.label_rh_text_1) safe_label_set_text_static(objects.label_rh_text_1, UiText::InfoMrText());
+    if (objects.label_rh_excellent_1) safe_label_set_text_static(objects.label_rh_excellent_1, UiText::InfoMrExcellent());
+    if (objects.label_rh_acceptable_1) safe_label_set_text_static(objects.label_rh_acceptable_1, UiText::InfoMrAcceptable());
+    if (objects.label_rh_uncomfortable_1) safe_label_set_text_static(objects.label_rh_uncomfortable_1, UiText::InfoMrUncomfortable());
+    if (objects.label_rh_poor_1) safe_label_set_text_static(objects.label_rh_poor_1, UiText::InfoMrPoor());
     if (objects.label_dp_text_1) safe_label_set_text_static(objects.label_dp_text_1, UiText::InfoDpText());
     if (objects.label_dp_excellent_1) safe_label_set_text_static(objects.label_dp_excellent_1, UiText::InfoDpExcellent());
     if (objects.label_dp_acceptable_1) safe_label_set_text_static(objects.label_dp_acceptable_1, UiText::InfoDpAcceptable());
