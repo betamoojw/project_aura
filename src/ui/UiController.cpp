@@ -1624,7 +1624,7 @@ void UiController::update_sensor_info_ui() {
                 snprintf(buf, sizeof(buf), "%.0f", currentData.humidity);
                 safe_label_set_text(objects.label_sensor_value, buf);
             } else {
-                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissingShort());
             }
             const char *unit = objects.label_hum_unit
                 ? lv_label_get_text(objects.label_hum_unit)
@@ -1644,7 +1644,7 @@ void UiController::update_sensor_info_ui() {
                 snprintf(buf, sizeof(buf), "%.0f", ah_gm3);
                 safe_label_set_text(objects.label_sensor_value, buf);
             } else {
-                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissingShort());
             }
             const char *unit = objects.label_ah_unit
                 ? lv_label_get_text(objects.label_ah_unit)
@@ -1655,7 +1655,7 @@ void UiController::update_sensor_info_ui() {
             break;
         }
         case INFO_MR: {
-            const char *value = UiText::ValueMissing();
+            const char *value = UiText::ValueMissingShort();
             if (objects.label_mr_value) {
                 value = lv_label_get_text(objects.label_mr_value);
             }
@@ -1692,7 +1692,7 @@ void UiController::update_sensor_info_ui() {
                 snprintf(buf, sizeof(buf), "%.1f", dew_display);
                 safe_label_set_text(objects.label_sensor_value, buf);
             } else {
-                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissingShort());
             }
             safe_label_set_text(objects.label_sensor_info_unit, temp_units_c ? UiText::UnitC() : UiText::UnitF());
             float dp_color_c = isfinite(dew_c_rounded) ? dew_c_rounded : dew_c;

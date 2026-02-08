@@ -130,8 +130,8 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         safe_label_set_text(objects.label_hum_value, buf);
         safe_label_set_text(objects.label_hum_value_1, buf);
     } else {
-        safe_label_set_text_static(objects.label_hum_value, UiText::ValueMissing());
-        safe_label_set_text_static(objects.label_hum_value_1, UiText::ValueMissing());
+        safe_label_set_text_static(objects.label_hum_value, UiText::ValueMissingShort());
+        safe_label_set_text_static(objects.label_hum_value_1, UiText::ValueMissingShort());
     }
     lv_color_t hum_col = currentData.hum_valid ? getHumidityColor(currentData.humidity) : color_inactive();
     set_dot_color(objects.dot_hum, alert_color_for_mode(hum_col));
@@ -158,8 +158,8 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         safe_label_set_text(objects.label_dew_value, buf);
         safe_label_set_text(objects.label_dew_value_1, buf);
     } else {
-        safe_label_set_text_static(objects.label_dew_value, UiText::ValueMissing());
-        safe_label_set_text_static(objects.label_dew_value_1, UiText::ValueMissing());
+        safe_label_set_text_static(objects.label_dew_value, UiText::ValueMissingShort());
+        safe_label_set_text_static(objects.label_dew_value_1, UiText::ValueMissingShort());
     }
     if (objects.label_dew_unit) {
         safe_label_set_text_static(objects.label_dew_unit, temp_units_c ? UiText::UnitC() : UiText::UnitF());
@@ -178,8 +178,8 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         safe_label_set_text(objects.label_ah_value, buf);
         safe_label_set_text(objects.label_ah_value_1, buf);
     } else {
-        safe_label_set_text_static(objects.label_ah_value, UiText::ValueMissing());
-        safe_label_set_text_static(objects.label_ah_value_1, UiText::ValueMissing());
+        safe_label_set_text_static(objects.label_ah_value, UiText::ValueMissingShort());
+        safe_label_set_text_static(objects.label_ah_value_1, UiText::ValueMissingShort());
     }
     if (objects.dot_ah) {
         lv_color_t ah_col = getAbsoluteHumidityColor(ah_gm3);
@@ -196,7 +196,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
             snprintf(buf, sizeof(buf), "%d", mold_risk);
             safe_label_set_text(objects.label_mr_value, buf);
         } else {
-            safe_label_set_text_static(objects.label_mr_value, UiText::ValueMissing());
+            safe_label_set_text_static(objects.label_mr_value, UiText::ValueMissingShort());
         }
     }
     if (objects.dot_mr) {
