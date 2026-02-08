@@ -108,6 +108,7 @@ void UiController::on_card_co2_event_cb(lv_event_t *e) { if (instance_) instance
 void UiController::on_card_hum_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_hum_event(e); }
 void UiController::on_rh_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_rh_info_event(e); }
 void UiController::on_ah_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_ah_info_event(e); }
+void UiController::on_mr_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_mr_info_event(e); }
 void UiController::on_dp_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_dp_info_event(e); }
 void UiController::on_card_pm25_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm25_event(e); }
 void UiController::on_card_pm10_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm10_event(e); }
@@ -746,6 +747,13 @@ void UiController::on_ah_info_event(lv_event_t *e) {
         return;
     }
     select_humidity_info(INFO_AH);
+}
+
+void UiController::on_mr_info_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_humidity_info(INFO_MR);
 }
 
 void UiController::on_dp_info_event(lv_event_t *e) {

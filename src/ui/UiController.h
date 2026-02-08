@@ -68,6 +68,7 @@ private:
         INFO_CO2,
         INFO_RH,
         INFO_AH,
+        INFO_MR,
         INFO_DP,
         INFO_PM25,
         INFO_PM10,
@@ -252,6 +253,7 @@ private:
     void on_card_hum_event(lv_event_t *e);
     void on_rh_info_event(lv_event_t *e);
     void on_ah_info_event(lv_event_t *e);
+    void on_mr_info_event(lv_event_t *e);
     void on_dp_info_event(lv_event_t *e);
     void on_card_pm25_event(lv_event_t *e);
     void on_card_pm10_event(lv_event_t *e);
@@ -350,6 +352,7 @@ private:
     static void on_card_hum_event_cb(lv_event_t *e);
     static void on_rh_info_event_cb(lv_event_t *e);
     static void on_ah_info_event_cb(lv_event_t *e);
+    static void on_mr_info_event_cb(lv_event_t *e);
     static void on_dp_info_event_cb(lv_event_t *e);
     static void on_card_pm25_event_cb(lv_event_t *e);
     static void on_card_pm10_event_cb(lv_event_t *e);

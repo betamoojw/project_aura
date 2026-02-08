@@ -228,6 +228,7 @@ void UiController::bind_available_events() {
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_rh_info, on_rh_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_ah_info, on_ah_info_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_mr_info, on_mr_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_dp_info, on_dp_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_pm25, on_pm25_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_pm10, on_pm10_info_event_cb, LV_EVENT_CLICKED},
@@ -1653,6 +1654,26 @@ void UiController::update_sensor_info_ui() {
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(ah_col));
             break;
         }
+        case INFO_MR: {
+            const char *value = UiText::ValueMissing();
+            if (objects.label_mr_value) {
+                value = lv_label_get_text(objects.label_mr_value);
+            }
+            safe_label_set_text(objects.label_sensor_value, value);
+
+            const char *unit = UiText::UnitIndex();
+            if (objects.label_mr_unit) {
+                unit = lv_label_get_text(objects.label_mr_unit);
+            }
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+
+            lv_color_t mr_col = color_inactive();
+            if (objects.dot_mr) {
+                mr_col = lv_obj_get_style_bg_color(objects.dot_mr, LV_PART_MAIN);
+            }
+            set_dot_color(objects.dot_sensor_info, mr_col);
+            break;
+        }
         case INFO_DP: {
             float dew_c = NAN;
             float dew_c_rounded = NAN;
@@ -1890,6 +1911,7 @@ void UiController::restore_sensor_info_selection() {
         }
         case INFO_RH:
         case INFO_AH:
+        case INFO_MR:
         case INFO_DP:
             select_humidity_info(info_sensor);
             break;
@@ -1913,11 +1935,12 @@ void UiController::select_humidity_info(InfoSensor sensor) {
     hide_all_sensor_info_containers();
 
     const bool show_rh_ah = (sensor == INFO_RH) || (sensor == INFO_AH);
-    const bool show_mr_dp = (sensor == INFO_DP);
+    const bool show_mr_dp = (sensor == INFO_MR) || (sensor == INFO_DP);
     set_visible(objects.humidity_info_rh_ah, show_rh_ah);
     set_visible(objects.humidity_info_mr_dp, show_mr_dp);
     set_visible(objects.rh_info, sensor == INFO_RH);
     set_visible(objects.ah_info, sensor == INFO_AH);
+    set_visible(objects.mr_info, sensor == INFO_MR);
     set_visible(objects.dp_info, sensor == INFO_DP);
 
     auto set_checked = [](lv_obj_t *btn, bool checked) {
@@ -1927,6 +1950,7 @@ void UiController::select_humidity_info(InfoSensor sensor) {
     };
     set_checked(objects.btn_rh_info, sensor == INFO_RH);
     set_checked(objects.btn_ah_info, sensor == INFO_AH);
+    set_checked(objects.btn_mr_info, sensor == INFO_MR);
     set_checked(objects.btn_dp_info, sensor == INFO_DP);
 
     if (objects.label_sensor_info_title) {
@@ -1934,6 +1958,12 @@ void UiController::select_humidity_info(InfoSensor sensor) {
             safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleRh());
         } else if (sensor == INFO_AH) {
             safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleAh());
+        } else if (sensor == INFO_MR) {
+            const char *title = "MOLD RISK";
+            if (objects.label_mr_title) {
+                title = lv_label_get_text(objects.label_mr_title);
+            }
+            safe_label_set_text(objects.label_sensor_info_title, title);
         } else if (sensor == INFO_DP) {
             safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleDp());
         }
