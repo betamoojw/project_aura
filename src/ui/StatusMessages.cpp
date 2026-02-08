@@ -29,6 +29,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     StatusSeverity hcho_sev = STATUS_NONE;
     StatusSeverity temp_sev = STATUS_NONE;
     StatusSeverity pm25_sev = STATUS_NONE;
+    StatusSeverity pm1_sev = STATUS_NONE;
     StatusSeverity pm10_sev = STATUS_NONE;
     StatusSeverity nox_sev = STATUS_NONE;
     StatusSeverity hum_sev = STATUS_NONE;
@@ -40,6 +41,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     const char *hcho_msg = nullptr;
     const char *temp_msg = nullptr;
     const char *pm25_msg = nullptr;
+    const char *pm1_msg = nullptr;
     const char *pm10_msg = nullptr;
     const char *nox_msg = nullptr;
     const char *hum_msg = nullptr;
@@ -71,6 +73,20 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         } else if (data.pm25 >= 12.0f) {
             pm25_sev = STATUS_YELLOW;
             pm25_msg = text(TextId::MsgPm25Elevated);
+        }
+    }
+
+    if (data.pm_valid && isfinite(data.pm1) && data.pm1 >= 0.0f) {
+        result.has_valid = true;
+        if (data.pm1 >= 50.0f) {
+            pm1_sev = STATUS_RED;
+            pm1_msg = text(TextId::MsgPm1VeryHigh);
+        } else if (data.pm1 >= 25.0f) {
+            pm1_sev = STATUS_ORANGE;
+            pm1_msg = text(TextId::MsgPm1High);
+        } else if (data.pm1 >= 10.0f) {
+            pm1_sev = STATUS_YELLOW;
+            pm1_msg = text(TextId::MsgPm1Elevated);
         }
     }
 
@@ -254,6 +270,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         add_msg(sev, nox_sev, STATUS_SENSOR_NOX, nox_msg);
         add_msg(sev, hcho_sev, STATUS_SENSOR_HCHO, hcho_msg);
         add_msg(sev, pm25_sev, STATUS_SENSOR_PM25, pm25_msg);
+        add_msg(sev, pm1_sev, STATUS_SENSOR_PM1, pm1_msg);
         add_msg(sev, pm10_sev, STATUS_SENSOR_PM10, pm10_msg);
         add_msg(sev, voc_sev, STATUS_SENSOR_VOC, voc_msg);
         add_msg(sev, co2_sev, STATUS_SENSOR_CO2, co2_msg);
@@ -264,9 +281,9 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     };
 
     const bool has_red = (co2_sev == STATUS_RED) || (voc_sev == STATUS_RED) || (hcho_sev == STATUS_RED) ||
-                         (temp_sev == STATUS_RED) || (pm25_sev == STATUS_RED) || (pm10_sev == STATUS_RED) ||
-                         (nox_sev == STATUS_RED) || (hum_sev == STATUS_RED) || (dp_sev == STATUS_RED) ||
-                         (ah_sev == STATUS_RED);
+                         (temp_sev == STATUS_RED) || (pm25_sev == STATUS_RED) || (pm1_sev == STATUS_RED) ||
+                         (pm10_sev == STATUS_RED) || (nox_sev == STATUS_RED) || (hum_sev == STATUS_RED) ||
+                         (dp_sev == STATUS_RED) || (ah_sev == STATUS_RED);
     if (has_red) {
         add_by_severity(STATUS_RED);
     } else {
