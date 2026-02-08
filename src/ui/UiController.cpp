@@ -143,6 +143,16 @@ lv_obj_t *screen_root_by_id(int screen_id) {
     }
 }
 
+bool object_belongs_to_screen(lv_obj_t *obj, lv_obj_t *screen_root) {
+    if (!obj || !screen_root) {
+        return false;
+    }
+    if (obj == screen_root) {
+        return true;
+    }
+    return lv_obj_get_screen(obj) == screen_root;
+}
+
 constexpr uint32_t STATUS_ROTATE_MS = 5000;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
@@ -202,7 +212,12 @@ void UiController::setLvglReady(bool ready) {
     lvgl_ready = ready;
 }
 
-void UiController::bind_available_events() {
+void UiController::bind_available_events(int screen_id) {
+    lv_obj_t *screen_root = screen_root_by_id(screen_id);
+    if (!screen_root) {
+        return;
+    }
+
     struct EventBinding {
         lv_obj_t *obj;
         lv_event_cb_t cb;
@@ -312,10 +327,13 @@ void UiController::bind_available_events() {
         {objects.btn_ntp_toggle, on_ntp_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
     };
 
-    auto bind_events = [](const EventBinding *bindings, size_t count) {
+    auto bind_events = [screen_root](const EventBinding *bindings, size_t count) {
         for (size_t i = 0; i < count; ++i) {
             const EventBinding &binding = bindings[i];
             if (!binding.obj || !binding.cb) {
+                continue;
+            }
+            if (!object_belongs_to_screen(binding.obj, screen_root)) {
                 continue;
             }
             lv_obj_remove_event_cb(binding.obj, binding.cb);
@@ -327,7 +345,12 @@ void UiController::bind_available_events() {
     bind_events(value_bindings, sizeof(value_bindings) / sizeof(value_bindings[0]));
 }
 
-void UiController::apply_toggle_styles_for_available_objects() {
+void UiController::apply_toggle_styles_for_available_objects(int screen_id) {
+    lv_obj_t *screen_root = screen_root_by_id(screen_id);
+    if (!screen_root) {
+        return;
+    }
+
     lv_obj_t *toggle_buttons[] = {
         objects.btn_night_mode,
         objects.btn_auto_dim,
@@ -356,13 +379,24 @@ void UiController::apply_toggle_styles_for_available_objects() {
     };
 
     for (lv_obj_t *btn : toggle_buttons) {
+        if (!object_belongs_to_screen(btn, screen_root)) {
+            continue;
+        }
         apply_toggle_style(btn);
     }
 }
 
-void UiController::apply_checked_states_for_available_objects() {
-    auto set_checked = [](lv_obj_t *btn, bool checked) {
+void UiController::apply_checked_states_for_available_objects(int screen_id) {
+    lv_obj_t *screen_root = screen_root_by_id(screen_id);
+    if (!screen_root) {
+        return;
+    }
+
+    auto set_checked = [screen_root](lv_obj_t *btn, bool checked) {
         if (!btn) {
+            return;
+        }
+        if (!object_belongs_to_screen(btn, screen_root)) {
             return;
         }
         if (checked) {
@@ -421,9 +455,9 @@ void UiController::bind_screen_events_once(int screen_id) {
         return;
     }
 
-    bind_available_events();
-    apply_toggle_styles_for_available_objects();
-    apply_checked_states_for_available_objects();
+    bind_available_events(screen_id);
+    apply_toggle_styles_for_available_objects(screen_id);
+    apply_checked_states_for_available_objects(screen_id);
     refresh_texts_for_screen(screen_id);
     init_theme_controls_if_available();
     if (screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
