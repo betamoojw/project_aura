@@ -168,7 +168,7 @@ void UiController::on_back_event(lv_event_t *e) {
         if (offsets_saved) LOGI("UI", "offsets saved");
         if (language_saved) LOGI("UI", "language saved");
     }
-    pending_screen_id = SCREEN_ID_PAGE_MAIN;
+    pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
 }
 
 void UiController::on_about_event(lv_event_t *e) {
@@ -618,9 +618,14 @@ void UiController::on_card_temp_event(lv_event_t *e) {
         ? lv_label_get_text(objects.label_temp_value)
         : UiText::ValueMissing();
     safe_label_set_text(objects.label_sensor_value, value);
-    const char *unit = objects.label_temp_unit
-        ? lv_label_get_text(objects.label_temp_unit)
-        : "";
+    const char *unit = nullptr;
+    if (objects.label_temp_unit) {
+        unit = lv_label_get_text(objects.label_temp_unit);
+    } else if (objects.label_temp_unit_1) {
+        unit = lv_label_get_text(objects.label_temp_unit_1);
+    } else {
+        unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
+    }
     safe_label_set_text(objects.label_sensor_info_unit, unit);
     update_sensor_info_ui();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
@@ -636,9 +641,14 @@ void UiController::on_card_voc_event(lv_event_t *e) {
     if (objects.label_sensor_info_title) {
         safe_label_set_text(objects.label_sensor_info_title, "VOC");
     }
-    const char *unit = objects.label_voc_unit
-        ? lv_label_get_text(objects.label_voc_unit)
-        : "";
+    const char *unit = nullptr;
+    if (objects.label_voc_unit) {
+        unit = lv_label_get_text(objects.label_voc_unit);
+    } else if (objects.label_voc_unit_1) {
+        unit = lv_label_get_text(objects.label_voc_unit_1);
+    } else {
+        unit = UiText::UnitIndex();
+    }
     safe_label_set_text(objects.label_sensor_info_unit, unit);
     update_sensor_info_ui();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
@@ -654,9 +664,14 @@ void UiController::on_card_nox_event(lv_event_t *e) {
     if (objects.label_sensor_info_title) {
         safe_label_set_text(objects.label_sensor_info_title, "NOx");
     }
-    const char *unit = objects.label_nox_unit
-        ? lv_label_get_text(objects.label_nox_unit)
-        : "";
+    const char *unit = nullptr;
+    if (objects.label_nox_unit) {
+        unit = lv_label_get_text(objects.label_nox_unit);
+    } else if (objects.label_nox_unit_1) {
+        unit = lv_label_get_text(objects.label_nox_unit_1);
+    } else {
+        unit = UiText::UnitIndex();
+    }
     safe_label_set_text(objects.label_sensor_info_unit, unit);
     update_sensor_info_ui();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
@@ -672,9 +687,14 @@ void UiController::on_card_hcho_event(lv_event_t *e) {
     if (objects.label_sensor_info_title) {
         safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleFormaldehyde());
     }
-    const char *unit = objects.label_hcho_unit
-        ? lv_label_get_text(objects.label_hcho_unit)
-        : "";
+    const char *unit = nullptr;
+    if (objects.label_hcho_unit) {
+        unit = lv_label_get_text(objects.label_hcho_unit);
+    } else if (objects.label_hcho_unit_1) {
+        unit = lv_label_get_text(objects.label_hcho_unit_1);
+    } else {
+        unit = UiText::UnitPpb();
+    }
     safe_label_set_text(objects.label_sensor_info_unit, unit);
     update_sensor_info_ui();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
@@ -690,9 +710,14 @@ void UiController::on_card_co2_event(lv_event_t *e) {
     if (objects.label_sensor_info_title) {
         safe_label_set_text(objects.label_sensor_info_title, "CO2");
     }
-    const char *unit = objects.label_co2_unit
-        ? lv_label_get_text(objects.label_co2_unit)
-        : "";
+    const char *unit = nullptr;
+    if (objects.label_co2_unit) {
+        unit = lv_label_get_text(objects.label_co2_unit);
+    } else if (objects.label_co2_unit_1) {
+        unit = lv_label_get_text(objects.label_co2_unit_1);
+    } else {
+        unit = "ppm";
+    }
     safe_label_set_text(objects.label_sensor_info_unit, unit);
     update_sensor_info_ui();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
@@ -725,6 +750,9 @@ void UiController::on_dp_info_event(lv_event_t *e) {
         return;
     }
     select_humidity_info(INFO_DP);
+    if (current_screen_id != SCREEN_ID_PAGE_SENSORS_INFO) {
+        pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+    }
 }
 
 void UiController::on_card_pm25_event(lv_event_t *e) {
@@ -785,7 +813,7 @@ void UiController::on_sensors_info_back_event(lv_event_t *e) {
     }
     info_sensor = INFO_NONE;
     hide_all_sensor_info_containers();
-    pending_screen_id = SCREEN_ID_PAGE_MAIN;
+    pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
 }
 
 void UiController::on_led_indicators_event(lv_event_t *e) {
@@ -1297,7 +1325,7 @@ void UiController::on_boot_diag_continue(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
-    pending_screen_id = SCREEN_ID_PAGE_MAIN;
+    pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
     boot_diag_active = false;
     data_dirty = true;
 }

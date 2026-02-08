@@ -389,7 +389,7 @@ private:
 
     bool data_dirty = true;
     bool lvgl_ready = false;
-    static constexpr size_t kScreenSlotCount = 13; // screen ids are 1..12
+    static constexpr size_t kScreenSlotCount = 14; // screen ids are 1..13
     bool screen_events_bound_[kScreenSlotCount] = {};
     bool theme_events_bound_ = false;
     int pending_screen_id = 0;

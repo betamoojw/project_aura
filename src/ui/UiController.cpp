@@ -119,7 +119,9 @@ lv_obj_t *screen_root_by_id(int screen_id) {
         case SCREEN_ID_PAGE_BOOT_DIAG:
             return objects.page_boot_diag;
         case SCREEN_ID_PAGE_MAIN:
-            return objects.page_main;
+            return objects.page_main_pro ? objects.page_main_pro : objects.page_main;
+        case SCREEN_ID_PAGE_MAIN_PRO:
+            return objects.page_main_pro;
         case SCREEN_ID_PAGE_SETTINGS:
             return objects.page_settings;
         case SCREEN_ID_PAGE_WIFI:
@@ -211,18 +213,30 @@ void UiController::bind_available_events() {
 
     const EventBinding click_bindings[] = {
         {objects.btn_settings, on_settings_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_settings_1, on_settings_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back, on_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_about, on_about_event_cb, LV_EVENT_CLICKED},
         {objects.btn_about_back, on_about_back_event_cb, LV_EVENT_CLICKED},
         {objects.card_temp, on_card_temp_event_cb, LV_EVENT_CLICKED},
+        {objects.card_temp_pro, on_card_temp_event_cb, LV_EVENT_CLICKED},
         {objects.card_voc, on_card_voc_event_cb, LV_EVENT_CLICKED},
+        {objects.card_voc_pro, on_card_voc_event_cb, LV_EVENT_CLICKED},
         {objects.card_nox, on_card_nox_event_cb, LV_EVENT_CLICKED},
+        {objects.card_nox_pro, on_card_nox_event_cb, LV_EVENT_CLICKED},
         {objects.card_hcho, on_card_hcho_event_cb, LV_EVENT_CLICKED},
+        {objects.card_hcho_pro, on_card_hcho_event_cb, LV_EVENT_CLICKED},
         {objects.card_co2, on_card_co2_event_cb, LV_EVENT_CLICKED},
+        {objects.card_co2_pro, on_card_co2_event_cb, LV_EVENT_CLICKED},
         {objects.card_hum, on_card_hum_event_cb, LV_EVENT_CLICKED},
+        {objects.card_hum_pro, on_card_hum_event_cb, LV_EVENT_CLICKED},
+        {objects.card_hum_2, on_dp_info_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm25, on_card_pm25_event_cb, LV_EVENT_CLICKED},
+        {objects.card_pm25_pro, on_card_pm25_event_cb, LV_EVENT_CLICKED},
         {objects.card_pm10, on_card_pm10_event_cb, LV_EVENT_CLICKED},
+        {objects.card_pm10_pro, on_card_pm10_event_cb, LV_EVENT_CLICKED},
+        {objects.card_co_pro, on_card_pm10_event_cb, LV_EVENT_CLICKED},
         {objects.card_pressure, on_card_pressure_event_cb, LV_EVENT_CLICKED},
+        {objects.card_pressure_pro, on_card_pressure_event_cb, LV_EVENT_CLICKED},
         {objects.btn_back_1, on_sensors_info_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_rh_info, on_rh_info_event_cb, LV_EVENT_CLICKED},
         {objects.btn_ah_info, on_ah_info_event_cb, LV_EVENT_CLICKED},
@@ -347,6 +361,7 @@ void UiController::apply_toggle_styles_for_available_objects() {
         objects.btn_auto_night_toggle,
         objects.btn_rh_info,
         objects.btn_ah_info,
+        objects.btn_mr_info,
         objects.btn_dp_info,
         objects.btn_pm25,
         objects.btn_pm10,
@@ -432,6 +447,7 @@ void UiController::bind_screen_events_once(int screen_id) {
 void UiController::refresh_texts_for_screen(int screen_id) {
     switch (screen_id) {
         case SCREEN_ID_PAGE_MAIN:
+        case SCREEN_ID_PAGE_MAIN_PRO:
             update_main_texts();
             break;
         case SCREEN_ID_PAGE_SETTINGS:
@@ -492,8 +508,8 @@ void UiController::begin() {
         snprintf(version_text, sizeof(version_text), "v%s", APP_VERSION);
         safe_label_set_text(objects.label_boot_ver, version_text);
     }
-    current_screen_id = SCREEN_ID_PAGE_MAIN;
-    pending_screen_id = SCREEN_ID_PAGE_MAIN;
+    current_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
+    pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
     memset(screen_events_bound_, 0, sizeof(screen_events_bound_));
     theme_events_bound_ = false;
     boot_release_at_ms = 0;
@@ -610,14 +626,14 @@ void UiController::poll(uint32_t now) {
         last_blink_ms = now;
             if (alert_blink_enabled) {
                 blink_state = !blink_state;
-                if (current_screen_id == SCREEN_ID_PAGE_MAIN ||
+                if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO ||
                     current_screen_id == SCREEN_ID_PAGE_SETTINGS ||
                     current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
                     data_dirty = true;
                 }
             }
     }
-    if (current_screen_id == SCREEN_ID_PAGE_MAIN &&
+    if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
         status_msg_count > 1 &&
         (now - status_msg_last_ms) >= STATUS_ROTATE_MS) {
         data_dirty = true;
@@ -638,7 +654,7 @@ void UiController::poll(uint32_t now) {
             boot_diag_start_ms = now;
             last_boot_diag_update_ms = 0;
         } else {
-            pending_screen_id = SCREEN_ID_PAGE_MAIN;
+            pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
         }
         boot_logo_active = false;
         data_dirty = true;
@@ -649,7 +665,7 @@ void UiController::poll(uint32_t now) {
         pending_screen_id == 0 &&
         !boot_diag_has_error &&
         (now - boot_diag_start_ms) >= Config::BOOT_DIAG_MS) {
-        pending_screen_id = SCREEN_ID_PAGE_MAIN;
+        pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
         boot_diag_active = false;
         data_dirty = true;
     }
@@ -678,7 +694,7 @@ void UiController::poll(uint32_t now) {
             temp_offset_ui_dirty = true;
             hum_offset_ui_dirty = true;
             data_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
+        } else if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO) {
             data_dirty = true;
         } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
             data_dirty = true;
@@ -693,7 +709,7 @@ void UiController::poll(uint32_t now) {
             nightModeManager.markUiDirty();
         }
 
-        if (current_screen_id == SCREEN_ID_PAGE_MAIN &&
+        if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
             !boot_ui_released &&
             (objects.page_boot_logo || objects.page_boot_diag)) {
             boot_release_at_ms = now + 500;
@@ -703,7 +719,7 @@ void UiController::poll(uint32_t now) {
     if (!boot_ui_released &&
         boot_release_at_ms != 0 &&
         pending_screen_id == 0 &&
-        current_screen_id == SCREEN_ID_PAGE_MAIN &&
+        current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
         now >= boot_release_at_ms) {
         release_boot_screens();
     }
@@ -755,7 +771,7 @@ void UiController::poll(uint32_t now) {
             did_update = true;
         }
             if (data_dirty) {
-                if (current_screen_id == SCREEN_ID_PAGE_MAIN) {
+                if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO) {
                     update_ui();
                 } else if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
                     update_settings_header();
@@ -794,6 +810,9 @@ lv_color_t UiController::color_blue() { return lv_color_hex(0x2196f3); }
 lv_color_t UiController::color_card_border() {
     if (objects.card_co2) {
         return lv_obj_get_style_border_color(objects.card_co2, LV_PART_MAIN);
+    }
+    if (objects.card_co2_pro) {
+        return lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
     }
     return lv_color_hex(0xffe19756);
 }
@@ -1002,17 +1021,21 @@ void UiController::update_clock_labels() {
         if (objects.label_date_value) safe_label_set_text(objects.label_date_value, UiText::DateMissing());
         if (objects.label_time_value_1) safe_label_set_text(objects.label_time_value_1, UiText::TimeMissing());
         if (objects.label_date_value_1) safe_label_set_text(objects.label_date_value_1, UiText::DateMissing());
+        if (objects.label_time_value_2) safe_label_set_text(objects.label_time_value_2, UiText::TimeMissing());
+        if (objects.label_date_value_2) safe_label_set_text(objects.label_date_value_2, UiText::DateMissing());
         return;
     }
     snprintf(buf, sizeof(buf), "%02d:%02d", local_tm.tm_hour, local_tm.tm_min);
     if (objects.label_time_value) safe_label_set_text(objects.label_time_value, buf);
     if (objects.label_time_value_1) safe_label_set_text(objects.label_time_value_1, buf);
+    if (objects.label_time_value_2) safe_label_set_text(objects.label_time_value_2, buf);
     snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
              local_tm.tm_mday,
              local_tm.tm_mon + 1,
              local_tm.tm_year + 1900);
     if (objects.label_date_value) safe_label_set_text(objects.label_date_value, buf);
     if (objects.label_date_value_1) safe_label_set_text(objects.label_date_value_1, buf);
+    if (objects.label_date_value_2) safe_label_set_text(objects.label_date_value_2, buf);
 }
 
 bool UiController::boot_diag_has_errors(uint32_t now_ms) {
@@ -1387,22 +1410,50 @@ void UiController::update_led_indicators() {
     const bool visible = led_indicators_enabled;
     if (objects.dot_co2) visible ? lv_obj_clear_flag(objects.dot_co2, LV_OBJ_FLAG_HIDDEN)
                                  : lv_obj_add_flag(objects.dot_co2, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_co2_1) visible ? lv_obj_clear_flag(objects.dot_co2_1, LV_OBJ_FLAG_HIDDEN)
+                                   : lv_obj_add_flag(objects.dot_co2_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_temp) visible ? lv_obj_clear_flag(objects.dot_temp, LV_OBJ_FLAG_HIDDEN)
                                   : lv_obj_add_flag(objects.dot_temp, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_temp_1) visible ? lv_obj_clear_flag(objects.dot_temp_1, LV_OBJ_FLAG_HIDDEN)
+                                    : lv_obj_add_flag(objects.dot_temp_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_hum) visible ? lv_obj_clear_flag(objects.dot_hum, LV_OBJ_FLAG_HIDDEN)
                                  : lv_obj_add_flag(objects.dot_hum, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_hum_1) visible ? lv_obj_clear_flag(objects.dot_hum_1, LV_OBJ_FLAG_HIDDEN)
+                                   : lv_obj_add_flag(objects.dot_hum_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_dp) visible ? lv_obj_clear_flag(objects.dot_dp, LV_OBJ_FLAG_HIDDEN)
                                 : lv_obj_add_flag(objects.dot_dp, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_dp_1) visible ? lv_obj_clear_flag(objects.dot_dp_1, LV_OBJ_FLAG_HIDDEN)
+                                  : lv_obj_add_flag(objects.dot_dp_1, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_ah) visible ? lv_obj_clear_flag(objects.dot_ah, LV_OBJ_FLAG_HIDDEN)
+                                : lv_obj_add_flag(objects.dot_ah, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_ah_1) visible ? lv_obj_clear_flag(objects.dot_ah_1, LV_OBJ_FLAG_HIDDEN)
+                                  : lv_obj_add_flag(objects.dot_ah_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm25) visible ? lv_obj_clear_flag(objects.dot_pm25, LV_OBJ_FLAG_HIDDEN)
                                   : lv_obj_add_flag(objects.dot_pm25, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_pm25_1) visible ? lv_obj_clear_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN)
+                                    : lv_obj_add_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm10) visible ? lv_obj_clear_flag(objects.dot_pm10, LV_OBJ_FLAG_HIDDEN)
                                   : lv_obj_add_flag(objects.dot_pm10, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_pm10_pro) visible ? lv_obj_clear_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN)
+                                      : lv_obj_add_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_pm1) visible ? lv_obj_clear_flag(objects.dot_pm1, LV_OBJ_FLAG_HIDDEN)
+                                 : lv_obj_add_flag(objects.dot_pm1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_voc) visible ? lv_obj_clear_flag(objects.dot_voc, LV_OBJ_FLAG_HIDDEN)
                                  : lv_obj_add_flag(objects.dot_voc, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_voc_1) visible ? lv_obj_clear_flag(objects.dot_voc_1, LV_OBJ_FLAG_HIDDEN)
+                                   : lv_obj_add_flag(objects.dot_voc_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_nox) visible ? lv_obj_clear_flag(objects.dot_nox, LV_OBJ_FLAG_HIDDEN)
                                  : lv_obj_add_flag(objects.dot_nox, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_nox_1) visible ? lv_obj_clear_flag(objects.dot_nox_1, LV_OBJ_FLAG_HIDDEN)
+                                   : lv_obj_add_flag(objects.dot_nox_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_hcho) visible ? lv_obj_clear_flag(objects.dot_hcho, LV_OBJ_FLAG_HIDDEN)
                                   : lv_obj_add_flag(objects.dot_hcho, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_hcho_1) visible ? lv_obj_clear_flag(objects.dot_hcho_1, LV_OBJ_FLAG_HIDDEN)
+                                    : lv_obj_add_flag(objects.dot_hcho_1, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_co) visible ? lv_obj_clear_flag(objects.dot_co, LV_OBJ_FLAG_HIDDEN)
+                                : lv_obj_add_flag(objects.dot_co, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_mr) visible ? lv_obj_clear_flag(objects.dot_mr, LV_OBJ_FLAG_HIDDEN)
+                                : lv_obj_add_flag(objects.dot_mr, LV_OBJ_FLAG_HIDDEN);
 }
 
 void UiController::set_chip_color(lv_obj_t *obj, lv_color_t color) {
@@ -1466,9 +1517,16 @@ void UiController::update_ui() {
         header_col = night_alert_color(aq.color);
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
-    lv_obj_set_style_border_color(objects.container_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_color(objects.container_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_opa(objects.container_header, header_shadow, LV_PART_MAIN | LV_STATE_DEFAULT);
+    if (objects.container_header) {
+        lv_obj_set_style_border_color(objects.container_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_color(objects.container_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_opa(objects.container_header, header_shadow, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    if (objects.container_header_pro) {
+        lv_obj_set_style_border_color(objects.container_header_pro, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_color(objects.container_header_pro, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_opa(objects.container_header_pro, header_shadow, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
     if (objects.container_settings_header) {
         lv_obj_set_style_border_color(objects.container_settings_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_color(objects.container_settings_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1539,6 +1597,15 @@ void UiController::update_sensor_info_ui() {
             } else {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
+            const char *unit = nullptr;
+            if (objects.label_hcho_unit) {
+                unit = lv_label_get_text(objects.label_hcho_unit);
+            } else if (objects.label_hcho_unit_1) {
+                unit = lv_label_get_text(objects.label_hcho_unit_1);
+            } else {
+                unit = UiText::UnitPpb();
+            }
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t hcho_col = getHCHOColor(currentData.hcho, currentData.hcho_valid);
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(hcho_col));
             break;
@@ -1551,6 +1618,15 @@ void UiController::update_sensor_info_ui() {
             } else {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
+            const char *unit = nullptr;
+            if (objects.label_co2_unit) {
+                unit = lv_label_get_text(objects.label_co2_unit);
+            } else if (objects.label_co2_unit_1) {
+                unit = lv_label_get_text(objects.label_co2_unit_1);
+            } else {
+                unit = "ppm";
+            }
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t co2_col = currentData.co2_valid ? getCO2Color(currentData.co2) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(co2_col));
             break;
@@ -1626,9 +1702,14 @@ void UiController::update_sensor_info_ui() {
             } else {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
-            const char *unit = objects.label_pm25_unit
-                ? lv_label_get_text(objects.label_pm25_unit)
-                : "";
+            const char *unit = nullptr;
+            if (objects.label_pm25_unit) {
+                unit = lv_label_get_text(objects.label_pm25_unit);
+            } else if (objects.label_pm25_unit_1) {
+                unit = lv_label_get_text(objects.label_pm25_unit_1);
+            } else {
+                unit = "ug/m3";
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t pm25_col = currentData.pm25_valid ? getPM25Color(currentData.pm25) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm25_col));
@@ -1643,9 +1724,14 @@ void UiController::update_sensor_info_ui() {
             } else {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
-            const char *unit = objects.label_pm10_unit
-                ? lv_label_get_text(objects.label_pm10_unit)
-                : "";
+            const char *unit = nullptr;
+            if (objects.label_pm10_unit) {
+                unit = lv_label_get_text(objects.label_pm10_unit);
+            } else if (objects.label_pm10_unit_pro) {
+                unit = lv_label_get_text(objects.label_pm10_unit_pro);
+            } else {
+                unit = "ug/m3";
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t pm10_col = currentData.pm10_valid ? getPM10Color(currentData.pm10) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm10_col));
@@ -1662,9 +1748,14 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_value, buf);
             safe_label_set_text(objects.label_pressure_value, buf);
 
-            const char *unit = objects.label_pressure_unit
-                ? lv_label_get_text(objects.label_pressure_unit)
-                : "hPa";
+            const char *unit = nullptr;
+            if (objects.label_pressure_unit) {
+                unit = lv_label_get_text(objects.label_pressure_unit);
+            } else if (objects.label_pressure_unit_1) {
+                unit = lv_label_get_text(objects.label_pressure_unit_1);
+            } else {
+                unit = "hPa";
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
 
             if (currentData.pressure_delta_3h_valid) {
@@ -1718,13 +1809,23 @@ void UiController::restore_sensor_info_selection() {
             if (objects.label_sensor_info_title) {
                 safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleTemperature());
             }
-            const char *value = objects.label_temp_value
-                ? lv_label_get_text(objects.label_temp_value)
-                : UiText::ValueMissing();
+            const char *value = nullptr;
+            if (objects.label_temp_value) {
+                value = lv_label_get_text(objects.label_temp_value);
+            } else if (objects.label_temp_value_1) {
+                value = lv_label_get_text(objects.label_temp_value_1);
+            } else {
+                value = UiText::ValueMissing();
+            }
             safe_label_set_text(objects.label_sensor_value, value);
-            const char *unit = objects.label_temp_unit
-                ? lv_label_get_text(objects.label_temp_unit)
-                : "";
+            const char *unit = nullptr;
+            if (objects.label_temp_unit) {
+                unit = lv_label_get_text(objects.label_temp_unit);
+            } else if (objects.label_temp_unit_1) {
+                unit = lv_label_get_text(objects.label_temp_unit_1);
+            } else {
+                unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             update_sensor_info_ui();
             break;
@@ -1735,9 +1836,14 @@ void UiController::restore_sensor_info_selection() {
             if (objects.label_sensor_info_title) {
                 safe_label_set_text(objects.label_sensor_info_title, "VOC");
             }
-            const char *unit = objects.label_voc_unit
-                ? lv_label_get_text(objects.label_voc_unit)
-                : "";
+            const char *unit = nullptr;
+            if (objects.label_voc_unit) {
+                unit = lv_label_get_text(objects.label_voc_unit);
+            } else if (objects.label_voc_unit_1) {
+                unit = lv_label_get_text(objects.label_voc_unit_1);
+            } else {
+                unit = UiText::UnitIndex();
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             update_sensor_info_ui();
             break;
@@ -1748,9 +1854,14 @@ void UiController::restore_sensor_info_selection() {
             if (objects.label_sensor_info_title) {
                 safe_label_set_text(objects.label_sensor_info_title, "NOx");
             }
-            const char *unit = objects.label_nox_unit
-                ? lv_label_get_text(objects.label_nox_unit)
-                : "";
+            const char *unit = nullptr;
+            if (objects.label_nox_unit) {
+                unit = lv_label_get_text(objects.label_nox_unit);
+            } else if (objects.label_nox_unit_1) {
+                unit = lv_label_get_text(objects.label_nox_unit_1);
+            } else {
+                unit = UiText::UnitIndex();
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             update_sensor_info_ui();
             break;
@@ -1761,9 +1872,14 @@ void UiController::restore_sensor_info_selection() {
             if (objects.label_sensor_info_title) {
                 safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleFormaldehyde());
             }
-            const char *unit = objects.label_hcho_unit
-                ? lv_label_get_text(objects.label_hcho_unit)
-                : "";
+            const char *unit = nullptr;
+            if (objects.label_hcho_unit) {
+                unit = lv_label_get_text(objects.label_hcho_unit);
+            } else if (objects.label_hcho_unit_1) {
+                unit = lv_label_get_text(objects.label_hcho_unit_1);
+            } else {
+                unit = UiText::UnitPpb();
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             update_sensor_info_ui();
             break;
@@ -1774,9 +1890,14 @@ void UiController::restore_sensor_info_selection() {
             if (objects.label_sensor_info_title) {
                 safe_label_set_text(objects.label_sensor_info_title, "CO2");
             }
-            const char *unit = objects.label_co2_unit
-                ? lv_label_get_text(objects.label_co2_unit)
-                : "";
+            const char *unit = nullptr;
+            if (objects.label_co2_unit) {
+                unit = lv_label_get_text(objects.label_co2_unit);
+            } else if (objects.label_co2_unit_1) {
+                unit = lv_label_get_text(objects.label_co2_unit_1);
+            } else {
+                unit = "ppm";
+            }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             update_sensor_info_ui();
             break;
@@ -1804,7 +1925,11 @@ void UiController::restore_sensor_info_selection() {
 void UiController::select_humidity_info(InfoSensor sensor) {
     info_sensor = sensor;
     hide_all_sensor_info_containers();
-    set_visible(objects.humidity_info, true);
+
+    const bool show_rh_ah = (sensor == INFO_RH) || (sensor == INFO_AH);
+    const bool show_mr_dp = (sensor == INFO_DP);
+    set_visible(objects.humidity_info_rh_ah, show_rh_ah);
+    set_visible(objects.humidity_info_mr_dp, show_mr_dp);
     set_visible(objects.rh_info, sensor == INFO_RH);
     set_visible(objects.ah_info, sensor == INFO_AH);
     set_visible(objects.dp_info, sensor == INFO_DP);
@@ -1870,9 +1995,14 @@ void UiController::select_pressure_info(InfoSensor sensor) {
     set_checked(objects.btn_3h_pressure_info, sensor == INFO_PRESSURE_3H);
     set_checked(objects.btn_24h_pressure_info, sensor == INFO_PRESSURE_24H);
 
-    const char *title = objects.label_pressure_title
-        ? lv_label_get_text(objects.label_pressure_title)
-        : "PRESSURE";
+    const char *title = nullptr;
+    if (objects.label_pressure_title) {
+        title = lv_label_get_text(objects.label_pressure_title);
+    } else if (objects.label_pressure_title_1) {
+        title = lv_label_get_text(objects.label_pressure_title_1);
+    } else {
+        title = "PRESSURE";
+    }
     safe_label_set_text(objects.label_sensor_info_title, title);
 
     update_sensor_info_ui();
@@ -1888,9 +2018,11 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.voc_info, false);
     set_visible(objects.nox_info, false);
     set_visible(objects.hcho_info, false);
-    set_visible(objects.humidity_info, false);
+    set_visible(objects.humidity_info_rh_ah, false);
+    set_visible(objects.humidity_info_mr_dp, false);
     set_visible(objects.rh_info, false);
     set_visible(objects.ah_info, false);
+    set_visible(objects.mr_info, false);
     set_visible(objects.dp_info, false);
     set_visible(objects.pressure_info, false);
     set_visible(objects.pressure_3h_info, false);
@@ -1951,6 +2083,7 @@ void UiController::update_language_fonts() {
         objects.page_boot_logo,
         objects.page_boot_diag,
         objects.page_main,
+        objects.page_main_pro,
         objects.page_settings,
         objects.page_wifi,
         objects.page_theme,
@@ -2000,14 +2133,23 @@ void UiController::update_settings_texts() {
 
 void UiController::update_main_texts() {
     if (objects.label_status_title) safe_label_set_text(objects.label_status_title, UiText::LabelStatusTitle());
+    if (objects.label_status_title_1) safe_label_set_text(objects.label_status_title_1, UiText::LabelStatusTitle());
     if (objects.label_btn_settings) safe_label_set_text(objects.label_btn_settings, UiText::LabelSettingsButton());
+    if (objects.label_btn_settings_1) safe_label_set_text(objects.label_btn_settings_1, UiText::LabelSettingsButton());
     if (objects.label_temp_title) safe_label_set_text(objects.label_temp_title, UiText::LabelTemperatureTitle());
+    if (objects.label_temp_title_1) safe_label_set_text(objects.label_temp_title_1, UiText::LabelTemperatureTitle());
     if (objects.label_pressure_title) safe_label_set_text(objects.label_pressure_title, UiText::LabelPressureTitle());
+    if (objects.label_pressure_title_1) safe_label_set_text(objects.label_pressure_title_1, UiText::LabelPressureTitle());
     if (objects.label_time_title) safe_label_set_text(objects.label_time_title, UiText::LabelTimeCard());
+    if (objects.label_time_title_2) safe_label_set_text(objects.label_time_title_2, UiText::LabelTimeCard());
     if (objects.label_voc_warmup) safe_label_set_text(objects.label_voc_warmup, UiText::LabelWarmup());
+    if (objects.label_voc_warmup_1) safe_label_set_text(objects.label_voc_warmup_1, UiText::LabelWarmup());
     if (objects.label_nox_warmup) safe_label_set_text(objects.label_nox_warmup, UiText::LabelWarmup());
+    if (objects.label_nox_warmup_1) safe_label_set_text(objects.label_nox_warmup_1, UiText::LabelWarmup());
     if (objects.label_voc_unit) safe_label_set_text(objects.label_voc_unit, UiText::UnitIndex());
+    if (objects.label_voc_unit_1) safe_label_set_text(objects.label_voc_unit_1, UiText::UnitIndex());
     if (objects.label_nox_unit) safe_label_set_text(objects.label_nox_unit, UiText::UnitIndex());
+    if (objects.label_nox_unit_1) safe_label_set_text(objects.label_nox_unit_1, UiText::UnitIndex());
 }
 
 void UiController::update_sensor_info_texts() {
@@ -2067,11 +2209,11 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_ah_acceptable) safe_label_set_text_static(objects.label_ah_acceptable, UiText::InfoAhAcceptable());
     if (objects.label_ah_uncomfortable) safe_label_set_text_static(objects.label_ah_uncomfortable, UiText::InfoAhUncomfortable());
     if (objects.label_ah_poor) safe_label_set_text_static(objects.label_ah_poor, UiText::InfoAhPoor());
-    if (objects.label_dp_text) safe_label_set_text_static(objects.label_dp_text, UiText::InfoDpText());
-    if (objects.label_dp_excellent) safe_label_set_text_static(objects.label_dp_excellent, UiText::InfoDpExcellent());
-    if (objects.label_dp_acceptable) safe_label_set_text_static(objects.label_dp_acceptable, UiText::InfoDpAcceptable());
-    if (objects.label_dp_uncomfortable) safe_label_set_text_static(objects.label_dp_uncomfortable, UiText::InfoDpUncomfortable());
-    if (objects.label_dp_poor) safe_label_set_text_static(objects.label_dp_poor, UiText::InfoDpPoor());
+    if (objects.label_dp_text_1) safe_label_set_text_static(objects.label_dp_text_1, UiText::InfoDpText());
+    if (objects.label_dp_excellent_1) safe_label_set_text_static(objects.label_dp_excellent_1, UiText::InfoDpExcellent());
+    if (objects.label_dp_acceptable_1) safe_label_set_text_static(objects.label_dp_acceptable_1, UiText::InfoDpAcceptable());
+    if (objects.label_dp_uncomfortable_1) safe_label_set_text_static(objects.label_dp_uncomfortable_1, UiText::InfoDpUncomfortable());
+    if (objects.label_dp_poor_1) safe_label_set_text_static(objects.label_dp_poor_1, UiText::InfoDpPoor());
 }
 
 void UiController::update_confirm_texts() {
@@ -2201,12 +2343,19 @@ void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
     if (objects.label_status_value) {
         safe_label_set_text(objects.label_status_value, status_text ? status_text : UiText::ValueMissing());
     }
+    if (objects.label_status_value_1) {
+        safe_label_set_text(objects.label_status_value_1, status_text ? status_text : UiText::ValueMissing());
+    }
 }
 
 void UiController::init_ui_defaults() {
     if (objects.co2_bar_mask) {
         lv_obj_clear_flag(objects.co2_bar_mask, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
         lv_obj_clear_flag(objects.co2_bar_mask, LV_OBJ_FLAG_SCROLLABLE);
+    }
+    if (objects.co2_bar_mask_1) {
+        lv_obj_clear_flag(objects.co2_bar_mask_1, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
+        lv_obj_clear_flag(objects.co2_bar_mask_1, LV_OBJ_FLAG_SCROLLABLE);
     }
 
     set_visible(objects.container_about, false);
@@ -2215,10 +2364,12 @@ void UiController::init_ui_defaults() {
     if (objects.wifi_status_icon_1) lv_obj_add_flag(objects.wifi_status_icon_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_2) lv_obj_add_flag(objects.wifi_status_icon_2, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_3) lv_obj_add_flag(objects.wifi_status_icon_3, LV_OBJ_FLAG_HIDDEN);
+    if (objects.wifi_status_icon_4) lv_obj_add_flag(objects.wifi_status_icon_4, LV_OBJ_FLAG_HIDDEN);
     if (objects.mqtt_status_icon) lv_obj_add_flag(objects.mqtt_status_icon, LV_OBJ_FLAG_HIDDEN);
     if (objects.mqtt_status_icon_1) lv_obj_add_flag(objects.mqtt_status_icon_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.mqtt_status_icon_2) lv_obj_add_flag(objects.mqtt_status_icon_2, LV_OBJ_FLAG_HIDDEN);
     if (objects.mqtt_status_icon_3) lv_obj_add_flag(objects.mqtt_status_icon_3, LV_OBJ_FLAG_HIDDEN);
+    if (objects.mqtt_status_icon_4) lv_obj_add_flag(objects.mqtt_status_icon_4, LV_OBJ_FLAG_HIDDEN);
 
     if (objects.btn_mqtt) {
         lv_obj_set_style_bg_color(objects.btn_mqtt, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);

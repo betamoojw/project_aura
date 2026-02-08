@@ -255,19 +255,28 @@ void UiController::update_status_icons() {
     static int wifi_icon_state_main = -1;
     if (main_wifi_state != wifi_icon_state_main) {
         wifi_icon_state_main = main_wifi_state;
-        if (objects.wifi_status_icon) {
+        lv_obj_t *main_wifi_icons[] = {
+            objects.wifi_status_icon,
+            objects.wifi_status_icon_4
+        };
+        const size_t main_wifi_icon_count = sizeof(main_wifi_icons) / sizeof(main_wifi_icons[0]);
+        for (size_t i = 0; i < main_wifi_icon_count; ++i) {
+            lv_obj_t *icon = main_wifi_icons[i];
+            if (!icon) {
+                continue;
+            }
             if (wifi_icon_state_main == 0) {
-                lv_obj_add_flag(objects.wifi_status_icon, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(icon, LV_OBJ_FLAG_HIDDEN);
             } else {
-                lv_obj_clear_flag(objects.wifi_status_icon, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(icon, LV_OBJ_FLAG_HIDDEN);
                 if (wifi_icon_state_main == 1) {
-                    lv_img_set_src(objects.wifi_status_icon, &img_wifi_green);
+                    lv_img_set_src(icon, &img_wifi_green);
                 } else if (wifi_icon_state_main == 2) {
-                    lv_img_set_src(objects.wifi_status_icon, &img_wifi_blue);
+                    lv_img_set_src(icon, &img_wifi_blue);
                 } else if (wifi_icon_state_main == 3) {
-                    lv_img_set_src(objects.wifi_status_icon, &img_wifi_yellow);
+                    lv_img_set_src(icon, &img_wifi_yellow);
                 } else if (wifi_icon_state_main == 4) {
-                    lv_img_set_src(objects.wifi_status_icon, &img_wifi_red);
+                    lv_img_set_src(icon, &img_wifi_red);
                 }
             }
         }
@@ -329,19 +338,28 @@ void UiController::update_status_icons() {
     static int mqtt_icon_state_main = -1;
     if (main_mqtt_state != mqtt_icon_state_main) {
         mqtt_icon_state_main = main_mqtt_state;
-        if (objects.mqtt_status_icon) {
+        lv_obj_t *main_mqtt_icons[] = {
+            objects.mqtt_status_icon,
+            objects.mqtt_status_icon_4
+        };
+        const size_t main_mqtt_icon_count = sizeof(main_mqtt_icons) / sizeof(main_mqtt_icons[0]);
+        for (size_t i = 0; i < main_mqtt_icon_count; ++i) {
+            lv_obj_t *icon = main_mqtt_icons[i];
+            if (!icon) {
+                continue;
+            }
             if (mqtt_icon_state_main == 0) {
-                lv_obj_add_flag(objects.mqtt_status_icon, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_add_flag(icon, LV_OBJ_FLAG_HIDDEN);
             } else {
-                lv_obj_clear_flag(objects.mqtt_status_icon, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_clear_flag(icon, LV_OBJ_FLAG_HIDDEN);
                 if (mqtt_icon_state_main == 1) {
-                    lv_img_set_src(objects.mqtt_status_icon, &img_home_green);
+                    lv_img_set_src(icon, &img_home_green);
                 } else if (mqtt_icon_state_main == 2) {
-                    lv_img_set_src(objects.mqtt_status_icon, &img_home_blue);
+                    lv_img_set_src(icon, &img_home_blue);
                 } else if (mqtt_icon_state_main == 3) {
-                    lv_img_set_src(objects.mqtt_status_icon, &img_home_red);
+                    lv_img_set_src(icon, &img_home_red);
                 } else if (mqtt_icon_state_main == 4) {
-                    lv_img_set_src(objects.mqtt_status_icon, &img_home_yellow);
+                    lv_img_set_src(icon, &img_home_yellow);
                 }
             }
         }
