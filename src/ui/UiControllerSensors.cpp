@@ -380,7 +380,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
             ? &ui_font_noto_sans_sc_reg_14
             : &ui_font_jet_reg_14;
         lv_obj_set_style_text_font(objects.label_co_unit, unit_font, LV_PART_MAIN | LV_STATE_DEFAULT);
-        safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : "ug/m³");
+        safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : "ug/m\xC2\xB3");
     }
     if (objects.label_co_value) {
         if (co_available) {

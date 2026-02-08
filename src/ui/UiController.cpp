@@ -682,38 +682,43 @@ void UiController::poll(uint32_t now) {
         if (next_screen == SCREEN_ID_PAGE_MAIN) {
             next_screen = SCREEN_ID_PAGE_MAIN_PRO;
         }
-        bool was_bound = (next_screen > 0 && next_screen < static_cast<int>(kScreenSlotCount))
-            ? screen_events_bound_[next_screen]
-            : true;
         ScreensEnum next_screen_enum = static_cast<ScreensEnum>(next_screen);
         loadScreen(next_screen_enum);
-        bind_screen_events_once(next_screen);
-        refresh_status_icons_after_switch = !was_bound;
-        current_screen_id = next_screen;
-        pending_screen_id = 0;
-        if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
-            temp_offset_ui_dirty = true;
-            hum_offset_ui_dirty = true;
-            data_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO) {
-            data_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
-            data_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
-            datetime_ui_dirty = true;
-            clock_ui_dirty = true;
-        } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
-            networkManager.markUiDirty();
-        } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
-            backlightManager.markUiDirty();
-        } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
-            nightModeManager.markUiDirty();
-        }
+        if (!screen_root_by_id(next_screen)) {
+            LOGW("UI", "screen %d is unavailable after load request", next_screen);
+            pending_screen_id = 0;
+        } else {
+            bool was_bound = (next_screen > 0 && next_screen < static_cast<int>(kScreenSlotCount))
+                ? screen_events_bound_[next_screen]
+                : true;
+            bind_screen_events_once(next_screen);
+            refresh_status_icons_after_switch = !was_bound;
+            current_screen_id = next_screen;
+            pending_screen_id = 0;
+            if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
+                temp_offset_ui_dirty = true;
+                hum_offset_ui_dirty = true;
+                data_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO) {
+                data_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
+                data_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
+                datetime_ui_dirty = true;
+                clock_ui_dirty = true;
+            } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
+                networkManager.markUiDirty();
+            } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
+                backlightManager.markUiDirty();
+            } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
+                nightModeManager.markUiDirty();
+            }
 
-        if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
-            !boot_ui_released &&
-            (objects.page_boot_logo || objects.page_boot_diag)) {
-            boot_release_at_ms = now + 500;
+            if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
+                !boot_ui_released &&
+                (objects.page_boot_logo || objects.page_boot_diag)) {
+                boot_release_at_ms = now + 500;
+            }
         }
     }
     if (refresh_status_icons_after_switch) {

@@ -25,7 +25,7 @@ WebHandlerContext *ctx() {
     return g_ctx;
 }
 
-String wifi_html_escape(const String &input) {
+String html_escape(const String &input) {
     String out;
     out.reserve(input.length());
     for (size_t i = 0; i < input.length(); i++) {
@@ -134,7 +134,7 @@ void wifi_build_scan_items(int count) {
             continue;
         }
         String ssid_label = wifi_label_safe(ssid_raw);
-        String ssid_html = wifi_html_escape(ssid_label);
+        String ssid_html = html_escape(ssid_label);
         int quality = wifi_rssi_to_quality(WiFi.RSSI(i));
         bool open = (WiFi.encryptionType(i) == WIFI_AUTH_OPEN);
         const char *security = open ? "Open" : "Secure";
@@ -279,15 +279,15 @@ void mqtt_handle_root() {
 
     html.replace("{{STATUS}}", status_text);
     html.replace("{{STATUS_CLASS}}", status_class);
-    html.replace("{{DEVICE_ID}}", context->mqtt_device_id ? *context->mqtt_device_id : String());
-    html.replace("{{DEVICE_IP}}", device_ip);
-    html.replace("{{MQTT_HOST}}", context->mqtt_host ? *context->mqtt_host : String());
+    html.replace("{{DEVICE_ID}}", html_escape(context->mqtt_device_id ? *context->mqtt_device_id : String()));
+    html.replace("{{DEVICE_IP}}", html_escape(device_ip));
+    html.replace("{{MQTT_HOST}}", html_escape(context->mqtt_host ? *context->mqtt_host : String()));
     html.replace("{{MQTT_PORT}}",
                  String(context->mqtt_port ? *context->mqtt_port : Config::MQTT_DEFAULT_PORT));
-    html.replace("{{MQTT_USER}}", mqtt_user);
-    html.replace("{{MQTT_PASS}}", mqtt_pass);
-    html.replace("{{MQTT_NAME}}", context->mqtt_device_name ? *context->mqtt_device_name : String());
-    html.replace("{{MQTT_TOPIC}}", context->mqtt_base_topic ? *context->mqtt_base_topic : String());
+    html.replace("{{MQTT_USER}}", html_escape(mqtt_user));
+    html.replace("{{MQTT_PASS}}", html_escape(mqtt_pass));
+    html.replace("{{MQTT_NAME}}", html_escape(context->mqtt_device_name ? *context->mqtt_device_name : String()));
+    html.replace("{{MQTT_TOPIC}}", html_escape(context->mqtt_base_topic ? *context->mqtt_base_topic : String()));
     html.replace("{{ANONYMOUS_CHECKED}}", anonymous_checked);
     html.replace("{{DISCOVERY_CHECKED}}", discovery_checked);
 
