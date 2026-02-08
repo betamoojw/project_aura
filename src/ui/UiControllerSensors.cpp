@@ -375,7 +375,9 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         safe_label_set_text_static(objects.label_co_title, co_available ? "CO" : "PM4");
     }
     if (objects.label_co_unit) {
-        safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : "ug/m3");
+        const bool is_zh = (ui_language == Config::Language::ZH);
+        const char *pm4_unit = is_zh ? "ug/m³" : "ug/m3";
+        safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : pm4_unit);
     }
     if (objects.label_co_value) {
         if (co_available) {
