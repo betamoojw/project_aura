@@ -25,6 +25,21 @@ float get_co_ppm_value(const SensorData &) {
     return NAN;
 }
 
+bool mold_inputs_valid(float temp_c, float rh) {
+    return isfinite(temp_c) && isfinite(rh) && rh >= 0.0f && rh <= 100.0f;
+}
+
+int compute_mold_risk_index(float temp_c, float rh) {
+    // Practical 0..10 indoor mold risk heuristic driven by RH + temperature.
+    // RH is primary driver; warmer air slightly increases risk.
+    if (!mold_inputs_valid(temp_c, rh)) {
+        return -1;
+    }
+    float risk = ((rh - 55.0f) / 4.0f) + ((temp_c - 18.0f) / 7.0f);
+    risk = constrain(risk, 0.0f, 10.0f);
+    return static_cast<int>(lroundf(risk));
+}
+
 } // namespace
 
 void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar) {
@@ -170,6 +185,29 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         lv_color_t ah_col = getAbsoluteHumidityColor(ah_gm3);
         set_dot_color(objects.dot_ah, alert_color_for_mode(ah_col));
         set_dot_color(objects.dot_ah_1, alert_color_for_mode(ah_col));
+    }
+
+    const int mold_risk =
+        (currentData.temp_valid && currentData.hum_valid)
+            ? compute_mold_risk_index(currentData.temperature, currentData.humidity)
+            : -1;
+    if (objects.label_mr_value) {
+        if (mold_risk >= 0) {
+            snprintf(buf, sizeof(buf), "%d", mold_risk);
+            safe_label_set_text(objects.label_mr_value, buf);
+        } else {
+            safe_label_set_text_static(objects.label_mr_value, UiText::ValueMissing());
+        }
+    }
+    if (objects.dot_mr) {
+        lv_color_t mr_col = color_inactive();
+        if (mold_risk >= 0) {
+            if (mold_risk <= 2) mr_col = color_green();
+            else if (mold_risk <= 4) mr_col = color_yellow();
+            else if (mold_risk <= 7) mr_col = color_orange();
+            else mr_col = color_red();
+        }
+        set_dot_color(objects.dot_mr, alert_color_for_mode(mr_col));
     }
 
     if (currentData.pm25_valid) {
