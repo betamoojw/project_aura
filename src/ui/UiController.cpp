@@ -41,6 +41,8 @@ using namespace Config;
 namespace {
 
 constexpr uint32_t STATUS_ROTATE_MS = 5000;
+constexpr int UI_LVGL_LOCK_TIMEOUT_MS = 200;
+constexpr uint32_t UI_LVGL_LOCK_WARN_MS = 10000;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -269,8 +271,8 @@ void UiController::poll(uint32_t now) {
         data_dirty = true;
     }
 
-    if (!lvgl_port_lock(25)) {
-        if (now - last_lvgl_lock_warn_ms >= 5000) {
+    if (!lvgl_port_lock(UI_LVGL_LOCK_TIMEOUT_MS)) {
+        if (now - last_lvgl_lock_warn_ms >= UI_LVGL_LOCK_WARN_MS) {
             last_lvgl_lock_warn_ms = now;
             LOGW("UI", "LVGL lock timeout in poll (screen=%d, backlight=%s)",
                  current_screen_id,
