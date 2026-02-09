@@ -20,6 +20,7 @@ class MqttManager;
 class ThemeManager;
 class BacklightManager;
 class NightModeManager;
+class UiEventBinder;
 
 struct UiContext {
     StorageManager &storage;
@@ -54,6 +55,8 @@ public:
     void poll(uint32_t now_ms);
 
 private:
+    friend class UiEventBinder;
+
     enum ConfirmAction {
         CONFIRM_NONE = 0,
         CONFIRM_VOC_RESET,
