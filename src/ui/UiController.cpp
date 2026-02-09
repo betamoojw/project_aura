@@ -7,6 +7,7 @@
 #include "ui/UiController.h"
 #include "ui/UiBootFlow.h"
 #include "ui/UiLocalization.h"
+#include "ui/UiScreenFlow.h"
 #include "ui/UiText.h"
 #include "core/MathUtils.h"
 
@@ -282,92 +283,9 @@ void UiController::poll(uint32_t now) {
     }
     backlightManager.poll(lvgl_ready);
     update_status_icons();
-    bool refresh_status_icons_after_switch = false;
-    if (pending_screen_id != 0) {
-        int next_screen = pending_screen_id;
-        int previous_screen = current_screen_id;
-        // Keep compatibility with stale references to old MAIN screen id.
-        if (next_screen == SCREEN_ID_PAGE_MAIN) {
-            next_screen = SCREEN_ID_PAGE_MAIN_PRO;
-        }
-        ScreensEnum next_screen_enum = static_cast<ScreensEnum>(next_screen);
-        loadScreen(next_screen_enum);
-        if (!UiEventBinder::screenRootById(next_screen)) {
-            LOGW("UI", "screen %d is unavailable after load request", next_screen);
-            pending_screen_id = 0;
-        } else {
-            bool was_bound = (next_screen > 0 && next_screen < static_cast<int>(kScreenSlotCount))
-                ? screen_events_bound_[next_screen]
-                : true;
-            bind_screen_events_once(next_screen);
-            refresh_status_icons_after_switch = !was_bound;
-            current_screen_id = next_screen;
-            pending_screen_id = 0;
-
-            // Lazily rebuilt screens can be released on exit.
-            // Delay unload slightly to avoid racing with screen transition animation.
-            deferred_unload_.scheduleOnSwitch(previous_screen, current_screen_id, now);
-
-            if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
-                temp_offset_ui_dirty = true;
-                hum_offset_ui_dirty = true;
-                data_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO) {
-                data_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
-                data_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
-                datetime_ui_dirty = true;
-                clock_ui_dirty = true;
-            } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
-                networkManager.markUiDirty();
-            } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
-                backlightManager.markUiDirty();
-            } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
-                nightModeManager.markUiDirty();
-            }
-
-            if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
-                !boot_ui_released &&
-                (objects.page_boot_logo || objects.page_boot_diag)) {
-                boot_release_at_ms = now + 500;
-            }
-        }
-    }
-    if (refresh_status_icons_after_switch) {
-        wifi_icon_state = -1;
-        mqtt_icon_state = -1;
-        wifi_icon_state_main = -1;
-        mqtt_icon_state_main = -1;
-        update_status_icons();
-    }
-
-    if (!boot_ui_released &&
-        boot_release_at_ms != 0 &&
-        pending_screen_id == 0 &&
-        current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
-        now >= boot_release_at_ms) {
-        UiBootFlow::releaseBootScreens(*this);
-    }
-
-    for (size_t i = 0; i < deferred_unload_.count(); ++i) {
-        if (!deferred_unload_.ready(i, now, pending_screen_id, current_screen_id)) {
-            continue;
-        }
-
-        const int unload_screen_id = deferred_unload_.screenId(i);
-        unloadScreen(static_cast<ScreensEnum>(unload_screen_id));
-        if (!UiEventBinder::screenRootById(unload_screen_id)) {
-            if (unload_screen_id > 0 &&
-                unload_screen_id < static_cast<int>(kScreenSlotCount)) {
-                screen_events_bound_[unload_screen_id] = false;
-            }
-            deferred_unload_.clear(i);
-        } else {
-            // Transition may still be in-flight; retry shortly.
-            deferred_unload_.retry(i, now);
-        }
-    }
+    UiScreenFlow::processPendingScreen(*this, now);
+    UiScreenFlow::processBootRelease(*this, now);
+    UiScreenFlow::processDeferredUnloads(*this, now);
 
     if (allow_ui_update &&
         current_screen_id == SCREEN_ID_PAGE_BOOT_DIAG &&
