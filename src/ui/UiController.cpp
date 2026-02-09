@@ -5,6 +5,7 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #include "ui/UiController.h"
+#include "ui/UiBootFlow.h"
 #include "ui/UiText.h"
 #include "core/MathUtils.h"
 #include "ui/fonts.h"
@@ -12,9 +13,6 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-
-#include <WiFi.h>
-#include <esp_heap_caps.h>
 
 #include "lvgl_v8_port.h"
 #include "ui/ui.h"
@@ -24,7 +22,6 @@
 #include "web/WebHandlers.h"
 #include "config/AppConfig.h"
 #include "core/Logger.h"
-#include "core/BootState.h"
 #include "modules/StorageManager.h"
 #include "modules/NetworkManager.h"
 #include "modules/MqttManager.h"
@@ -42,34 +39,6 @@
 using namespace Config;
 
 namespace {
-
-const char *reset_reason_to_string(esp_reset_reason_t reason) {
-    switch (reason) {
-        case ESP_RST_POWERON: return "POWERON";
-        case ESP_RST_EXT: return "EXT";
-        case ESP_RST_SW: return "SW";
-        case ESP_RST_PANIC: return "PANIC";
-        case ESP_RST_INT_WDT: return "INT_WDT";
-        case ESP_RST_TASK_WDT: return "TASK_WDT";
-        case ESP_RST_WDT: return "WDT";
-        case ESP_RST_DEEPSLEEP: return "DEEPSLEEP";
-        case ESP_RST_BROWNOUT: return "BROWNOUT";
-        case ESP_RST_SDIO: return "SDIO";
-        default: return "UNKNOWN";
-    }
-}
-
-bool is_crash_reset(esp_reset_reason_t reason) {
-    switch (reason) {
-        case ESP_RST_PANIC:
-        case ESP_RST_INT_WDT:
-        case ESP_RST_TASK_WDT:
-        case ESP_RST_WDT:
-            return true;
-        default:
-            return false;
-    }
-}
 
 const char *language_label(Language lang) {
     switch (lang) {
@@ -99,17 +68,6 @@ void replace_font_recursive(lv_obj_t *obj, const lv_font_t *from, const lv_font_
     const uint32_t child_count = lv_obj_get_child_cnt(obj);
     for (uint32_t i = 0; i < child_count; ++i) {
         replace_font_recursive(lv_obj_get_child(obj, i), from, to);
-    }
-}
-
-void set_visible(lv_obj_t *obj, bool visible) {
-    if (!obj) {
-        return;
-    }
-    if (visible) {
-        lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
-    } else {
-        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
@@ -301,67 +259,6 @@ void UiController::begin() {
     last_clock_tick_ms = millis();
 }
 
-void UiController::clear_boot_object_refs() {
-    objects.page_boot_logo = nullptr;
-    objects.page_boot_diag = nullptr;
-    objects.label_boot_ver = nullptr;
-    objects.background_boot_diag = nullptr;
-    objects.btn_diag_continue = nullptr;
-    objects.label_btn_diag_continue = nullptr;
-    objects.lbl_diag_title = nullptr;
-    objects.lbl_diag_system_title = nullptr;
-    objects.lbl_diag_app_label = nullptr;
-    objects.lbl_diag_mac_label = nullptr;
-    objects.lbl_diag_reason_label = nullptr;
-    objects.lbl_diag_heap_label = nullptr;
-    objects.lbl_diag_storage_label = nullptr;
-    objects.lbl_diag_app_ver = nullptr;
-    objects.lbl_diag_mac = nullptr;
-    objects.lbl_diag_reason = nullptr;
-    objects.lbl_diag_heap = nullptr;
-    objects.lbl_diag_storage = nullptr;
-    objects.lbl_diag_sensors_title = nullptr;
-    objects.lbl_diag_i2c_label = nullptr;
-    objects.lbl_diag_touch_label = nullptr;
-    objects.lbl_diag_sen_label = nullptr;
-    objects.lbl_diag_dps_label = nullptr;
-    objects.lbl_diag_sfa_label = nullptr;
-    objects.lbl_diag_i2c = nullptr;
-    objects.lbl_diag_touch = nullptr;
-    objects.lbl_diag_sen = nullptr;
-    objects.lbl_diag_dps = nullptr;
-    objects.lbl_diag_sfa = nullptr;
-    objects.lbl_diag_rtc_label = nullptr;
-    objects.lbl_diag_rtc = nullptr;
-    objects.lbl_diag_error = nullptr;
-}
-
-void UiController::release_boot_screens() {
-    if (boot_ui_released) {
-        return;
-    }
-
-    lv_obj_t *boot_logo = objects.page_boot_logo;
-    lv_obj_t *boot_diag = objects.page_boot_diag;
-    if (boot_logo && lv_obj_is_valid(boot_logo)) {
-        lv_obj_del_async(boot_logo);
-    }
-    if (boot_diag && lv_obj_is_valid(boot_diag)) {
-        lv_obj_del_async(boot_diag);
-    }
-
-    clear_boot_object_refs();
-    screen_events_bound_[SCREEN_ID_PAGE_BOOT_LOGO] = false;
-    screen_events_bound_[SCREEN_ID_PAGE_BOOT_DIAG] = false;
-    boot_logo_active = false;
-    boot_diag_active = false;
-    boot_diag_has_error = false;
-    boot_release_at_ms = 0;
-    boot_ui_released = true;
-
-    LOGI("UI", "boot screens released");
-}
-
 void UiController::onSensorPoll(const SensorManager::PollResult &poll) {
     if (poll.data_changed || poll.warmup_changed) {
         data_dirty = true;
@@ -523,7 +420,7 @@ void UiController::poll(uint32_t now) {
         pending_screen_id == 0 &&
         current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
         now >= boot_release_at_ms) {
-        release_boot_screens();
+        UiBootFlow::releaseBootScreens(*this);
     }
 
     for (size_t i = 0; i < deferred_unload_.count(); ++i) {
@@ -548,7 +445,7 @@ void UiController::poll(uint32_t now) {
     if (allow_ui_update &&
         current_screen_id == SCREEN_ID_PAGE_BOOT_DIAG &&
         (now - last_boot_diag_update_ms) >= 200) {
-        update_boot_diag(now);
+        UiBootFlow::updateBootDiag(*this, now);
         last_boot_diag_update_ms = now;
     }
     if (allow_ui_update) {
@@ -867,135 +764,6 @@ void UiController::update_clock_labels() {
              local_tm.tm_year + 1900);
     if (objects.label_date_value_1) safe_label_set_text(objects.label_date_value_1, buf);
     if (objects.label_date_value_2) safe_label_set_text(objects.label_date_value_2, buf);
-}
-
-bool UiController::boot_diag_has_errors(uint32_t now_ms) {
-    bool has_error = false;
-    if (!storage.isMounted()) {
-        has_error = true;
-    }
-    if (!boot_i2c_recovered) {
-        has_error = true;
-    }
-    if (!boot_touch_detected) {
-        has_error = true;
-    }
-    if (is_crash_reset(boot_reset_reason)) {
-        has_error = true;
-    }
-    if (!sensorManager.isOk()) {
-        uint32_t retry_at = sensorManager.retryAtMs();
-        if (retry_at == 0 || now_ms >= retry_at) {
-            has_error = true;
-        }
-    }
-    if (!sensorManager.isDpsOk()) {
-        has_error = true;
-    }
-    if (!sensorManager.isSfaOk()) {
-        has_error = true;
-    }
-    if (timeManager.isRtcPresent()) {
-        if (timeManager.isRtcLostPower() || !timeManager.isRtcValid()) {
-            has_error = true;
-        }
-    }
-    return has_error;
-}
-
-void UiController::update_boot_diag(uint32_t now_ms) {
-    update_boot_diag_texts();
-    char buf[64];
-
-    if (objects.lbl_diag_app_ver) {
-        snprintf(buf, sizeof(buf), "v%s", APP_VERSION);
-        safe_label_set_text(objects.lbl_diag_app_ver, buf);
-    }
-    if (objects.lbl_diag_mac) {
-        String mac = WiFi.macAddress();
-        safe_label_set_text(objects.lbl_diag_mac, mac.c_str());
-    }
-    if (objects.lbl_diag_reason) {
-        const char *reason = reset_reason_to_string(boot_reset_reason);
-        if (safe_boot_stage > 0) {
-            snprintf(buf, sizeof(buf), "%s / boot=%lu safe=%lu",
-                     reason,
-                     static_cast<unsigned long>(boot_count),
-                     static_cast<unsigned long>(safe_boot_stage));
-        } else {
-            snprintf(buf, sizeof(buf), "%s / boot=%lu",
-                     reason,
-                     static_cast<unsigned long>(boot_count));
-        }
-        safe_label_set_text(objects.lbl_diag_reason, buf);
-    }
-    if (objects.lbl_diag_heap) {
-        size_t free_bytes = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-        size_t min_bytes = heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT);
-        size_t max_bytes = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-        snprintf(buf, sizeof(buf), "free %uk / min %uk / max %uk",
-                 static_cast<unsigned>(free_bytes / 1024),
-                 static_cast<unsigned>(min_bytes / 1024),
-                 static_cast<unsigned>(max_bytes / 1024));
-        safe_label_set_text(objects.lbl_diag_heap, buf);
-    }
-    if (objects.lbl_diag_storage) {
-        const char *status = UiText::StatusErr();
-        if (storage.isMounted()) {
-            status = storage.isConfigLoaded() ? UiText::BootDiagStorageOkConfig()
-                                              : UiText::BootDiagStorageOkDefaults();
-        }
-        safe_label_set_text(objects.lbl_diag_storage, status);
-    }
-    if (objects.lbl_diag_i2c) {
-        safe_label_set_text(objects.lbl_diag_i2c,
-                            boot_i2c_recovered ? UiText::BootDiagRecovered() : UiText::BootDiagFail());
-    }
-    if (objects.lbl_diag_touch) {
-        safe_label_set_text(objects.lbl_diag_touch,
-                            boot_touch_detected ? UiText::BootDiagDetected() : UiText::BootDiagFail());
-    }
-    if (objects.lbl_diag_sen) {
-        const char *status = UiText::StatusErr();
-        if (sensorManager.isOk()) {
-            status = UiText::StatusOk();
-        } else {
-            uint32_t retry_at = sensorManager.retryAtMs();
-            if (retry_at != 0 && now_ms < retry_at) {
-                status = UiText::BootDiagStarting();
-            }
-        }
-        safe_label_set_text(objects.lbl_diag_sen, status);
-    }
-    if (objects.lbl_diag_dps_label) {
-        safe_label_set_text(objects.lbl_diag_dps_label, sensorManager.pressureSensorLabel());
-    }
-    if (objects.lbl_diag_dps) {
-        safe_label_set_text(objects.lbl_diag_dps,
-                            sensorManager.isDpsOk() ? UiText::StatusOk() : UiText::StatusErr());
-    }
-    if (objects.lbl_diag_sfa) {
-        safe_label_set_text(objects.lbl_diag_sfa,
-                            sensorManager.isSfaOk() ? UiText::StatusOk() : UiText::StatusErr());
-    }
-    if (objects.lbl_diag_rtc) {
-        const char *status = UiText::BootDiagNotFound();
-        if (timeManager.isRtcPresent()) {
-            if (timeManager.isRtcLostPower()) {
-                status = UiText::BootDiagLost();
-            } else if (timeManager.isRtcValid()) {
-                status = UiText::StatusOk();
-            } else {
-                status = UiText::StatusErr();
-            }
-        }
-        safe_label_set_text(objects.lbl_diag_rtc, status);
-    }
-
-    bool has_errors = boot_diag_has_errors(now_ms);
-    boot_diag_has_error = has_errors;
-    set_visible(objects.lbl_diag_error, has_errors);
-    set_visible(objects.btn_diag_continue, has_errors);
 }
 
 void UiController::set_button_enabled(lv_obj_t *btn, bool enabled) {
@@ -1896,7 +1664,14 @@ void UiController::select_pressure_info(InfoSensor sensor) {
 }
 
 void UiController::set_visible(lv_obj_t *obj, bool visible) {
-    ::set_visible(obj, visible);
+    if (!obj) {
+        return;
+    }
+    if (visible) {
+        lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 
 void UiController::hide_all_sensor_info_containers() {

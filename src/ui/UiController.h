@@ -21,6 +21,7 @@ class ThemeManager;
 class BacklightManager;
 class NightModeManager;
 class UiEventBinder;
+class UiBootFlow;
 
 struct UiContext {
     StorageManager &storage;
@@ -56,6 +57,7 @@ public:
 
 private:
     friend class UiEventBinder;
+    friend class UiBootFlow;
 
     enum ConfirmAction {
         CONFIRM_NONE = 0,
@@ -91,8 +93,6 @@ private:
     void update_sensor_info_ui();
     void restore_sensor_info_selection();
     void refresh_texts_for_screen(int screen_id);
-    void release_boot_screens();
-    void clear_boot_object_refs();
     void select_humidity_info(InfoSensor sensor);
     void select_pm_info(InfoSensor sensor);
     void select_pressure_info(InfoSensor sensor);
@@ -102,8 +102,6 @@ private:
     void update_status_message(uint32_t now_ms, bool gas_warmup);
     void update_clock_labels();
     void update_datetime_ui();
-    void update_boot_diag(uint32_t now_ms);
-    bool boot_diag_has_errors(uint32_t now_ms);
     void update_language_label();
     void update_language_fonts();
     Config::Language next_language(Config::Language current);

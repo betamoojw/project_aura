@@ -1,0 +1,244 @@
+// SPDX-FileCopyrightText: 2025-2026 Volodymyr Papush (21CNCStudio)
+// SPDX-License-Identifier: GPL-3.0-or-later
+// GPL-3.0-or-later: https://www.gnu.org/licenses/gpl-3.0.html
+// Want to use this code in a commercial product while keeping modifications proprietary?
+// Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
+
+#include "ui/UiBootFlow.h"
+
+#include <WiFi.h>
+#include <esp_heap_caps.h>
+
+#include "core/BootState.h"
+#include "core/Logger.h"
+#include "modules/StorageManager.h"
+#include "ui/UiController.h"
+#include "ui/UiText.h"
+#include "ui/ui.h"
+
+#ifndef APP_VERSION
+#define APP_VERSION "dev"
+#endif
+
+namespace {
+
+const char *reset_reason_to_string(esp_reset_reason_t reason) {
+    switch (reason) {
+        case ESP_RST_POWERON: return "POWERON";
+        case ESP_RST_EXT: return "EXT";
+        case ESP_RST_SW: return "SW";
+        case ESP_RST_PANIC: return "PANIC";
+        case ESP_RST_INT_WDT: return "INT_WDT";
+        case ESP_RST_TASK_WDT: return "TASK_WDT";
+        case ESP_RST_WDT: return "WDT";
+        case ESP_RST_DEEPSLEEP: return "DEEPSLEEP";
+        case ESP_RST_BROWNOUT: return "BROWNOUT";
+        case ESP_RST_SDIO: return "SDIO";
+        default: return "UNKNOWN";
+    }
+}
+
+bool is_crash_reset(esp_reset_reason_t reason) {
+    switch (reason) {
+        case ESP_RST_PANIC:
+        case ESP_RST_INT_WDT:
+        case ESP_RST_TASK_WDT:
+        case ESP_RST_WDT:
+            return true;
+        default:
+            return false;
+    }
+}
+
+} // namespace
+
+void UiBootFlow::clearBootObjectRefs(UiController &owner) {
+    (void)owner;
+    objects.page_boot_logo = nullptr;
+    objects.page_boot_diag = nullptr;
+    objects.label_boot_ver = nullptr;
+    objects.background_boot_diag = nullptr;
+    objects.btn_diag_continue = nullptr;
+    objects.label_btn_diag_continue = nullptr;
+    objects.lbl_diag_title = nullptr;
+    objects.lbl_diag_system_title = nullptr;
+    objects.lbl_diag_app_label = nullptr;
+    objects.lbl_diag_mac_label = nullptr;
+    objects.lbl_diag_reason_label = nullptr;
+    objects.lbl_diag_heap_label = nullptr;
+    objects.lbl_diag_storage_label = nullptr;
+    objects.lbl_diag_app_ver = nullptr;
+    objects.lbl_diag_mac = nullptr;
+    objects.lbl_diag_reason = nullptr;
+    objects.lbl_diag_heap = nullptr;
+    objects.lbl_diag_storage = nullptr;
+    objects.lbl_diag_sensors_title = nullptr;
+    objects.lbl_diag_i2c_label = nullptr;
+    objects.lbl_diag_touch_label = nullptr;
+    objects.lbl_diag_sen_label = nullptr;
+    objects.lbl_diag_dps_label = nullptr;
+    objects.lbl_diag_sfa_label = nullptr;
+    objects.lbl_diag_i2c = nullptr;
+    objects.lbl_diag_touch = nullptr;
+    objects.lbl_diag_sen = nullptr;
+    objects.lbl_diag_dps = nullptr;
+    objects.lbl_diag_sfa = nullptr;
+    objects.lbl_diag_rtc_label = nullptr;
+    objects.lbl_diag_rtc = nullptr;
+    objects.lbl_diag_error = nullptr;
+}
+
+void UiBootFlow::releaseBootScreens(UiController &owner) {
+    if (owner.boot_ui_released) {
+        return;
+    }
+
+    lv_obj_t *boot_logo = objects.page_boot_logo;
+    lv_obj_t *boot_diag = objects.page_boot_diag;
+    if (boot_logo && lv_obj_is_valid(boot_logo)) {
+        lv_obj_del_async(boot_logo);
+    }
+    if (boot_diag && lv_obj_is_valid(boot_diag)) {
+        lv_obj_del_async(boot_diag);
+    }
+
+    clearBootObjectRefs(owner);
+    owner.screen_events_bound_[SCREEN_ID_PAGE_BOOT_LOGO] = false;
+    owner.screen_events_bound_[SCREEN_ID_PAGE_BOOT_DIAG] = false;
+    owner.boot_logo_active = false;
+    owner.boot_diag_active = false;
+    owner.boot_diag_has_error = false;
+    owner.boot_release_at_ms = 0;
+    owner.boot_ui_released = true;
+
+    LOGI("UI", "boot screens released");
+}
+
+bool UiBootFlow::bootDiagHasErrors(UiController &owner, uint32_t now_ms) {
+    bool has_error = false;
+    if (!owner.storage.isMounted()) {
+        has_error = true;
+    }
+    if (!boot_i2c_recovered) {
+        has_error = true;
+    }
+    if (!boot_touch_detected) {
+        has_error = true;
+    }
+    if (is_crash_reset(boot_reset_reason)) {
+        has_error = true;
+    }
+    if (!owner.sensorManager.isOk()) {
+        uint32_t retry_at = owner.sensorManager.retryAtMs();
+        if (retry_at == 0 || now_ms >= retry_at) {
+            has_error = true;
+        }
+    }
+    if (!owner.sensorManager.isDpsOk()) {
+        has_error = true;
+    }
+    if (!owner.sensorManager.isSfaOk()) {
+        has_error = true;
+    }
+    if (owner.timeManager.isRtcPresent()) {
+        if (owner.timeManager.isRtcLostPower() || !owner.timeManager.isRtcValid()) {
+            has_error = true;
+        }
+    }
+    return has_error;
+}
+
+void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
+    owner.update_boot_diag_texts();
+    char buf[64];
+
+    if (objects.lbl_diag_app_ver) {
+        snprintf(buf, sizeof(buf), "v%s", APP_VERSION);
+        owner.safe_label_set_text(objects.lbl_diag_app_ver, buf);
+    }
+    if (objects.lbl_diag_mac) {
+        String mac = WiFi.macAddress();
+        owner.safe_label_set_text(objects.lbl_diag_mac, mac.c_str());
+    }
+    if (objects.lbl_diag_reason) {
+        const char *reason = reset_reason_to_string(boot_reset_reason);
+        if (safe_boot_stage > 0) {
+            snprintf(buf, sizeof(buf), "%s / boot=%lu safe=%lu",
+                     reason,
+                     static_cast<unsigned long>(boot_count),
+                     static_cast<unsigned long>(safe_boot_stage));
+        } else {
+            snprintf(buf, sizeof(buf), "%s / boot=%lu",
+                     reason,
+                     static_cast<unsigned long>(boot_count));
+        }
+        owner.safe_label_set_text(objects.lbl_diag_reason, buf);
+    }
+    if (objects.lbl_diag_heap) {
+        size_t free_bytes = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+        size_t min_bytes = heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT);
+        size_t max_bytes = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+        snprintf(buf, sizeof(buf), "free %uk / min %uk / max %uk",
+                 static_cast<unsigned>(free_bytes / 1024),
+                 static_cast<unsigned>(min_bytes / 1024),
+                 static_cast<unsigned>(max_bytes / 1024));
+        owner.safe_label_set_text(objects.lbl_diag_heap, buf);
+    }
+    if (objects.lbl_diag_storage) {
+        const char *status = UiText::StatusErr();
+        if (owner.storage.isMounted()) {
+            status = owner.storage.isConfigLoaded() ? UiText::BootDiagStorageOkConfig()
+                                                    : UiText::BootDiagStorageOkDefaults();
+        }
+        owner.safe_label_set_text(objects.lbl_diag_storage, status);
+    }
+    if (objects.lbl_diag_i2c) {
+        owner.safe_label_set_text(objects.lbl_diag_i2c,
+                                  boot_i2c_recovered ? UiText::BootDiagRecovered() : UiText::BootDiagFail());
+    }
+    if (objects.lbl_diag_touch) {
+        owner.safe_label_set_text(objects.lbl_diag_touch,
+                                  boot_touch_detected ? UiText::BootDiagDetected() : UiText::BootDiagFail());
+    }
+    if (objects.lbl_diag_sen) {
+        const char *status = UiText::StatusErr();
+        if (owner.sensorManager.isOk()) {
+            status = UiText::StatusOk();
+        } else {
+            uint32_t retry_at = owner.sensorManager.retryAtMs();
+            if (retry_at != 0 && now_ms < retry_at) {
+                status = UiText::BootDiagStarting();
+            }
+        }
+        owner.safe_label_set_text(objects.lbl_diag_sen, status);
+    }
+    if (objects.lbl_diag_dps_label) {
+        owner.safe_label_set_text(objects.lbl_diag_dps_label, owner.sensorManager.pressureSensorLabel());
+    }
+    if (objects.lbl_diag_dps) {
+        owner.safe_label_set_text(objects.lbl_diag_dps,
+                                  owner.sensorManager.isDpsOk() ? UiText::StatusOk() : UiText::StatusErr());
+    }
+    if (objects.lbl_diag_sfa) {
+        owner.safe_label_set_text(objects.lbl_diag_sfa,
+                                  owner.sensorManager.isSfaOk() ? UiText::StatusOk() : UiText::StatusErr());
+    }
+    if (objects.lbl_diag_rtc) {
+        const char *status = UiText::BootDiagNotFound();
+        if (owner.timeManager.isRtcPresent()) {
+            if (owner.timeManager.isRtcLostPower()) {
+                status = UiText::BootDiagLost();
+            } else if (owner.timeManager.isRtcValid()) {
+                status = UiText::StatusOk();
+            } else {
+                status = UiText::StatusErr();
+            }
+        }
+        owner.safe_label_set_text(objects.lbl_diag_rtc, status);
+    }
+
+    bool has_errors = bootDiagHasErrors(owner, now_ms);
+    owner.boot_diag_has_error = has_errors;
+    owner.set_visible(objects.lbl_diag_error, has_errors);
+    owner.set_visible(objects.btn_diag_continue, has_errors);
+}
