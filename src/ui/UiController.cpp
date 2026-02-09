@@ -539,6 +539,7 @@ void UiController::begin() {
     wifi_screen_unload_at_ms = 0;
     mqtt_screen_unload_at_ms = 0;
     clock_screen_unload_at_ms = 0;
+    co2_calib_screen_unload_at_ms = 0;
     wifi_icon_state = -1;
     mqtt_icon_state = -1;
     wifi_icon_state_main = -1;
@@ -751,6 +752,12 @@ void UiController::poll(uint32_t now) {
             } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
                 clock_screen_unload_at_ms = 0;
             }
+            if (previous_screen == SCREEN_ID_PAGE_CO2_CALIB &&
+                current_screen_id != SCREEN_ID_PAGE_CO2_CALIB) {
+                co2_calib_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_CO2_CALIB) {
+                co2_calib_screen_unload_at_ms = 0;
+            }
 
             if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
                 temp_offset_ui_dirty = true;
@@ -831,6 +838,19 @@ void UiController::poll(uint32_t now) {
         } else {
             // Transition may still be in-flight; retry shortly.
             clock_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (co2_calib_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_CO2_CALIB &&
+        now >= co2_calib_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_CO2_CALIB);
+        if (!objects.page_co2_calib) {
+            screen_events_bound_[SCREEN_ID_PAGE_CO2_CALIB] = false;
+            co2_calib_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            co2_calib_screen_unload_at_ms = now + 100;
         }
     }
 
