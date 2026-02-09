@@ -24,6 +24,7 @@ class UiEventBinder;
 class UiBootFlow;
 class UiLocalization;
 class UiScreenFlow;
+class UiRenderLoop;
 
 struct UiContext {
     StorageManager &storage;
@@ -62,6 +63,7 @@ private:
     friend class UiBootFlow;
     friend class UiLocalization;
     friend class UiScreenFlow;
+    friend class UiRenderLoop;
 
     enum ConfirmAction {
         CONFIRM_NONE = 0,

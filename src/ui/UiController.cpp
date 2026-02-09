@@ -5,8 +5,8 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #include "ui/UiController.h"
-#include "ui/UiBootFlow.h"
 #include "ui/UiLocalization.h"
+#include "ui/UiRenderLoop.h"
 #include "ui/UiScreenFlow.h"
 #include "ui/UiText.h"
 #include "core/MathUtils.h"
@@ -270,11 +270,6 @@ void UiController::poll(uint32_t now) {
         data_dirty = true;
     }
 
-    bool allow_ui_update = true;
-    if (networkManager.state() == AuraNetworkManager::WIFI_STATE_AP_CONFIG &&
-        (now - last_ui_update_ms) < WIFI_UI_UPDATE_MS) {
-        allow_ui_update = false;
-    }
     lvgl_port_lock(-1);
     mqtt_apply_pending();
     if ((now - last_ui_tick_ms) >= UI_TICK_MS) {
@@ -287,67 +282,7 @@ void UiController::poll(uint32_t now) {
     UiScreenFlow::processBootRelease(*this, now);
     UiScreenFlow::processDeferredUnloads(*this, now);
 
-    if (allow_ui_update &&
-        current_screen_id == SCREEN_ID_PAGE_BOOT_DIAG &&
-        (now - last_boot_diag_update_ms) >= 200) {
-        UiBootFlow::updateBootDiag(*this, now);
-        last_boot_diag_update_ms = now;
-    }
-    if (allow_ui_update) {
-        bool did_update = false;
-        if (temp_offset_ui_dirty) {
-            update_temp_offset_label();
-            temp_offset_ui_dirty = false;
-            did_update = true;
-        }
-        if (hum_offset_ui_dirty) {
-            update_hum_offset_label();
-            hum_offset_ui_dirty = false;
-            did_update = true;
-        }
-        if (networkManager.isUiDirty()) {
-            update_wifi_ui();
-            networkManager.clearUiDirty();
-            did_update = true;
-        }
-        if (mqttManager.isUiDirty()) {
-            update_mqtt_ui();
-            mqttManager.clearUiDirty();
-            did_update = true;
-        }
-        if (clock_ui_dirty) {
-            update_clock_labels();
-            clock_ui_dirty = false;
-            did_update = true;
-        }
-        if (datetime_ui_dirty && current_screen_id == SCREEN_ID_PAGE_CLOCK) {
-            update_datetime_ui();
-            datetime_ui_dirty = false;
-            did_update = true;
-        }
-        if (backlightManager.isUiDirty() && current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
-            backlightManager.updateUi();
-            did_update = true;
-        }
-        if (nightModeManager.isUiDirty() && current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
-            nightModeManager.updateUi();
-            did_update = true;
-        }
-            if (data_dirty) {
-                if (current_screen_id == SCREEN_ID_PAGE_MAIN_PRO) {
-                    update_ui();
-                } else if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
-                    update_settings_header();
-                } else if (current_screen_id == SCREEN_ID_PAGE_SENSORS_INFO) {
-                    update_sensor_info_ui();
-                }
-                data_dirty = false;
-                did_update = true;
-            }
-        if (did_update) {
-            last_ui_update_ms = now;
-        }
-    }
+    UiRenderLoop::process(*this, now);
     lvgl_port_unlock();
 }
 
