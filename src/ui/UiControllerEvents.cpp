@@ -286,6 +286,7 @@ void UiController::on_theme_color_event(lv_event_t *e) {
     }
     update_theme_custom_info(presets);
     themeManager.setThemeScreenOpen(true);
+    networkManager.setThemeScreenOpen(true);
     themeManager.setCustomTabSelected(!presets);
     pending_screen_id = SCREEN_ID_PAGE_THEME;
 }
@@ -298,6 +299,7 @@ void UiController::on_theme_back_event(lv_event_t *e) {
         themeManager.applyPreviewAsCurrent(storage, night_mode, datetime_ui_dirty);
     }
     themeManager.setThemeScreenOpen(false);
+    networkManager.setThemeScreenOpen(false);
     themeManager.setCustomTabSelected(false);
     pending_screen_id = SCREEN_ID_PAGE_SETTINGS;
 }

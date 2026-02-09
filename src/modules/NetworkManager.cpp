@@ -55,6 +55,7 @@ void AuraNetworkManager::begin(StorageManager &storage) {
     web_ctx_.wifi_start_scan = network_wifi_start_scan;
     web_ctx_.wifi_start_sta = network_wifi_start_sta;
     web_ctx_.mqtt_ui_open = &mqtt_ui_open_;
+    web_ctx_.theme_ui_open = &theme_ui_open_;
     WebHandlersInit(&web_ctx_);
 
     storage_->loadWiFiSettings(wifi_ssid_, wifi_pass_, wifi_enabled_);

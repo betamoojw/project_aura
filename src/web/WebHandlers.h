@@ -43,6 +43,7 @@ struct WebHandlerContext {
     bool *mqtt_anonymous = nullptr;
     void (*mqtt_sync_with_wifi)() = nullptr;
     bool *mqtt_ui_open = nullptr;
+    bool *theme_ui_open = nullptr;
 };
 
 void WebHandlersInit(WebHandlerContext *context);
