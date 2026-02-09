@@ -184,6 +184,10 @@ void wifi_handle_save() {
         return;
     }
     WebServer &server = *context->server;
+    if (!context->wifi_is_ap_mode || !context->wifi_is_ap_mode()) {
+        server.send(409, "text/plain", "WiFi save allowed only in AP setup mode");
+        return;
+    }
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
     ssid.trim();
