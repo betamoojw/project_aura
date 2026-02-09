@@ -178,6 +178,16 @@ void unloadScreen(enum ScreensEnum screenId) {
         createdScreens[screenId] = 0;
         return;
     }
+    if (!lv_obj_is_valid(screen)) {
+        clearObjectRefsForScreen(screen);
+        createdScreens[screenId] = 0;
+        return;
+    }
+    if (screen == lv_scr_act()) {
+        // Screen transition animation may still keep this screen active.
+        // Retry unloading later from caller side.
+        return;
+    }
     clearObjectRefsForScreen(screen);
     createdScreens[screenId] = 0;
     lv_obj_del_async(screen);

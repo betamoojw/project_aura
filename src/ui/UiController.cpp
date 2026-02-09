@@ -536,6 +536,7 @@ void UiController::begin() {
     theme_events_bound_ = false;
     boot_release_at_ms = 0;
     boot_ui_released = false;
+    wifi_screen_unload_at_ms = 0;
     wifi_icon_state = -1;
     mqtt_icon_state = -1;
     wifi_icon_state_main = -1;
@@ -732,9 +733,11 @@ void UiController::poll(uint32_t now) {
             pending_screen_id = 0;
 
             // WiFi screen is lazily rebuilt and not used continuously, so release it on exit.
+            // Delay unload slightly to avoid racing with screen transition animation.
             if (previous_screen == SCREEN_ID_PAGE_WIFI && current_screen_id != SCREEN_ID_PAGE_WIFI) {
-                unloadScreen(SCREEN_ID_PAGE_WIFI);
-                screen_events_bound_[SCREEN_ID_PAGE_WIFI] = false;
+                wifi_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
+                wifi_screen_unload_at_ms = 0;
             }
 
             if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
@@ -777,6 +780,20 @@ void UiController::poll(uint32_t now) {
         current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
         now >= boot_release_at_ms) {
         release_boot_screens();
+    }
+
+    if (wifi_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_WIFI &&
+        now >= wifi_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_WIFI);
+        if (!objects.page_wifi) {
+            screen_events_bound_[SCREEN_ID_PAGE_WIFI] = false;
+            wifi_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            wifi_screen_unload_at_ms = now + 100;
+        }
     }
 
     if (allow_ui_update &&
