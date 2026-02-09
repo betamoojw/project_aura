@@ -442,6 +442,7 @@ private:
     uint32_t status_msg_signature = 0;
     uint8_t status_msg_index = 0;
     uint8_t status_msg_count = 0;
+    uint32_t last_lvgl_lock_warn_ms = 0;
     UiDeferredUnload deferred_unload_;
     bool boot_logo_active = false;
     uint32_t boot_logo_start_ms = 0;

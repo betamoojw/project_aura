@@ -269,7 +269,15 @@ void UiController::poll(uint32_t now) {
         data_dirty = true;
     }
 
-    lvgl_port_lock(-1);
+    if (!lvgl_port_lock(25)) {
+        if (now - last_lvgl_lock_warn_ms >= 5000) {
+            last_lvgl_lock_warn_ms = now;
+            LOGW("UI", "LVGL lock timeout in poll (screen=%d, backlight=%s)",
+                 current_screen_id,
+                 backlightManager.isOn() ? "ON" : "OFF");
+        }
+        return;
+    }
     mqtt_apply_pending();
     if ((now - last_ui_tick_ms) >= UI_TICK_MS) {
         ui_tick();
@@ -1018,6 +1026,7 @@ void UiController::init_ui_defaults() {
 
     ui_language = storage.config().language;
     language_dirty = false;
+    header_status_enabled = storage.config().header_status_enabled;
     UiLocalization::applyCurrentLanguage(*this);
 
     update_clock_labels();
