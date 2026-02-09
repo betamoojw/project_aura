@@ -154,16 +154,6 @@ bool object_belongs_to_screen(lv_obj_t *obj, lv_obj_t *screen_root) {
 }
 
 constexpr uint32_t STATUS_ROTATE_MS = 5000;
-constexpr uint32_t DEFERRED_UNLOAD_DELAY_MS = 300;
-constexpr uint32_t DEFERRED_UNLOAD_RETRY_MS = 100;
-constexpr int DEFERRED_UNLOAD_SCREENS[] = {
-    SCREEN_ID_PAGE_WIFI,
-    SCREEN_ID_PAGE_MQTT,
-    SCREEN_ID_PAGE_CLOCK,
-    SCREEN_ID_PAGE_CO2_CALIB,
-    SCREEN_ID_PAGE_AUTO_NIGHT_MODE,
-    SCREEN_ID_PAGE_BACKLIGHT,
-};
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -542,13 +532,11 @@ void UiController::begin() {
     }
     current_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
     pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
-    static_assert((sizeof(DEFERRED_UNLOAD_SCREENS) / sizeof(DEFERRED_UNLOAD_SCREENS[0])) == kDeferredUnloadCount,
-                  "Deferred unload screen mapping/count mismatch");
     memset(screen_events_bound_, 0, sizeof(screen_events_bound_));
     theme_events_bound_ = false;
     boot_release_at_ms = 0;
     boot_ui_released = false;
-    memset(deferred_unload_at_ms_, 0, sizeof(deferred_unload_at_ms_));
+    deferred_unload_.reset();
     wifi_icon_state = -1;
     mqtt_icon_state = -1;
     wifi_icon_state_main = -1;
@@ -746,14 +734,7 @@ void UiController::poll(uint32_t now) {
 
             // Lazily rebuilt screens can be released on exit.
             // Delay unload slightly to avoid racing with screen transition animation.
-            for (size_t i = 0; i < kDeferredUnloadCount; ++i) {
-                const int unload_screen_id = DEFERRED_UNLOAD_SCREENS[i];
-                if (previous_screen == unload_screen_id && current_screen_id != unload_screen_id) {
-                    deferred_unload_at_ms_[i] = now + DEFERRED_UNLOAD_DELAY_MS;
-                } else if (current_screen_id == unload_screen_id) {
-                    deferred_unload_at_ms_[i] = 0;
-                }
-            }
+            deferred_unload_.scheduleOnSwitch(previous_screen, current_screen_id, now);
 
             if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
                 temp_offset_ui_dirty = true;
@@ -797,26 +778,22 @@ void UiController::poll(uint32_t now) {
         release_boot_screens();
     }
 
-    for (size_t i = 0; i < kDeferredUnloadCount; ++i) {
-        uint32_t &unload_at_ms = deferred_unload_at_ms_[i];
-        if (unload_at_ms == 0 || pending_screen_id != 0) {
-            continue;
-        }
-        const int unload_screen_id = DEFERRED_UNLOAD_SCREENS[i];
-        if (current_screen_id == unload_screen_id || now < unload_at_ms) {
+    for (size_t i = 0; i < deferred_unload_.count(); ++i) {
+        if (!deferred_unload_.ready(i, now, pending_screen_id, current_screen_id)) {
             continue;
         }
 
+        const int unload_screen_id = deferred_unload_.screenId(i);
         unloadScreen(static_cast<ScreensEnum>(unload_screen_id));
         if (!screen_root_by_id(unload_screen_id)) {
             if (unload_screen_id > 0 &&
                 unload_screen_id < static_cast<int>(kScreenSlotCount)) {
                 screen_events_bound_[unload_screen_id] = false;
             }
-            unload_at_ms = 0;
+            deferred_unload_.clear(i);
         } else {
             // Transition may still be in-flight; retry shortly.
-            unload_at_ms = now + DEFERRED_UNLOAD_RETRY_MS;
+            deferred_unload_.retry(i, now);
         }
     }
 

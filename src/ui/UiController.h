@@ -9,6 +9,7 @@
 #include <Arduino.h>
 #include "config/AppData.h"
 #include "config/AppConfig.h"
+#include "ui/UiDeferredUnload.h"
 #include <lvgl.h>
 #include "modules/SensorManager.h"
 #include "modules/TimeManager.h"
@@ -441,8 +442,7 @@ private:
     uint32_t status_msg_signature = 0;
     uint8_t status_msg_index = 0;
     uint8_t status_msg_count = 0;
-    static constexpr size_t kDeferredUnloadCount = 6;
-    uint32_t deferred_unload_at_ms_[kDeferredUnloadCount] = {};
+    UiDeferredUnload deferred_unload_;
     bool boot_logo_active = false;
     uint32_t boot_logo_start_ms = 0;
     bool boot_diag_active = false;
