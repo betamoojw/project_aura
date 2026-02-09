@@ -712,6 +712,7 @@ void UiController::poll(uint32_t now) {
     bool refresh_status_icons_after_switch = false;
     if (pending_screen_id != 0) {
         int next_screen = pending_screen_id;
+        int previous_screen = current_screen_id;
         // Keep compatibility with stale references to old MAIN screen id.
         if (next_screen == SCREEN_ID_PAGE_MAIN) {
             next_screen = SCREEN_ID_PAGE_MAIN_PRO;
@@ -729,6 +730,13 @@ void UiController::poll(uint32_t now) {
             refresh_status_icons_after_switch = !was_bound;
             current_screen_id = next_screen;
             pending_screen_id = 0;
+
+            // WiFi screen is lazily rebuilt and not used continuously, so release it on exit.
+            if (previous_screen == SCREEN_ID_PAGE_WIFI && current_screen_id != SCREEN_ID_PAGE_WIFI) {
+                unloadScreen(SCREEN_ID_PAGE_WIFI);
+                screen_events_bound_[SCREEN_ID_PAGE_WIFI] = false;
+            }
+
             if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
                 temp_offset_ui_dirty = true;
                 hum_offset_ui_dirty = true;

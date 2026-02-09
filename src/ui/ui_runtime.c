@@ -64,6 +64,23 @@ static lv_obj_t *getLvglObjectFromScreenId(enum ScreensEnum screenId) {
     return page_slots[screenId - 1];
 }
 
+static void clearObjectRefsForScreen(lv_obj_t *screen) {
+    if (!screen) {
+        return;
+    }
+    lv_obj_t **slots = (lv_obj_t **)&objects;
+    size_t slot_count = sizeof(objects) / sizeof(lv_obj_t *);
+    for (size_t i = 0; i < slot_count; ++i) {
+        lv_obj_t *obj = slots[i];
+        if (!obj) {
+            continue;
+        }
+        if (obj == screen || lv_obj_get_screen(obj) == screen) {
+            slots[i] = NULL;
+        }
+    }
+}
+
 typedef void (*create_screen_func_t)(void);
 
 static const create_screen_func_t screen_create_funcs[UI_MAX_SCREEN_ID + 1] = {
@@ -143,6 +160,27 @@ void loadScreen(enum ScreensEnum screenId) {
     }
     currentScreen = screenId - 1;
     lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
+}
+
+void unloadScreen(enum ScreensEnum screenId) {
+    screenId = normalizeScreenId(screenId);
+    if (!isScreenIdValid(screenId)) {
+        return;
+    }
+    if (isScreenEager(screenId)) {
+        return;
+    }
+    if (currentScreen == screenId - 1) {
+        return;
+    }
+    lv_obj_t *screen = getLvglObjectFromScreenId(screenId);
+    if (!screen) {
+        createdScreens[screenId] = 0;
+        return;
+    }
+    clearObjectRefsForScreen(screen);
+    createdScreens[screenId] = 0;
+    lv_obj_del_async(screen);
 }
 
 void ui_init() {
