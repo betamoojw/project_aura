@@ -441,12 +441,8 @@ private:
     uint32_t status_msg_signature = 0;
     uint8_t status_msg_index = 0;
     uint8_t status_msg_count = 0;
-    uint32_t wifi_screen_unload_at_ms = 0;
-    uint32_t mqtt_screen_unload_at_ms = 0;
-    uint32_t clock_screen_unload_at_ms = 0;
-    uint32_t co2_calib_screen_unload_at_ms = 0;
-    uint32_t auto_night_screen_unload_at_ms = 0;
-    uint32_t backlight_screen_unload_at_ms = 0;
+    static constexpr size_t kDeferredUnloadCount = 6;
+    uint32_t deferred_unload_at_ms_[kDeferredUnloadCount] = {};
     bool boot_logo_active = false;
     uint32_t boot_logo_start_ms = 0;
     bool boot_diag_active = false;

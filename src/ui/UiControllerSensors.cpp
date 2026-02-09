@@ -379,7 +379,11 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         const lv_font_t *unit_font = (ui_language == Config::Language::ZH)
             ? &ui_font_noto_sans_sc_reg_14
             : &ui_font_jet_reg_14;
-        lv_obj_set_style_text_font(objects.label_co_unit, unit_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+        const lv_font_t *current_font =
+            lv_obj_get_style_text_font(objects.label_co_unit, LV_PART_MAIN | LV_STATE_DEFAULT);
+        if (current_font != unit_font) {
+            lv_obj_set_style_text_font(objects.label_co_unit, unit_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
         safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : "ug/m\xC2\xB3");
     }
     if (objects.label_co_value) {
