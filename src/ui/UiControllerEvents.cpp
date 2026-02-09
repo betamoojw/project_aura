@@ -141,6 +141,15 @@ void UiController::on_back_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+
+    if (current_screen_id == SCREEN_ID_PAGE_SETTINGS &&
+        objects.container_about &&
+        !lv_obj_has_flag(objects.container_about, LV_OBJ_FLAG_HIDDEN)) {
+        LOGD("UI", "back pressed (close about)");
+        lv_obj_add_flag(objects.container_about, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
     LOGD("UI", "back pressed");
     bool save_config = false;
     bool offsets_saved = false;
