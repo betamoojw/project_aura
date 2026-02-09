@@ -104,9 +104,6 @@ private:
     void update_status_message(uint32_t now_ms, bool gas_warmup);
     void update_clock_labels();
     void update_datetime_ui();
-    void update_language_label();
-    void update_language_fonts();
-    Config::Language next_language(Config::Language current);
     void update_settings_texts();
     void update_main_texts();
     void update_sensor_info_texts();

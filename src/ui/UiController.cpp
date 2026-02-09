@@ -9,7 +9,6 @@
 #include "ui/UiLocalization.h"
 #include "ui/UiText.h"
 #include "core/MathUtils.h"
-#include "ui/fonts.h"
 
 #include <math.h>
 #include <string.h>
@@ -40,37 +39,6 @@
 using namespace Config;
 
 namespace {
-
-const char *language_label(Language lang) {
-    switch (lang) {
-        case Language::DE: return "DEUTSCH";
-        case Language::ES: return "ESPAÑOL";
-        case Language::FR: return "FRANÇAIS";
-        case Language::IT: return "ITALIANO";
-        case Language::PT: return "PORTUGUÊS BR";
-        case Language::NL: return "NEDERLANDS";
-        case Language::ZH: return "简体中文";
-        case Language::EN:
-        default:
-            return "ENGLISH";
-    }
-}
-
-void replace_font_recursive(lv_obj_t *obj, const lv_font_t *from, const lv_font_t *to) {
-    if (!obj || !from || !to || from == to) {
-        return;
-    }
-
-    const lv_font_t *current = lv_obj_get_style_text_font(obj, LV_PART_MAIN | LV_STATE_DEFAULT);
-    if (current == from) {
-        lv_obj_set_style_text_font(obj, to, LV_PART_MAIN | LV_STATE_DEFAULT);
-    }
-
-    const uint32_t child_count = lv_obj_get_child_cnt(obj);
-    for (uint32_t i = 0; i < child_count; ++i) {
-        replace_font_recursive(lv_obj_get_child(obj, i), from, to);
-    }
-}
 
 constexpr uint32_t STATUS_ROTATE_MS = 5000;
 
@@ -1674,55 +1642,6 @@ void UiController::update_settings_header() {
     sync_auto_dim_button_state();
 }
 
-Config::Language UiController::next_language(Config::Language current) {
-    switch (current) {
-        case Config::Language::EN: return Config::Language::DE;
-        case Config::Language::DE: return Config::Language::ES;
-        case Config::Language::ES: return Config::Language::FR;
-        case Config::Language::FR: return Config::Language::IT;
-        case Config::Language::IT: return Config::Language::PT;
-        case Config::Language::PT: return Config::Language::NL;
-        case Config::Language::NL: return Config::Language::ZH;
-        case Config::Language::ZH: return Config::Language::EN;
-        default:
-            return Config::Language::EN;
-    }
-}
-
-void UiController::update_language_label() {
-    if (objects.label_language_value) {
-        safe_label_set_text(objects.label_language_value, language_label(ui_language));
-    }
-}
-
-void UiController::update_language_fonts() {
-    const bool is_zh = (ui_language == Config::Language::ZH);
-    const lv_font_t *from_14 = is_zh ? &ui_font_jet_reg_14 : &ui_font_noto_sans_sc_reg_14;
-    const lv_font_t *to_14 = is_zh ? &ui_font_noto_sans_sc_reg_14 : &ui_font_jet_reg_14;
-    const lv_font_t *from_18 = is_zh ? &ui_font_jet_reg_18 : &ui_font_noto_sans_sc_reg_18;
-    const lv_font_t *to_18 = is_zh ? &ui_font_noto_sans_sc_reg_18 : &ui_font_jet_reg_18;
-
-    lv_obj_t *roots[] = {
-        objects.page_boot_logo,
-        objects.page_boot_diag,
-        objects.page_main_pro,
-        objects.page_settings,
-        objects.page_wifi,
-        objects.page_theme,
-        objects.page_clock,
-        objects.page_co2_calib,
-        objects.page_auto_night_mode,
-        objects.page_backlight,
-        objects.page_mqtt,
-        objects.page_sensors_info,
-    };
-
-    for (lv_obj_t *root : roots) {
-        replace_font_recursive(root, from_14, to_14);
-        replace_font_recursive(root, from_18, to_18);
-    }
-}
-
 void UiController::update_settings_texts() {
     if (objects.label_settings_title) safe_label_set_text(objects.label_settings_title, UiText::LabelSettingsTitle());
     if (objects.label_btn_back) safe_label_set_text(objects.label_btn_back, UiText::LabelSettingsBack());
@@ -2015,8 +1934,7 @@ void UiController::init_ui_defaults() {
 
     ui_language = storage.config().language;
     language_dirty = false;
-    UiStrings::setLanguage(ui_language);
-    UiLocalization::refreshAllTexts(*this);
+    UiLocalization::applyCurrentLanguage(*this);
 
     update_clock_labels();
     timeManager.syncInputsFromSystem(set_hour, set_minute, set_day, set_month, set_year);
@@ -2031,3 +1949,4 @@ void UiController::init_ui_defaults() {
     update_ui();
     confirm_hide();
 }
+

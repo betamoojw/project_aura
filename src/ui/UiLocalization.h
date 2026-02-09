@@ -6,10 +6,19 @@
 
 #pragma once
 
+#include "config/AppConfig.h"
+
 class UiController;
 
 class UiLocalization {
 public:
+    static Config::Language nextLanguage(Config::Language current);
+    static void applyCurrentLanguage(UiController &owner);
+    static void cycleLanguage(UiController &owner);
     static void refreshTextsForScreen(UiController &owner, int screen_id);
     static void refreshAllTexts(UiController &owner);
+
+private:
+    static void updateLanguageLabel(UiController &owner);
+    static void updateLanguageFonts(UiController &owner);
 };

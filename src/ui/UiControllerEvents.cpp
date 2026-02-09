@@ -20,7 +20,6 @@
 #include "ui/NightModeManager.h"
 #include "ui/ThemeManager.h"
 #include "ui/UiLocalization.h"
-#include "ui/UiStrings.h"
 #include "ui/UiText.h"
 #include "ui/ui.h"
 
@@ -209,10 +208,7 @@ void UiController::on_language_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
-    ui_language = next_language(ui_language);
-    UiStrings::setLanguage(ui_language);
-    language_dirty = (ui_language != storage.config().language);
-    UiLocalization::refreshAllTexts(*this);
+    UiLocalization::cycleLanguage(*this);
     update_ui();
     update_wifi_ui();
     update_mqtt_ui();
