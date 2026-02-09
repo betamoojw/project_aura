@@ -26,21 +26,6 @@ float get_co_ppm_value(const SensorData &) {
     return NAN;
 }
 
-bool mold_inputs_valid(float temp_c, float rh) {
-    return isfinite(temp_c) && isfinite(rh) && rh >= 0.0f && rh <= 100.0f;
-}
-
-int compute_mold_risk_index(float temp_c, float rh) {
-    // Practical 0..10 indoor mold risk heuristic driven by RH + temperature.
-    // RH is primary driver; warmer air slightly increases risk.
-    if (!mold_inputs_valid(temp_c, rh)) {
-        return -1;
-    }
-    float risk = ((rh - 55.0f) / 4.0f) + ((temp_c - 18.0f) / 7.0f);
-    risk = constrain(risk, 0.0f, 10.0f);
-    return static_cast<int>(lroundf(risk));
-}
-
 } // namespace
 
 void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar) {
@@ -190,7 +175,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
 
     const int mold_risk =
         (currentData.temp_valid && currentData.hum_valid)
-            ? compute_mold_risk_index(currentData.temperature, currentData.humidity)
+            ? MathUtils::compute_mold_risk_index(currentData.temperature, currentData.humidity)
             : -1;
     if (objects.label_mr_value) {
         if (mold_risk >= 0) {

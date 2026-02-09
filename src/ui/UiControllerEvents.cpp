@@ -114,8 +114,6 @@ void UiController::on_card_pm25_event_cb(lv_event_t *e) { if (instance_) instanc
 void UiController::on_card_pm10_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm10_event(e); }
 void UiController::on_card_pm1_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm1_event(e); }
 void UiController::on_card_pm4_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm4_event(e); }
-void UiController::on_pm25_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm25_info_event(e); }
-void UiController::on_pm10_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm10_info_event(e); }
 void UiController::on_card_pressure_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pressure_event(e); }
 void UiController::on_pressure_3h_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_3h_info_event(e); }
 void UiController::on_pressure_24h_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_24h_info_event(e); }
@@ -793,20 +791,6 @@ void UiController::on_card_pm4_event(lv_event_t *e) {
     }
     select_pm_info(INFO_PM4);
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
-}
-
-void UiController::on_pm25_info_event(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
-        return;
-    }
-    select_pm_info(INFO_PM25);
-}
-
-void UiController::on_pm10_info_event(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
-        return;
-    }
-    select_pm_info(INFO_PM10);
 }
 
 void UiController::on_card_pressure_event(lv_event_t *e) {

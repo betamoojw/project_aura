@@ -145,11 +145,17 @@ void UiController::update_sensor_info_ui() {
             break;
         }
         case INFO_MR: {
-            const char *value = UiText::ValueMissingShort();
-            if (objects.label_mr_value) {
-                value = lv_label_get_text(objects.label_mr_value);
+            const int mold_risk =
+                (currentData.temp_valid && currentData.hum_valid)
+                    ? MathUtils::compute_mold_risk_index(currentData.temperature, currentData.humidity)
+                    : -1;
+            if (mold_risk >= 0) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%d", mold_risk);
+                safe_label_set_text(objects.label_sensor_value, buf);
+            } else {
+                safe_label_set_text_static(objects.label_sensor_value, UiText::ValueMissingShort());
             }
-            safe_label_set_text(objects.label_sensor_value, value);
 
             const char *unit = UiText::UnitIndex();
             if (objects.label_mr_unit) {
@@ -158,10 +164,18 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_info_unit, unit);
 
             lv_color_t mr_col = color_inactive();
-            if (objects.dot_mr) {
-                mr_col = lv_obj_get_style_bg_color(objects.dot_mr, LV_PART_MAIN);
+            if (mold_risk >= 0) {
+                if (mold_risk <= 2) {
+                    mr_col = color_green();
+                } else if (mold_risk <= 4) {
+                    mr_col = color_yellow();
+                } else if (mold_risk <= 7) {
+                    mr_col = color_orange();
+                } else {
+                    mr_col = color_red();
+                }
             }
-            set_dot_color(objects.dot_sensor_info, mr_col);
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(mr_col));
             break;
         }
         case INFO_DP: {
@@ -563,6 +577,7 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.voc_info, false);
     set_visible(objects.nox_info, false);
     set_visible(objects.hcho_info, false);
+    set_visible(objects.co_info, false);
     set_visible(objects.humidity_info_rh_ah, false);
     set_visible(objects.humidity_info_mr_dp, false);
     set_visible(objects.rh_info, false);

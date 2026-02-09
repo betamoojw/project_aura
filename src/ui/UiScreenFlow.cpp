@@ -13,6 +13,7 @@
 #include "ui/UiBootFlow.h"
 #include "ui/UiController.h"
 #include "ui/UiEventBinder.h"
+#include "ui/ThemeManager.h"
 #include "ui/ui.h"
 
 void UiScreenFlow::processPendingScreen(UiController &owner, uint32_t now_ms) {
@@ -27,6 +28,13 @@ void UiScreenFlow::processPendingScreen(UiController &owner, uint32_t now_ms) {
         ScreensEnum next_screen_enum = static_cast<ScreensEnum>(next_screen);
         loadScreen(next_screen_enum);
         if (!UiEventBinder::screenRootById(next_screen)) {
+            if (next_screen == SCREEN_ID_PAGE_MQTT) {
+                owner.networkManager.setMqttScreenOpen(false);
+            } else if (next_screen == SCREEN_ID_PAGE_THEME) {
+                owner.themeManager.setThemeScreenOpen(false);
+                owner.networkManager.setThemeScreenOpen(false);
+                owner.themeManager.setCustomTabSelected(false);
+            }
             LOGW("UI", "screen %d is unavailable after load request", next_screen);
             owner.pending_screen_id = 0;
         } else {

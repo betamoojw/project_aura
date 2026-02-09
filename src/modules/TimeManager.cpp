@@ -332,6 +332,9 @@ bool TimeManager::requestNtpSync() {
     ntp_sync_start_ms_ = millis();
     ntp_last_attempt_ms_ = ntp_sync_start_ms_;
     configTime(0, 0, "pool.ntp.org", "time.nist.gov", "time.google.com");
+    // configTime(0,0,...) resets TZ to UTC in the runtime.
+    // Re-apply selected timezone immediately so UI/RTC stay in local time.
+    applyTimezone();
     return true;
 }
 

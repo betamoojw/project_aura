@@ -268,8 +268,6 @@ private:
     void on_card_pm10_event(lv_event_t *e);
     void on_card_pm1_event(lv_event_t *e);
     void on_card_pm4_event(lv_event_t *e);
-    void on_pm25_info_event(lv_event_t *e);
-    void on_pm10_info_event(lv_event_t *e);
     void on_card_pressure_event(lv_event_t *e);
     void on_pressure_3h_info_event(lv_event_t *e);
     void on_pressure_24h_info_event(lv_event_t *e);
@@ -369,8 +367,6 @@ private:
     static void on_card_pm10_event_cb(lv_event_t *e);
     static void on_card_pm1_event_cb(lv_event_t *e);
     static void on_card_pm4_event_cb(lv_event_t *e);
-    static void on_pm25_info_event_cb(lv_event_t *e);
-    static void on_pm10_info_event_cb(lv_event_t *e);
     static void on_card_pressure_event_cb(lv_event_t *e);
     static void on_pressure_3h_info_event_cb(lv_event_t *e);
     static void on_pressure_24h_info_event_cb(lv_event_t *e);
