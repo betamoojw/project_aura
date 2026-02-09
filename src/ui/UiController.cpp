@@ -540,6 +540,8 @@ void UiController::begin() {
     mqtt_screen_unload_at_ms = 0;
     clock_screen_unload_at_ms = 0;
     co2_calib_screen_unload_at_ms = 0;
+    auto_night_screen_unload_at_ms = 0;
+    backlight_screen_unload_at_ms = 0;
     wifi_icon_state = -1;
     mqtt_icon_state = -1;
     wifi_icon_state_main = -1;
@@ -758,6 +760,18 @@ void UiController::poll(uint32_t now) {
             } else if (current_screen_id == SCREEN_ID_PAGE_CO2_CALIB) {
                 co2_calib_screen_unload_at_ms = 0;
             }
+            if (previous_screen == SCREEN_ID_PAGE_AUTO_NIGHT_MODE &&
+                current_screen_id != SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
+                auto_night_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
+                auto_night_screen_unload_at_ms = 0;
+            }
+            if (previous_screen == SCREEN_ID_PAGE_BACKLIGHT &&
+                current_screen_id != SCREEN_ID_PAGE_BACKLIGHT) {
+                backlight_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
+                backlight_screen_unload_at_ms = 0;
+            }
 
             if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
                 temp_offset_ui_dirty = true;
@@ -851,6 +865,32 @@ void UiController::poll(uint32_t now) {
         } else {
             // Transition may still be in-flight; retry shortly.
             co2_calib_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (auto_night_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_AUTO_NIGHT_MODE &&
+        now >= auto_night_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_AUTO_NIGHT_MODE);
+        if (!objects.page_auto_night_mode) {
+            screen_events_bound_[SCREEN_ID_PAGE_AUTO_NIGHT_MODE] = false;
+            auto_night_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            auto_night_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (backlight_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_BACKLIGHT &&
+        now >= backlight_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_BACKLIGHT);
+        if (!objects.page_backlight) {
+            screen_events_bound_[SCREEN_ID_PAGE_BACKLIGHT] = false;
+            backlight_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            backlight_screen_unload_at_ms = now + 100;
         }
     }
 
