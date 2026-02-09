@@ -22,6 +22,7 @@ class BacklightManager;
 class NightModeManager;
 class UiEventBinder;
 class UiBootFlow;
+class UiLocalization;
 
 struct UiContext {
     StorageManager &storage;
@@ -58,6 +59,7 @@ public:
 private:
     friend class UiEventBinder;
     friend class UiBootFlow;
+    friend class UiLocalization;
 
     enum ConfirmAction {
         CONFIRM_NONE = 0,

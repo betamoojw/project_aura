@@ -6,6 +6,7 @@
 
 #include "ui/UiController.h"
 #include "ui/UiBootFlow.h"
+#include "ui/UiLocalization.h"
 #include "ui/UiText.h"
 #include "core/MathUtils.h"
 #include "ui/fonts.h"
@@ -174,49 +175,7 @@ void UiController::bind_screen_events_once(int screen_id) {
 }
 
 void UiController::refresh_texts_for_screen(int screen_id) {
-    switch (screen_id) {
-        case SCREEN_ID_PAGE_MAIN_PRO:
-            update_main_texts();
-            break;
-        case SCREEN_ID_PAGE_SETTINGS:
-            update_settings_texts();
-            update_confirm_texts();
-            break;
-        case SCREEN_ID_PAGE_WIFI:
-            update_wifi_texts();
-            break;
-        case SCREEN_ID_PAGE_THEME:
-            update_theme_texts();
-            break;
-        case SCREEN_ID_PAGE_CLOCK:
-            update_datetime_texts();
-            break;
-        case SCREEN_ID_PAGE_CO2_CALIB:
-            update_co2_calib_texts();
-            break;
-        case SCREEN_ID_PAGE_AUTO_NIGHT_MODE:
-            update_auto_night_texts();
-            break;
-        case SCREEN_ID_PAGE_BACKLIGHT:
-            update_backlight_texts();
-            break;
-        case SCREEN_ID_PAGE_MQTT:
-            update_mqtt_texts();
-            break;
-        case SCREEN_ID_PAGE_SENSORS_INFO:
-            update_sensor_info_texts();
-            break;
-        case SCREEN_ID_PAGE_BOOT_DIAG:
-            update_boot_diag_texts();
-            break;
-        case SCREEN_ID_PAGE_BOOT_LOGO:
-        default:
-            break;
-    }
-
-    if (ui_language == Config::Language::ZH) {
-        update_language_fonts();
-    }
+    UiLocalization::refreshTextsForScreen(*this, screen_id);
 }
 
 void UiController::begin() {
@@ -2057,20 +2016,7 @@ void UiController::init_ui_defaults() {
     ui_language = storage.config().language;
     language_dirty = false;
     UiStrings::setLanguage(ui_language);
-    update_language_label();
-    update_settings_texts();
-    update_main_texts();
-    update_sensor_info_texts();
-    update_confirm_texts();
-    update_wifi_texts();
-    update_mqtt_texts();
-    update_datetime_texts();
-    update_theme_texts();
-    update_auto_night_texts();
-    update_backlight_texts();
-    update_co2_calib_texts();
-    update_boot_diag_texts();
-    update_language_fonts();
+    UiLocalization::refreshAllTexts(*this);
 
     update_clock_labels();
     timeManager.syncInputsFromSystem(set_hour, set_minute, set_day, set_month, set_year);
