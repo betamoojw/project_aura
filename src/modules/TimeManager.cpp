@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <esp_sntp.h>
 
 #include "core/Logger.h"
 
@@ -76,9 +77,16 @@ bool TimeManager::initRtc() {
 }
 
 bool TimeManager::updateWifiState(bool wifi_enabled, bool wifi_connected) {
+    bool was_connected = wifi_connected_;
     wifi_enabled_ = wifi_enabled;
     wifi_connected_ = wifi_connected;
-    return syncNtpWithWifi();
+    bool state_changed = syncNtpWithWifi();
+    if (!was_connected && wifi_connected_ && ntp_enabled_ && !ntp_syncing_) {
+        if (requestNtpSync()) {
+            state_changed = true;
+        }
+    }
+    return state_changed;
 }
 
 bool TimeManager::setNtpEnabledPref(bool enabled) {
@@ -179,6 +187,22 @@ const TimeZoneEntry &TimeManager::getTimezone() const {
     return kTimeZones[idx];
 }
 
+int TimeManager::currentUtcOffsetMinutes() const {
+    time_t now = time(nullptr);
+    if (now <= Config::TIME_VALID_EPOCH) {
+        return getTimezone().offset_min;
+    }
+    tm utc_tm = {};
+    gmtime_r(&now, &utc_tm);
+    utc_tm.tm_isdst = -1;
+    time_t utc_as_local = mktime(&utc_tm);
+    if (utc_as_local == static_cast<time_t>(-1)) {
+        return getTimezone().offset_min;
+    }
+    long diff_sec = static_cast<long>(difftime(now, utc_as_local));
+    return static_cast<int>(diff_sec / 60L);
+}
+
 bool TimeManager::isSystemTimeValid() const {
     time_t now = time(nullptr);
     return now > Config::TIME_VALID_EPOCH;
@@ -268,13 +292,9 @@ void TimeManager::applyTimezone() {
         tz_index_ = 0;
     }
     const TimeZoneEntry &tz = kTimeZones[tz_index_];
-    char fixed_tz[24] = { 0 };
-    const char *posix = tz.posix;
-    if (!posix || !posix[0]) {
-        buildFixedTzString(tz.offset_min, fixed_tz, sizeof(fixed_tz));
-        posix = fixed_tz;
-    }
-    setenv("TZ", posix, 1);
+    char posix_tz[32] = { 0 };
+    buildTimezonePosix(tz, posix_tz, sizeof(posix_tz));
+    setenv("TZ", posix_tz, 1);
     tzset();
 }
 
@@ -331,10 +351,12 @@ bool TimeManager::requestNtpSync() {
     ntp_err_ = false;
     ntp_sync_start_ms_ = millis();
     ntp_last_attempt_ms_ = ntp_sync_start_ms_;
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov", "time.google.com");
-    // configTime(0,0,...) resets TZ to UTC in the runtime.
-    // Re-apply selected timezone immediately so UI/RTC stay in local time.
-    applyTimezone();
+    const TimeZoneEntry &tz = getTimezone();
+    char posix_tz[32] = { 0 };
+    buildTimezonePosix(tz, posix_tz, sizeof(posix_tz));
+    LOGI("Time", "NTP sync start (tz=%s, wifi=ON)", tz.name ? tz.name : "unknown");
+    sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);
+    configTzTime(posix_tz, "pool.ntp.org", "time.nist.gov", "time.google.com");
     return true;
 }
 
@@ -343,6 +365,7 @@ bool TimeManager::syncNtpWithWifi() {
     bool effective = wifi_enabled_ && desired;
     if (effective == ntp_enabled_) {
         if (!effective) {
+            stopNtpService();
             ntp_syncing_ = false;
             ntp_err_ = false;
         }
@@ -350,6 +373,10 @@ bool TimeManager::syncNtpWithWifi() {
     }
     ntp_enabled_ = effective;
     if (!ntp_enabled_) {
+        if (ntp_syncing_) {
+            LOGW("Time", "NTP sync canceled (WiFi disabled/disconnected)");
+        }
+        stopNtpService();
         ntp_syncing_ = false;
         ntp_err_ = false;
     } else {
@@ -362,6 +389,7 @@ TimeManager::PollResult TimeManager::ntpPoll(uint32_t now_ms) {
     PollResult result;
     if (!ntp_enabled_ || !wifi_connected_) {
         if (ntp_syncing_) {
+            LOGW("Time", "NTP sync canceled while waiting for network");
             ntp_syncing_ = false;
             result.state_changed = true;
         }
@@ -369,10 +397,23 @@ TimeManager::PollResult TimeManager::ntpPoll(uint32_t now_ms) {
     }
 
     if (ntp_syncing_) {
-        tm info = {};
-        if (::getLocalTime(&info, 10)) {
+        sntp_sync_status_t sync_status = sntp_get_sync_status();
+        if (sync_status == SNTP_SYNC_STATUS_COMPLETED) {
             time_t epoch = time(nullptr);
             if (epoch > Config::TIME_VALID_EPOCH) {
+                tm local_tm = {};
+                localtime_r(&epoch, &local_tm);
+                char buf[32];
+                snprintf(buf,
+                         sizeof(buf),
+                         "%04d-%02d-%02d %02d:%02d:%02d",
+                         local_tm.tm_year + 1900,
+                         local_tm.tm_mon + 1,
+                         local_tm.tm_mday,
+                         local_tm.tm_hour,
+                         local_tm.tm_min,
+                         local_tm.tm_sec);
+                LOGI("Time", "NTP sync completed, local time=%s", buf);
                 ntp_syncing_ = false;
                 ntp_err_ = false;
                 ntp_last_sync_ms_ = now_ms;
@@ -383,6 +424,8 @@ TimeManager::PollResult TimeManager::ntpPoll(uint32_t now_ms) {
             }
         }
         if (now_ms - ntp_sync_start_ms_ > Config::NTP_SYNC_TIMEOUT_MS) {
+            uint32_t elapsed = now_ms - ntp_sync_start_ms_;
+            LOGW("Time", "NTP sync timeout after %lu ms", static_cast<unsigned long>(elapsed));
             ntp_syncing_ = false;
             ntp_err_ = true;
             result.state_changed = true;
@@ -402,4 +445,22 @@ TimeManager::PollResult TimeManager::ntpPoll(uint32_t now_ms) {
         }
     }
     return result;
+}
+
+void TimeManager::stopNtpService() {
+    if (esp_sntp_enabled()) {
+        esp_sntp_stop();
+    }
+}
+
+void TimeManager::buildTimezonePosix(const TimeZoneEntry &tz, char *out, size_t len) {
+    if (!out || len == 0) {
+        return;
+    }
+    out[0] = '\0';
+    if (tz.posix && tz.posix[0]) {
+        snprintf(out, len, "%s", tz.posix);
+        return;
+    }
+    buildFixedTzString(tz.offset_min, out, len);
 }
