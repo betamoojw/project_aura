@@ -443,6 +443,7 @@ private:
     uint8_t status_msg_count = 0;
     uint32_t wifi_screen_unload_at_ms = 0;
     uint32_t mqtt_screen_unload_at_ms = 0;
+    uint32_t clock_screen_unload_at_ms = 0;
     bool boot_logo_active = false;
     uint32_t boot_logo_start_ms = 0;
     bool boot_diag_active = false;

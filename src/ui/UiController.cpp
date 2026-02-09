@@ -538,6 +538,7 @@ void UiController::begin() {
     boot_ui_released = false;
     wifi_screen_unload_at_ms = 0;
     mqtt_screen_unload_at_ms = 0;
+    clock_screen_unload_at_ms = 0;
     wifi_icon_state = -1;
     mqtt_icon_state = -1;
     wifi_icon_state_main = -1;
@@ -745,6 +746,11 @@ void UiController::poll(uint32_t now) {
             } else if (current_screen_id == SCREEN_ID_PAGE_MQTT) {
                 mqtt_screen_unload_at_ms = 0;
             }
+            if (previous_screen == SCREEN_ID_PAGE_CLOCK && current_screen_id != SCREEN_ID_PAGE_CLOCK) {
+                clock_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
+                clock_screen_unload_at_ms = 0;
+            }
 
             if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
                 temp_offset_ui_dirty = true;
@@ -812,6 +818,19 @@ void UiController::poll(uint32_t now) {
         } else {
             // Transition may still be in-flight; retry shortly.
             mqtt_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (clock_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_CLOCK &&
+        now >= clock_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_CLOCK);
+        if (!objects.page_clock) {
+            screen_events_bound_[SCREEN_ID_PAGE_CLOCK] = false;
+            clock_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            clock_screen_unload_at_ms = now + 100;
         }
     }
 
