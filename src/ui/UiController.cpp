@@ -536,6 +536,12 @@ void UiController::begin() {
     theme_events_bound_ = false;
     boot_release_at_ms = 0;
     boot_ui_released = false;
+    wifi_screen_unload_at_ms = 0;
+    mqtt_screen_unload_at_ms = 0;
+    clock_screen_unload_at_ms = 0;
+    co2_calib_screen_unload_at_ms = 0;
+    auto_night_screen_unload_at_ms = 0;
+    backlight_screen_unload_at_ms = 0;
     wifi_icon_state = -1;
     mqtt_icon_state = -1;
     wifi_icon_state_main = -1;
@@ -712,6 +718,7 @@ void UiController::poll(uint32_t now) {
     bool refresh_status_icons_after_switch = false;
     if (pending_screen_id != 0) {
         int next_screen = pending_screen_id;
+        int previous_screen = current_screen_id;
         // Keep compatibility with stale references to old MAIN screen id.
         if (next_screen == SCREEN_ID_PAGE_MAIN) {
             next_screen = SCREEN_ID_PAGE_MAIN_PRO;
@@ -729,6 +736,43 @@ void UiController::poll(uint32_t now) {
             refresh_status_icons_after_switch = !was_bound;
             current_screen_id = next_screen;
             pending_screen_id = 0;
+
+            // WiFi screen is lazily rebuilt and not used continuously, so release it on exit.
+            // Delay unload slightly to avoid racing with screen transition animation.
+            if (previous_screen == SCREEN_ID_PAGE_WIFI && current_screen_id != SCREEN_ID_PAGE_WIFI) {
+                wifi_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_WIFI) {
+                wifi_screen_unload_at_ms = 0;
+            }
+            if (previous_screen == SCREEN_ID_PAGE_MQTT && current_screen_id != SCREEN_ID_PAGE_MQTT) {
+                mqtt_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_MQTT) {
+                mqtt_screen_unload_at_ms = 0;
+            }
+            if (previous_screen == SCREEN_ID_PAGE_CLOCK && current_screen_id != SCREEN_ID_PAGE_CLOCK) {
+                clock_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_CLOCK) {
+                clock_screen_unload_at_ms = 0;
+            }
+            if (previous_screen == SCREEN_ID_PAGE_CO2_CALIB &&
+                current_screen_id != SCREEN_ID_PAGE_CO2_CALIB) {
+                co2_calib_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_CO2_CALIB) {
+                co2_calib_screen_unload_at_ms = 0;
+            }
+            if (previous_screen == SCREEN_ID_PAGE_AUTO_NIGHT_MODE &&
+                current_screen_id != SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
+                auto_night_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
+                auto_night_screen_unload_at_ms = 0;
+            }
+            if (previous_screen == SCREEN_ID_PAGE_BACKLIGHT &&
+                current_screen_id != SCREEN_ID_PAGE_BACKLIGHT) {
+                backlight_screen_unload_at_ms = now + 300;
+            } else if (current_screen_id == SCREEN_ID_PAGE_BACKLIGHT) {
+                backlight_screen_unload_at_ms = 0;
+            }
+
             if (current_screen_id == SCREEN_ID_PAGE_SETTINGS) {
                 temp_offset_ui_dirty = true;
                 hum_offset_ui_dirty = true;
@@ -769,6 +813,85 @@ void UiController::poll(uint32_t now) {
         current_screen_id == SCREEN_ID_PAGE_MAIN_PRO &&
         now >= boot_release_at_ms) {
         release_boot_screens();
+    }
+
+    if (wifi_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_WIFI &&
+        now >= wifi_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_WIFI);
+        if (!objects.page_wifi) {
+            screen_events_bound_[SCREEN_ID_PAGE_WIFI] = false;
+            wifi_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            wifi_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (mqtt_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_MQTT &&
+        now >= mqtt_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_MQTT);
+        if (!objects.page_mqtt) {
+            screen_events_bound_[SCREEN_ID_PAGE_MQTT] = false;
+            mqtt_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            mqtt_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (clock_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_CLOCK &&
+        now >= clock_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_CLOCK);
+        if (!objects.page_clock) {
+            screen_events_bound_[SCREEN_ID_PAGE_CLOCK] = false;
+            clock_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            clock_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (co2_calib_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_CO2_CALIB &&
+        now >= co2_calib_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_CO2_CALIB);
+        if (!objects.page_co2_calib) {
+            screen_events_bound_[SCREEN_ID_PAGE_CO2_CALIB] = false;
+            co2_calib_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            co2_calib_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (auto_night_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_AUTO_NIGHT_MODE &&
+        now >= auto_night_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_AUTO_NIGHT_MODE);
+        if (!objects.page_auto_night_mode) {
+            screen_events_bound_[SCREEN_ID_PAGE_AUTO_NIGHT_MODE] = false;
+            auto_night_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            auto_night_screen_unload_at_ms = now + 100;
+        }
+    }
+    if (backlight_screen_unload_at_ms != 0 &&
+        pending_screen_id == 0 &&
+        current_screen_id != SCREEN_ID_PAGE_BACKLIGHT &&
+        now >= backlight_screen_unload_at_ms) {
+        unloadScreen(SCREEN_ID_PAGE_BACKLIGHT);
+        if (!objects.page_backlight) {
+            screen_events_bound_[SCREEN_ID_PAGE_BACKLIGHT] = false;
+            backlight_screen_unload_at_ms = 0;
+        } else {
+            // Transition may still be in-flight; retry shortly.
+            backlight_screen_unload_at_ms = now + 100;
+        }
     }
 
     if (allow_ui_update &&

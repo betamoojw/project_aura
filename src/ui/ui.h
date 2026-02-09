@@ -24,6 +24,7 @@ void ui_tick();
 
 #if !defined(EEZ_FOR_LVGL)
 void loadScreen(enum ScreensEnum screenId);
+void unloadScreen(enum ScreensEnum screenId);
 #endif
 
 #ifdef __cplusplus
