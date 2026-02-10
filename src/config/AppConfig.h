@@ -95,6 +95,8 @@ namespace Config {
     constexpr uint8_t SEN0466_CMD_READ_GAS = 0x86;
     constexpr uint8_t SEN0466_MODE_PASSIVE = 0x04;
     constexpr uint8_t SEN0466_GAS_TYPE_CO = 0x04;
+    // Diagnostic switch: disable all SEN0466 I2C transactions while keeping wiring unchanged.
+    constexpr bool SEN0466_ENABLED = false;
     constexpr uint8_t PCF8523_ADDR = 0x68;
     constexpr uint8_t PCF8523_REG_CONTROL_3 = 0x02;
     constexpr uint8_t PCF8523_REG_SECONDS = 0x03;
