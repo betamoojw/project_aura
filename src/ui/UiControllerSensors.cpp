@@ -153,10 +153,12 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     if (objects.label_dew_unit_1) {
         safe_label_set_text_static(objects.label_dew_unit_1, temp_units_c ? UiText::UnitC() : UiText::UnitF());
     }
+    float dp_color_c = isfinite(dew_c_rounded) ? dew_c_rounded : dew_c;
+    lv_color_t dp_col = getDewPointColor(dp_color_c);
     if (objects.dot_dp) {
-        float dp_color_c = isfinite(dew_c_rounded) ? dew_c_rounded : dew_c;
-        lv_color_t dp_col = getDewPointColor(dp_color_c);
         set_dot_color(objects.dot_dp, alert_color_for_mode(dp_col));
+    }
+    if (objects.dot_dp_1) {
         set_dot_color(objects.dot_dp_1, alert_color_for_mode(dp_col));
     }
     if (isfinite(ah_gm3)) {
@@ -167,9 +169,11 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         safe_label_set_text_static(objects.label_ah_value, UiText::ValueMissingShort());
         safe_label_set_text_static(objects.label_ah_value_1, UiText::ValueMissingShort());
     }
+    lv_color_t ah_col = getAbsoluteHumidityColor(ah_gm3);
     if (objects.dot_ah) {
-        lv_color_t ah_col = getAbsoluteHumidityColor(ah_gm3);
         set_dot_color(objects.dot_ah, alert_color_for_mode(ah_col));
+    }
+    if (objects.dot_ah_1) {
         set_dot_color(objects.dot_ah_1, alert_color_for_mode(ah_col));
     }
 

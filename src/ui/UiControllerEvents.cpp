@@ -440,7 +440,13 @@ void UiController::on_auto_night_toggle_event(lv_event_t *e) {
         return;
     }
     nightModeManager.setAutoEnabled(enabled);
-    apply_auto_night_now();
+    if (enabled) {
+        apply_auto_night_now();
+    } else if (night_mode) {
+        // Auto-night is being disabled while forced night mode is active:
+        // return to normal mode immediately and restore blink state.
+        set_night_mode_state(false, true);
+    }
     mqttManager.updateNightModeAvailability(nightModeManager.isAutoEnabled());
     sync_night_mode_toggle_ui();
     sync_auto_dim_button_state();
