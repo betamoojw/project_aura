@@ -26,21 +26,6 @@ float get_co_ppm_value(const SensorData &) {
     return NAN;
 }
 
-bool mold_inputs_valid(float temp_c, float rh) {
-    return isfinite(temp_c) && isfinite(rh) && rh >= 0.0f && rh <= 100.0f;
-}
-
-int compute_mold_risk_index(float temp_c, float rh) {
-    // Practical 0..10 indoor mold risk heuristic driven by RH + temperature.
-    // RH is primary driver; warmer air slightly increases risk.
-    if (!mold_inputs_valid(temp_c, rh)) {
-        return -1;
-    }
-    float risk = ((rh - 55.0f) / 4.0f) + ((temp_c - 18.0f) / 7.0f);
-    risk = constrain(risk, 0.0f, 10.0f);
-    return static_cast<int>(lroundf(risk));
-}
-
 } // namespace
 
 void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar) {
@@ -168,10 +153,12 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     if (objects.label_dew_unit_1) {
         safe_label_set_text_static(objects.label_dew_unit_1, temp_units_c ? UiText::UnitC() : UiText::UnitF());
     }
+    float dp_color_c = isfinite(dew_c_rounded) ? dew_c_rounded : dew_c;
+    lv_color_t dp_col = getDewPointColor(dp_color_c);
     if (objects.dot_dp) {
-        float dp_color_c = isfinite(dew_c_rounded) ? dew_c_rounded : dew_c;
-        lv_color_t dp_col = getDewPointColor(dp_color_c);
         set_dot_color(objects.dot_dp, alert_color_for_mode(dp_col));
+    }
+    if (objects.dot_dp_1) {
         set_dot_color(objects.dot_dp_1, alert_color_for_mode(dp_col));
     }
     if (isfinite(ah_gm3)) {
@@ -182,15 +169,17 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         safe_label_set_text_static(objects.label_ah_value, UiText::ValueMissingShort());
         safe_label_set_text_static(objects.label_ah_value_1, UiText::ValueMissingShort());
     }
+    lv_color_t ah_col = getAbsoluteHumidityColor(ah_gm3);
     if (objects.dot_ah) {
-        lv_color_t ah_col = getAbsoluteHumidityColor(ah_gm3);
         set_dot_color(objects.dot_ah, alert_color_for_mode(ah_col));
+    }
+    if (objects.dot_ah_1) {
         set_dot_color(objects.dot_ah_1, alert_color_for_mode(ah_col));
     }
 
     const int mold_risk =
         (currentData.temp_valid && currentData.hum_valid)
-            ? compute_mold_risk_index(currentData.temperature, currentData.humidity)
+            ? MathUtils::compute_mold_risk_index(currentData.temperature, currentData.humidity)
             : -1;
     if (objects.label_mr_value) {
         if (mold_risk >= 0) {
@@ -379,7 +368,11 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         const lv_font_t *unit_font = (ui_language == Config::Language::ZH)
             ? &ui_font_noto_sans_sc_reg_14
             : &ui_font_jet_reg_14;
-        lv_obj_set_style_text_font(objects.label_co_unit, unit_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+        const lv_font_t *current_font =
+            lv_obj_get_style_text_font(objects.label_co_unit, LV_PART_MAIN | LV_STATE_DEFAULT);
+        if (current_font != unit_font) {
+            lv_obj_set_style_text_font(objects.label_co_unit, unit_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
         safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : "ug/m\xC2\xB3");
     }
     if (objects.label_co_value) {

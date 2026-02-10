@@ -45,6 +45,7 @@ public:
     bool adjustTimezone(int delta);
     int getTimezoneIndex() const { return tz_index_; }
     const TimeZoneEntry &getTimezone() const;
+    int currentUtcOffsetMinutes() const;
 
     bool isSystemTimeValid() const;
     bool getLocalTime(tm &out);
@@ -68,6 +69,8 @@ private:
     bool requestNtpSync();
     bool syncNtpWithWifi();
     PollResult ntpPoll(uint32_t now_ms);
+    void stopNtpService();
+    static void buildTimezonePosix(const TimeZoneEntry &tz, char *out, size_t len);
 
     StorageManager *storage_ = nullptr;
     Pcf8523 rtc_;

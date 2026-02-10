@@ -35,6 +35,10 @@ bool network_wifi_is_connected() {
     return g_network && g_network->isConnected();
 }
 
+bool network_wifi_is_ap_mode() {
+    return g_network && g_network->state() == AuraNetworkManager::WIFI_STATE_AP_CONFIG;
+}
+
 } // namespace
 
 void AuraNetworkManager::begin(StorageManager &storage) {
@@ -52,9 +56,11 @@ void AuraNetworkManager::begin(StorageManager &storage) {
     web_ctx_.wifi_scan_in_progress = &wifi_scan_in_progress_;
     web_ctx_.wifi_scan_options = &wifi_scan_options_;
     web_ctx_.wifi_is_connected = network_wifi_is_connected;
+    web_ctx_.wifi_is_ap_mode = network_wifi_is_ap_mode;
     web_ctx_.wifi_start_scan = network_wifi_start_scan;
     web_ctx_.wifi_start_sta = network_wifi_start_sta;
     web_ctx_.mqtt_ui_open = &mqtt_ui_open_;
+    web_ctx_.theme_ui_open = &theme_ui_open_;
     WebHandlersInit(&web_ctx_);
 
     storage_->loadWiFiSettings(wifi_ssid_, wifi_pass_, wifi_enabled_);

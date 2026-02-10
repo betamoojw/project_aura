@@ -33,4 +33,16 @@ inline float compute_absolute_humidity_gm3(float temp_c, float rh) {
     return 216.7f * (e / (temp_c + 273.15f));
 }
 
+inline int compute_mold_risk_index(float temp_c, float rh) {
+    if (!isfinite(temp_c) || !isfinite(rh) || rh < 0.0f || rh > 100.0f) {
+        return -1;
+    }
+
+    // Practical 0..10 indoor mold risk heuristic driven by RH + temperature.
+    // RH is the main driver; warmer air slightly increases risk.
+    float risk = ((rh - 55.0f) / 4.0f) + ((temp_c - 18.0f) / 7.0f);
+    risk = fminf(fmaxf(risk, 0.0f), 10.0f);
+    return static_cast<int>(lroundf(risk));
+}
+
 } // namespace MathUtils

@@ -45,6 +45,7 @@ public:
     void startApOnDemand();
     void startScan();
     void setMqttScreenOpen(bool open) { mqtt_ui_open_ = open; }
+    void setThemeScreenOpen(bool open) { theme_ui_open_ = open; }
 
     bool isEnabled() const { return wifi_enabled_; }
     bool isEnabledDirty() const { return wifi_enabled_dirty_; }
@@ -84,6 +85,7 @@ private:
     bool wifi_enabled_dirty_ = false;
     bool wifi_ui_dirty_ = false;
     bool mqtt_ui_open_ = false;
+    bool theme_ui_open_ = false;
     StateChangeCallback state_change_cb_ = nullptr;
     void *state_change_ctx_ = nullptr;
 };

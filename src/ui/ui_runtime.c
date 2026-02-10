@@ -27,6 +27,7 @@ void ui_tick() {
 
 enum { UI_KNOWN_SCREEN_COUNT = 13 };
 enum { UI_PAGE_SLOT_COUNT = (int)(offsetof(objects_t, label_boot_ver) / sizeof(lv_obj_t *)) };
+enum { UI_OBJECT_SLOT_COUNT = (int)(sizeof(objects_t) / sizeof(lv_obj_t *)) };
 
 #if defined(__cplusplus)
 #define UI_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
@@ -38,6 +39,13 @@ UI_STATIC_ASSERT(UI_PAGE_SLOT_COUNT == UI_KNOWN_SCREEN_COUNT,
                  "EEZ page layout changed: update ui_runtime screen tables.");
 UI_STATIC_ASSERT(SCREEN_ID_PAGE_MAIN_PRO == UI_KNOWN_SCREEN_COUNT,
                  "Expected MAIN_PRO to be last screen id; update ui_runtime mapping.");
+UI_STATIC_ASSERT(offsetof(objects_t, page_boot_logo) == 0,
+                 "objects_t must start with page_boot_logo.");
+UI_STATIC_ASSERT((offsetof(objects_t, page_main_pro) + sizeof(lv_obj_t *)) ==
+                     (UI_PAGE_SLOT_COUNT * sizeof(lv_obj_t *)),
+                 "Page roots must stay contiguous; update ui_runtime mapping.");
+UI_STATIC_ASSERT((sizeof(objects_t) % sizeof(lv_obj_t *)) == 0,
+                 "objects_t must consist of lv_obj_t* slots only.");
 
 enum { UI_MAX_SCREEN_ID = UI_KNOWN_SCREEN_COUNT };
 
@@ -57,25 +65,59 @@ static bool isScreenIdValid(enum ScreensEnum screenId) {
 }
 
 static lv_obj_t *getLvglObjectFromScreenId(enum ScreensEnum screenId) {
-    if (!isScreenIdValid(screenId)) {
-        return 0;
+    switch (screenId) {
+        case SCREEN_ID_PAGE_BOOT_LOGO:
+            return objects.page_boot_logo;
+        case SCREEN_ID_PAGE_BOOT_DIAG:
+            return objects.page_boot_diag;
+        case SCREEN_ID_PAGE_MAIN:
+            return objects.page_main;
+        case SCREEN_ID_PAGE_SETTINGS:
+            return objects.page_settings;
+        case SCREEN_ID_PAGE_WIFI:
+            return objects.page_wifi;
+        case SCREEN_ID_PAGE_THEME:
+            return objects.page_theme;
+        case SCREEN_ID_PAGE_CLOCK:
+            return objects.page_clock;
+        case SCREEN_ID_PAGE_CO2_CALIB:
+            return objects.page_co2_calib;
+        case SCREEN_ID_PAGE_AUTO_NIGHT_MODE:
+            return objects.page_auto_night_mode;
+        case SCREEN_ID_PAGE_BACKLIGHT:
+            return objects.page_backlight;
+        case SCREEN_ID_PAGE_MQTT:
+            return objects.page_mqtt;
+        case SCREEN_ID_PAGE_SENSORS_INFO:
+            return objects.page_sensors_info;
+        case SCREEN_ID_PAGE_MAIN_PRO:
+            return objects.page_main_pro;
+        default:
+            return 0;
     }
-    lv_obj_t **page_slots = (lv_obj_t **)&objects;
-    return page_slots[screenId - 1];
 }
 
 static void clearObjectRefsForScreen(lv_obj_t *screen) {
     if (!screen) {
         return;
     }
+    bool screen_valid = lv_obj_is_valid(screen);
     lv_obj_t **slots = (lv_obj_t **)&objects;
-    size_t slot_count = sizeof(objects) / sizeof(lv_obj_t *);
-    for (size_t i = 0; i < slot_count; ++i) {
+    for (size_t i = 0; i < UI_OBJECT_SLOT_COUNT; ++i) {
         lv_obj_t *obj = slots[i];
         if (!obj) {
             continue;
         }
-        if (obj == screen || lv_obj_get_screen(obj) == screen) {
+        if (obj == screen) {
+            slots[i] = NULL;
+            continue;
+        }
+        if (!lv_obj_is_valid(obj)) {
+            // Drop stale references left after async deletion.
+            slots[i] = NULL;
+            continue;
+        }
+        if (screen_valid && lv_obj_get_screen(obj) == screen) {
             slots[i] = NULL;
         }
     }

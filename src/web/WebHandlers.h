@@ -26,6 +26,7 @@ struct WebHandlerContext {
     bool *wifi_scan_in_progress = nullptr;
     String *wifi_scan_options = nullptr;
     bool (*wifi_is_connected)() = nullptr;
+    bool (*wifi_is_ap_mode)() = nullptr;
     void (*wifi_start_scan)() = nullptr;
     void (*wifi_start_sta)() = nullptr;
 
@@ -43,6 +44,7 @@ struct WebHandlerContext {
     bool *mqtt_anonymous = nullptr;
     void (*mqtt_sync_with_wifi)() = nullptr;
     bool *mqtt_ui_open = nullptr;
+    bool *theme_ui_open = nullptr;
 };
 
 void WebHandlersInit(WebHandlerContext *context);

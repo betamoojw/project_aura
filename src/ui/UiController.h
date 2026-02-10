@@ -9,6 +9,7 @@
 #include <Arduino.h>
 #include "config/AppData.h"
 #include "config/AppConfig.h"
+#include "ui/UiDeferredUnload.h"
 #include <lvgl.h>
 #include "modules/SensorManager.h"
 #include "modules/TimeManager.h"
@@ -19,6 +20,11 @@ class MqttManager;
 class ThemeManager;
 class BacklightManager;
 class NightModeManager;
+class UiEventBinder;
+class UiBootFlow;
+class UiLocalization;
+class UiScreenFlow;
+class UiRenderLoop;
 
 struct UiContext {
     StorageManager &storage;
@@ -53,6 +59,12 @@ public:
     void poll(uint32_t now_ms);
 
 private:
+    friend class UiEventBinder;
+    friend class UiBootFlow;
+    friend class UiLocalization;
+    friend class UiScreenFlow;
+    friend class UiRenderLoop;
+
     enum ConfirmAction {
         CONFIRM_NONE = 0,
         CONFIRM_VOC_RESET,
@@ -87,8 +99,6 @@ private:
     void update_sensor_info_ui();
     void restore_sensor_info_selection();
     void refresh_texts_for_screen(int screen_id);
-    void release_boot_screens();
-    void clear_boot_object_refs();
     void select_humidity_info(InfoSensor sensor);
     void select_pm_info(InfoSensor sensor);
     void select_pressure_info(InfoSensor sensor);
@@ -98,11 +108,6 @@ private:
     void update_status_message(uint32_t now_ms, bool gas_warmup);
     void update_clock_labels();
     void update_datetime_ui();
-    void update_boot_diag(uint32_t now_ms);
-    bool boot_diag_has_errors(uint32_t now_ms);
-    void update_language_label();
-    void update_language_fonts();
-    Config::Language next_language(Config::Language current);
     void update_settings_texts();
     void update_main_texts();
     void update_sensor_info_texts();
@@ -263,8 +268,6 @@ private:
     void on_card_pm10_event(lv_event_t *e);
     void on_card_pm1_event(lv_event_t *e);
     void on_card_pm4_event(lv_event_t *e);
-    void on_pm25_info_event(lv_event_t *e);
-    void on_pm10_info_event(lv_event_t *e);
     void on_card_pressure_event(lv_event_t *e);
     void on_pressure_3h_info_event(lv_event_t *e);
     void on_pressure_24h_info_event(lv_event_t *e);
@@ -364,8 +367,6 @@ private:
     static void on_card_pm10_event_cb(lv_event_t *e);
     static void on_card_pm1_event_cb(lv_event_t *e);
     static void on_card_pm4_event_cb(lv_event_t *e);
-    static void on_pm25_info_event_cb(lv_event_t *e);
-    static void on_pm10_info_event_cb(lv_event_t *e);
     static void on_card_pressure_event_cb(lv_event_t *e);
     static void on_pressure_3h_info_event_cb(lv_event_t *e);
     static void on_pressure_24h_info_event_cb(lv_event_t *e);
@@ -441,12 +442,9 @@ private:
     uint32_t status_msg_signature = 0;
     uint8_t status_msg_index = 0;
     uint8_t status_msg_count = 0;
-    uint32_t wifi_screen_unload_at_ms = 0;
-    uint32_t mqtt_screen_unload_at_ms = 0;
-    uint32_t clock_screen_unload_at_ms = 0;
-    uint32_t co2_calib_screen_unload_at_ms = 0;
-    uint32_t auto_night_screen_unload_at_ms = 0;
-    uint32_t backlight_screen_unload_at_ms = 0;
+    uint32_t last_lvgl_lock_warn_ms = 0;
+    uint16_t lvgl_lock_fail_streak = 0;
+    UiDeferredUnload deferred_unload_;
     bool boot_logo_active = false;
     uint32_t boot_logo_start_ms = 0;
     bool boot_diag_active = false;

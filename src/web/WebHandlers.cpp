@@ -184,6 +184,10 @@ void wifi_handle_save() {
         return;
     }
     WebServer &server = *context->server;
+    if (!context->wifi_is_ap_mode || !context->wifi_is_ap_mode()) {
+        server.send(409, "text/plain", "WiFi save allowed only in AP setup mode");
+        return;
+    }
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
     ssid.trim();
@@ -398,6 +402,11 @@ void theme_handle_root() {
         context->server->send(403, "text/plain", "WiFi required");
         return;
     }
+    if (!context->theme_ui_open || !*context->theme_ui_open) {
+        String html = FPSTR(WebTemplates::kThemeLockedPage);
+        context->server->send(200, "text/html", html);
+        return;
+    }
     if (!context->theme_manager->isCustomScreenOpen()) {
         String html = FPSTR(WebTemplates::kThemeLockedPage);
         context->server->send(200, "text/html", html);
@@ -424,6 +433,10 @@ void theme_handle_apply() {
     bool wifi_ready = context->wifi_is_connected && context->wifi_is_connected();
     if (!wifi_ready) {
         server.send(403, "text/plain", "WiFi required");
+        return;
+    }
+    if (!context->theme_ui_open || !*context->theme_ui_open) {
+        server.send(409, "text/plain", "Open Theme screen to enable");
         return;
     }
     if (!context->theme_manager->isCustomScreenOpen()) {

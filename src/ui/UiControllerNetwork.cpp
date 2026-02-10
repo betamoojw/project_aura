@@ -26,7 +26,7 @@ void UiController::update_datetime_ui() {
 
     const TimeZoneEntry &tz = timeManager.getTimezone();
     char offset_buf[12];
-    TimeManager::formatTzOffset(tz.offset_min, offset_buf, sizeof(offset_buf));
+    TimeManager::formatTzOffset(timeManager.currentUtcOffsetMinutes(), offset_buf, sizeof(offset_buf));
     if (objects.label_tz_offset_value) {
         safe_label_set_text(objects.label_tz_offset_value, offset_buf);
     }

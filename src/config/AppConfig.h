@@ -270,6 +270,7 @@ namespace Config {
         float hum_offset = 0.0f;
         bool units_c = true;
         bool night_mode = false;
+        bool header_status_enabled = true;
         bool led_indicators = true;
         bool alert_blink = true;
         bool asc_enabled = true;

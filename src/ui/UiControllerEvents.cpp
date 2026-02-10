@@ -19,7 +19,7 @@
 #include "ui/BacklightManager.h"
 #include "ui/NightModeManager.h"
 #include "ui/ThemeManager.h"
-#include "ui/UiStrings.h"
+#include "ui/UiLocalization.h"
 #include "ui/UiText.h"
 #include "ui/ui.h"
 
@@ -114,8 +114,6 @@ void UiController::on_card_pm25_event_cb(lv_event_t *e) { if (instance_) instanc
 void UiController::on_card_pm10_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm10_event(e); }
 void UiController::on_card_pm1_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm1_event(e); }
 void UiController::on_card_pm4_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm4_event(e); }
-void UiController::on_pm25_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm25_info_event(e); }
-void UiController::on_pm10_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm10_info_event(e); }
 void UiController::on_card_pressure_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pressure_event(e); }
 void UiController::on_pressure_3h_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_3h_info_event(e); }
 void UiController::on_pressure_24h_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_24h_info_event(e); }
@@ -141,6 +139,15 @@ void UiController::on_back_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+
+    if (current_screen_id == SCREEN_ID_PAGE_SETTINGS &&
+        objects.container_about &&
+        !lv_obj_has_flag(objects.container_about, LV_OBJ_FLAG_HIDDEN)) {
+        LOGD("UI", "back pressed (close about)");
+        lv_obj_add_flag(objects.container_about, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
     LOGD("UI", "back pressed");
     bool save_config = false;
     bool offsets_saved = false;
@@ -199,23 +206,7 @@ void UiController::on_language_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
-    ui_language = next_language(ui_language);
-    UiStrings::setLanguage(ui_language);
-    language_dirty = (ui_language != storage.config().language);
-    update_language_label();
-    update_settings_texts();
-    update_main_texts();
-    update_sensor_info_texts();
-    update_confirm_texts();
-    update_wifi_texts();
-    update_mqtt_texts();
-    update_datetime_texts();
-    update_theme_texts();
-    update_auto_night_texts();
-    update_backlight_texts();
-    update_co2_calib_texts();
-    update_boot_diag_texts();
-    update_language_fonts();
+    UiLocalization::cycleLanguage(*this);
     update_ui();
     update_wifi_ui();
     update_mqtt_ui();
@@ -277,6 +268,7 @@ void UiController::on_theme_color_event(lv_event_t *e) {
     }
     update_theme_custom_info(presets);
     themeManager.setThemeScreenOpen(true);
+    networkManager.setThemeScreenOpen(true);
     themeManager.setCustomTabSelected(!presets);
     pending_screen_id = SCREEN_ID_PAGE_THEME;
 }
@@ -289,6 +281,7 @@ void UiController::on_theme_back_event(lv_event_t *e) {
         themeManager.applyPreviewAsCurrent(storage, night_mode, datetime_ui_dirty);
     }
     themeManager.setThemeScreenOpen(false);
+    networkManager.setThemeScreenOpen(false);
     themeManager.setCustomTabSelected(false);
     pending_screen_id = SCREEN_ID_PAGE_SETTINGS;
 }
@@ -409,6 +402,8 @@ void UiController::on_head_status_event(lv_event_t *e) {
     }
     lv_obj_t *btn = lv_event_get_target(e);
     header_status_enabled = lv_obj_has_state(btn, LV_STATE_CHECKED);
+    storage.config().header_status_enabled = header_status_enabled;
+    storage.saveConfig(true);
     data_dirty = true;
 }
 
@@ -445,7 +440,13 @@ void UiController::on_auto_night_toggle_event(lv_event_t *e) {
         return;
     }
     nightModeManager.setAutoEnabled(enabled);
-    apply_auto_night_now();
+    if (enabled) {
+        apply_auto_night_now();
+    } else if (night_mode) {
+        // Auto-night is being disabled while forced night mode is active:
+        // return to normal mode immediately and restore blink state.
+        set_night_mode_state(false, true);
+    }
     mqttManager.updateNightModeAvailability(nightModeManager.isAutoEnabled());
     sync_night_mode_toggle_ui();
     sync_auto_dim_button_state();
@@ -798,20 +799,6 @@ void UiController::on_card_pm4_event(lv_event_t *e) {
     }
     select_pm_info(INFO_PM4);
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
-}
-
-void UiController::on_pm25_info_event(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
-        return;
-    }
-    select_pm_info(INFO_PM25);
-}
-
-void UiController::on_pm10_info_event(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
-        return;
-    }
-    select_pm_info(INFO_PM10);
 }
 
 void UiController::on_card_pressure_event(lv_event_t *e) {
