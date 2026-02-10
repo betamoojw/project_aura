@@ -212,7 +212,7 @@
     #define ESP_PANEL_BOARD_TOUCH_I2C_HOST_ID           (0)     // Typically set to 0
 #if !ESP_PANEL_BOARD_TOUCH_BUS_SKIP_INIT_HOST
     /* For host */
-    #define ESP_PANEL_BOARD_TOUCH_I2C_CLK_HZ            (100 * 1000)
+    #define ESP_PANEL_BOARD_TOUCH_I2C_CLK_HZ            (50 * 1000)
                                                                 // Typically set to 400K
     #define ESP_PANEL_BOARD_TOUCH_I2C_SCL_PULLUP        (1)     // 0/1. Typically set to 1
     #define ESP_PANEL_BOARD_TOUCH_I2C_SDA_PULLUP        (1)     // 0/1. Typically set to 1
@@ -320,7 +320,7 @@
 #define ESP_PANEL_BOARD_EXPANDER_I2C_HOST_ID        (0)     // Typically set to 0
 /* For host */
 #if !ESP_PANEL_BOARD_EXPANDER_SKIP_INIT_HOST
-#define ESP_PANEL_BOARD_EXPANDER_I2C_CLK_HZ         (100 * 1000)
+#define ESP_PANEL_BOARD_EXPANDER_I2C_CLK_HZ         (50 * 1000)
                                                             // Typically set to 400K
 #define ESP_PANEL_BOARD_EXPANDER_I2C_SCL_PULLUP     (1)     // 0/1. Typically set to 1
 #define ESP_PANEL_BOARD_EXPANDER_I2C_SDA_PULLUP     (1)     // 0/1. Typically set to 1

@@ -44,7 +44,7 @@ namespace Config {
     constexpr uint8_t I2C_SDA_PIN = 8;
     constexpr uint8_t I2C_SCL_PIN = 9;
     constexpr i2c_port_t I2C_PORT = I2C_NUM_0;
-    constexpr uint32_t I2C_FREQ_HZ = 100000;
+    constexpr uint32_t I2C_FREQ_HZ = 50000;
     constexpr uint32_t I2C_TIMEOUT_MS = 50;
     constexpr uint8_t LOG_LEVEL = 3; // 0=error, 1=warn, 2=info, 3=debug
     constexpr uint32_t MEM_LOG_INTERVAL_MS = 15UL * 60UL * 1000UL;
