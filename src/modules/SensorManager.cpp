@@ -34,6 +34,44 @@ int clampi(int value, int min_value, int max_value) {
     return value;
 }
 
+bool sync_co_fields(SensorData &data, const Sen0466 &co_sensor) {
+    bool co_present = co_sensor.isPresent();
+    bool co_warmup = co_sensor.isWarmupActive();
+    bool co_valid = co_sensor.isDataValid();
+    float co_ppm = co_sensor.coPpm();
+
+    if (!co_present) {
+        co_warmup = false;
+        co_valid = false;
+        co_ppm = 0.0f;
+    } else if (!co_valid || !isfinite(co_ppm) || co_ppm < Config::SEN0466_CO_MIN_PPM) {
+        co_valid = false;
+        co_ppm = 0.0f;
+    } else if (co_ppm > Config::SEN0466_CO_MAX_PPM) {
+        co_ppm = Config::SEN0466_CO_MAX_PPM;
+    }
+
+    bool changed = false;
+    if (data.co_sensor_present != co_present) {
+        data.co_sensor_present = co_present;
+        changed = true;
+    }
+    if (data.co_warmup != co_warmup) {
+        data.co_warmup = co_warmup;
+        changed = true;
+    }
+    if (data.co_valid != co_valid) {
+        data.co_valid = co_valid;
+        changed = true;
+    }
+    if (!isfinite(data.co_ppm) || fabsf(data.co_ppm - co_ppm) > 0.01f) {
+        data.co_ppm = co_ppm;
+        changed = true;
+    }
+
+    return changed;
+}
+
 bool apply_sanity_filters(SensorData &data) {
     bool changed = false;
 
@@ -208,6 +246,14 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
         LOGW("Sensors", "SFA30 not found");
     }
 
+    sen0466_.begin();
+    if (sen0466_.start()) {
+        Logger::log(Logger::Info, "Sensors", "SEN0466 CO OK at 0x%02X",
+                    static_cast<unsigned>(Config::SEN0466_ADDR));
+    } else {
+        LOGW("Sensors", "SEN0466 CO not found, PM4 fallback active");
+    }
+
     sen66_.scheduleRetry(Config::SEN66_STARTUP_GRACE_MS);
     Logger::log(Logger::Info, "Sensors",
                 "SEN66 startup delay %u ms",
@@ -233,6 +279,8 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         data.hcho_valid = true;
         result.data_changed = true;
     }
+
+    sen0466_.poll();
 
     float pressure_hpa = 0.0f;
     float temperature_c = 0.0f;
@@ -306,6 +354,10 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         (now - sfa_last_ms > Config::SFA3X_STALE_MS)) {
         data.hcho_valid = false;
         sfa3x_.invalidate();
+        result.data_changed = true;
+    }
+
+    if (sync_co_fields(data, sen0466_)) {
         result.data_changed = true;
     }
 

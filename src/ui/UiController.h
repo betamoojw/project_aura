@@ -140,6 +140,7 @@ private:
     lv_color_t getAbsoluteHumidityColor(float ah);
     lv_color_t getDewPointColor(float dew_c);
     lv_color_t getCO2Color(int co2);
+    lv_color_t getCOColor(float co_ppm);
     lv_color_t getPM25Color(float pm);
     lv_color_t getPM10Color(float pm);
     lv_color_t getPM1Color(float pm);

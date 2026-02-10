@@ -376,6 +376,13 @@ lv_color_t UiController::getCO2Color(int co2) {
     return color_red();
 }
 
+lv_color_t UiController::getCOColor(float co_ppm) {
+    if (co_ppm < 9.0f) return color_green();
+    if (co_ppm <= 35.0f) return color_yellow();
+    if (co_ppm <= 100.0f) return color_orange();
+    return color_red();
+}
+
 lv_color_t UiController::getPM25Color(float pm) {
     if (pm <= 12.0f) return color_green();
     if (pm <= 35.0f) return color_yellow();

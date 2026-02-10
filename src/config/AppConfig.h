@@ -90,6 +90,11 @@ namespace Config {
     constexpr uint16_t SFA3X_CMD_START = 0x0006;
     constexpr uint16_t SFA3X_CMD_STOP = 0x0104;
     constexpr uint16_t SFA3X_CMD_READ_VALUES = 0x0327;
+    constexpr uint8_t SEN0466_ADDR = 0x74;
+    constexpr uint8_t SEN0466_CMD_CHANGE_MODE = 0x78;
+    constexpr uint8_t SEN0466_CMD_READ_GAS = 0x86;
+    constexpr uint8_t SEN0466_MODE_PASSIVE = 0x04;
+    constexpr uint8_t SEN0466_GAS_TYPE_CO = 0x04;
     constexpr uint8_t PCF8523_ADDR = 0x68;
     constexpr uint8_t PCF8523_REG_CONTROL_3 = 0x02;
     constexpr uint8_t PCF8523_REG_SECONDS = 0x03;
@@ -150,6 +155,12 @@ namespace Config {
     constexpr uint32_t SFA3X_READ_DELAY_MS = 5;
     constexpr uint32_t SFA3X_POLL_MS = 1000;
     constexpr uint32_t SFA3X_STALE_MS = 3000;
+    constexpr uint32_t SEN0466_CMD_DELAY_MS = 10;
+    constexpr uint32_t SEN0466_POLL_MS = 1000;
+    constexpr uint32_t SEN0466_STALE_MS = 6000;
+    constexpr uint32_t SEN0466_RETRY_MS = 5000;
+    constexpr uint32_t SEN0466_WARMUP_MS = 300UL * 1000UL;
+    constexpr uint8_t SEN0466_MAX_FAILS = 3;
     // Sensor sanity filter ranges (hard limits from datasheets).
     constexpr float SEN66_TEMP_MIN_C = -10.0f;
     constexpr float SEN66_TEMP_MAX_C = 60.0f;
@@ -171,6 +182,8 @@ namespace Config {
     constexpr float DPS310_PRESSURE_MAX_HPA = 1200.0f;
     constexpr float SFA3X_HCHO_MIN_PPB = 0.0f;
     constexpr float SFA3X_HCHO_MAX_PPB = 1000.0f;
+    constexpr float SEN0466_CO_MIN_PPM = 0.0f;
+    constexpr float SEN0466_CO_MAX_PPM = 1000.0f;
 
     constexpr uint32_t CLOCK_TICK_MS = 1000;
     constexpr uint32_t NTP_SYNC_INTERVAL_MS = 6UL * 60UL * 60UL * 1000UL;

@@ -10,6 +10,7 @@
 #include "config/AppData.h"
 #include "drivers/Bmp580.h"
 #include "drivers/Dps310.h"
+#include "drivers/Sen0466.h"
 #include "drivers/Sen66.h"
 #include "drivers/Sfa3x.h"
 
@@ -58,6 +59,7 @@ private:
     Bmp580 bmp580_;
     Dps310 dps310_;
     Sfa3x sfa3x_;
+    Sen0466 sen0466_;
     Sen66 sen66_;
     bool warmup_active_last_ = false;
     PressureSensorType pressure_sensor_ = PRESSURE_NONE;

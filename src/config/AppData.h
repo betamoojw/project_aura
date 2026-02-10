@@ -13,6 +13,7 @@ struct SensorData {
     float pressure_delta_3h = 0.0f;
     float pressure_delta_24h = 0.0f;
     float hcho = 0.0f;
+    float co_ppm = 0.0f;
     int co2 = 0;
     int voc_index = 0;
     int nox_index = 0;
@@ -25,6 +26,9 @@ struct SensorData {
     bool voc_valid = false;
     bool nox_valid = false;
     bool hcho_valid = false;
+    bool co_valid = false;
+    bool co_sensor_present = false;
+    bool co_warmup = false;
     bool pressure_valid = false;
     bool pressure_delta_3h_valid = false;
     bool pressure_delta_24h_valid = false;
