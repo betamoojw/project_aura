@@ -41,8 +41,9 @@ using namespace Config;
 namespace {
 
 constexpr uint32_t STATUS_ROTATE_MS = 5000;
-constexpr int UI_LVGL_LOCK_TIMEOUT_MS = 200;
-constexpr uint32_t UI_LVGL_LOCK_WARN_MS = 10000;
+constexpr int UI_LVGL_LOCK_TIMEOUT_MS = 500;
+constexpr uint32_t UI_LVGL_LOCK_WARN_MS = 60000;
+constexpr uint16_t UI_LVGL_LOCK_WARN_FAIL_STREAK = 3;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -169,6 +170,8 @@ void UiController::begin() {
     pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
     memset(screen_events_bound_, 0, sizeof(screen_events_bound_));
     theme_events_bound_ = false;
+    lvgl_lock_fail_streak = 0;
+    last_lvgl_lock_warn_ms = 0;
     boot_release_at_ms = 0;
     boot_ui_released = false;
     deferred_unload_.reset();
@@ -272,14 +275,20 @@ void UiController::poll(uint32_t now) {
     }
 
     if (!lvgl_port_lock(UI_LVGL_LOCK_TIMEOUT_MS)) {
-        if (now - last_lvgl_lock_warn_ms >= UI_LVGL_LOCK_WARN_MS) {
+        if (lvgl_lock_fail_streak != 0xFFFFu) {
+            ++lvgl_lock_fail_streak;
+        }
+        if (lvgl_lock_fail_streak >= UI_LVGL_LOCK_WARN_FAIL_STREAK &&
+            (now - last_lvgl_lock_warn_ms) >= UI_LVGL_LOCK_WARN_MS) {
             last_lvgl_lock_warn_ms = now;
-            LOGW("UI", "LVGL lock timeout in poll (screen=%d, backlight=%s)",
+            LOGW("UI", "LVGL lock timeout in poll (screen=%d, backlight=%s, streak=%u)",
                  current_screen_id,
-                 backlightManager.isOn() ? "ON" : "OFF");
+                 backlightManager.isOn() ? "ON" : "OFF",
+                 static_cast<unsigned>(lvgl_lock_fail_streak));
         }
         return;
     }
+    lvgl_lock_fail_streak = 0;
     mqtt_apply_pending();
     if ((now - last_ui_tick_ms) >= UI_TICK_MS) {
         ui_tick();

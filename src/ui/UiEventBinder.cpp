@@ -247,7 +247,7 @@ void UiEventBinder::applyCheckedStatesForAvailableObjects(UiController &owner, i
         }
     };
 
-    set_checked(objects.btn_head_status, true);
+    set_checked(objects.btn_head_status, owner.header_status_enabled);
     set_checked(objects.btn_night_mode, owner.night_mode);
     set_checked(objects.btn_units_c_f, owner.temp_units_c);
     set_checked(objects.btn_led_indicators, owner.led_indicators_enabled);

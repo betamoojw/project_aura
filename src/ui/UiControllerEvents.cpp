@@ -402,6 +402,8 @@ void UiController::on_head_status_event(lv_event_t *e) {
     }
     lv_obj_t *btn = lv_event_get_target(e);
     header_status_enabled = lv_obj_has_state(btn, LV_STATE_CHECKED);
+    storage.config().header_status_enabled = header_status_enabled;
+    storage.saveConfig(true);
     data_dirty = true;
 }
 

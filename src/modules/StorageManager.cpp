@@ -426,6 +426,7 @@ bool StorageManager::loadConfig() {
         readValue(ui, "hum_offset", loaded.hum_offset);
         readValue(ui, "units_c", loaded.units_c);
         readValue(ui, "night_mode", loaded.night_mode);
+        readValue(ui, "header_status_enabled", loaded.header_status_enabled);
         readValue(ui, "led_indicators", loaded.led_indicators);
         readValue(ui, "alert_blink", loaded.alert_blink);
         readValue(ui, "asc_enabled", loaded.asc_enabled);
@@ -515,6 +516,7 @@ bool StorageManager::saveConfigInternal() {
     ui["hum_offset"] = config_.hum_offset;
     ui["units_c"] = config_.units_c;
     ui["night_mode"] = config_.night_mode;
+    ui["header_status_enabled"] = config_.header_status_enabled;
     ui["led_indicators"] = config_.led_indicators;
     ui["alert_blink"] = config_.alert_blink;
     ui["asc_enabled"] = config_.asc_enabled;
