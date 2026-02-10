@@ -246,16 +246,12 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
         LOGW("Sensors", "SFA30 not found");
     }
 
-    if (Config::SEN0466_ENABLED) {
-        sen0466_.begin();
-        if (sen0466_.start()) {
-            Logger::log(Logger::Info, "Sensors", "SEN0466 CO OK at 0x%02X",
-                        static_cast<unsigned>(Config::SEN0466_ADDR));
-        } else {
-            LOGW("Sensors", "SEN0466 CO not found, PM4 fallback active");
-        }
+    sen0466_.begin();
+    if (sen0466_.start()) {
+        Logger::log(Logger::Info, "Sensors", "SEN0466 CO OK at 0x%02X",
+                    static_cast<unsigned>(Config::SEN0466_ADDR));
     } else {
-        LOGW("Sensors", "SEN0466 CO disabled (diagnostic mode), PM4 fallback active");
+        LOGW("Sensors", "SEN0466 CO not found, PM4 fallback active");
     }
 
     sen66_.scheduleRetry(Config::SEN66_STARTUP_GRACE_MS);
@@ -284,9 +280,7 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         result.data_changed = true;
     }
 
-    if (Config::SEN0466_ENABLED) {
-        sen0466_.poll();
-    }
+    sen0466_.poll();
 
     float pressure_hpa = 0.0f;
     float temperature_c = 0.0f;
@@ -363,10 +357,8 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         result.data_changed = true;
     }
 
-    if (Config::SEN0466_ENABLED) {
-        if (sync_co_fields(data, sen0466_)) {
-            result.data_changed = true;
-        }
+    if (sync_co_fields(data, sen0466_)) {
+        result.data_changed = true;
     }
 
     return result;
