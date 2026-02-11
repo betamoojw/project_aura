@@ -699,6 +699,7 @@ typedef struct _objects_t {
     lv_obj_t *label_co_value;
     lv_obj_t *label_co_title;
     lv_obj_t *dot_co;
+    lv_obj_t *label_co_warmup;
     lv_obj_t *card_hum_2;
     lv_obj_t *label_mr_title;
     lv_obj_t *label_dew_title_1;
