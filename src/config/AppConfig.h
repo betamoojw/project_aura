@@ -159,6 +159,9 @@ namespace Config {
     constexpr uint32_t SEN0466_POLL_MS = 3000;
     constexpr uint32_t SEN0466_STALE_MS = 18000;
     constexpr uint32_t SEN0466_RETRY_MS = 5000;
+    constexpr uint32_t SEN0466_I2C_TIMEOUT_MS = 15;
+    constexpr uint32_t SEN0466_FAIL_COOLDOWN_MS = 30UL * 1000UL;
+    constexpr uint8_t SEN0466_MAX_COOLDOWN_RECOVERY_FAILS = 3;
     constexpr uint32_t SEN0466_WARMUP_MS = 300UL * 1000UL;
     constexpr uint8_t SEN0466_MAX_FAILS = 3;
     // Sensor sanity filter ranges (hard limits from datasheets).

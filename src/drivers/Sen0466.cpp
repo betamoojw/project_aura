@@ -29,6 +29,9 @@ bool Sen0466::begin() {
     last_poll_ms_ = 0;
     last_data_ms_ = 0;
     last_retry_ms_ = 0;
+    fail_cooldown_active_ = false;
+    fail_cooldown_started_ms_ = 0;
+    cooldown_recover_fail_count_ = 0;
     return true;
 }
 
@@ -40,6 +43,9 @@ bool Sen0466::start() {
         co_ppm_ = 0.0f;
         fail_count_ = 0;
         warned_type_mismatch_ = false;
+        fail_cooldown_active_ = false;
+        fail_cooldown_started_ms_ = 0;
+        cooldown_recover_fail_count_ = 0;
         return false;
     }
 
@@ -51,6 +57,9 @@ bool Sen0466::start() {
         co_ppm_ = 0.0f;
         fail_count_ = 0;
         warned_type_mismatch_ = false;
+        fail_cooldown_active_ = false;
+        fail_cooldown_started_ms_ = 0;
+        cooldown_recover_fail_count_ = 0;
     }
 
     if (!setPassiveMode()) {
@@ -66,6 +75,47 @@ void Sen0466::poll() {
         if (now - last_retry_ms_ >= Config::SEN0466_RETRY_MS) {
             start();
         }
+        return;
+    }
+
+    if (fail_cooldown_active_) {
+        if (now - fail_cooldown_started_ms_ < Config::SEN0466_FAIL_COOLDOWN_MS) {
+            return;
+        }
+
+        fail_cooldown_active_ = false;
+        fail_cooldown_started_ms_ = 0;
+        if (!setPassiveMode()) {
+            if (cooldown_recover_fail_count_ < UINT8_MAX) {
+                ++cooldown_recover_fail_count_;
+            }
+            if (cooldown_recover_fail_count_ >= Config::SEN0466_MAX_COOLDOWN_RECOVERY_FAILS) {
+                LOGW("SEN0466", "cooldown recovery failed %u times, marking sensor not present",
+                     static_cast<unsigned>(cooldown_recover_fail_count_));
+                present_ = false;
+                data_valid_ = false;
+                co_ppm_ = 0.0f;
+                fail_count_ = 0;
+                warned_type_mismatch_ = false;
+                fail_cooldown_active_ = false;
+                fail_cooldown_started_ms_ = 0;
+                cooldown_recover_fail_count_ = 0;
+                last_retry_ms_ = now;
+                return;
+            }
+            fail_cooldown_active_ = true;
+            fail_cooldown_started_ms_ = now;
+            LOGW("SEN0466", "cooldown elapsed, passive mode restore failed (%u/%u)",
+                 static_cast<unsigned>(cooldown_recover_fail_count_),
+                 static_cast<unsigned>(Config::SEN0466_MAX_COOLDOWN_RECOVERY_FAILS));
+            return;
+        }
+
+        cooldown_recover_fail_count_ = 0;
+        fail_count_ = 0;
+        warned_type_mismatch_ = false;
+        last_poll_ms_ = now;
+        LOGI("SEN0466", "cooldown elapsed, passive mode restored");
         return;
     }
 
@@ -87,10 +137,17 @@ void Sen0466::poll() {
         }
         if (fail_count_ >= Config::SEN0466_MAX_FAILS) {
             data_valid_ = false;
+            fail_cooldown_active_ = true;
+            fail_cooldown_started_ms_ = now;
+            cooldown_recover_fail_count_ = 0;
+            LOGW("SEN0466", "read failed %u times, entering cooldown %lu ms",
+                 static_cast<unsigned>(fail_count_),
+                 static_cast<unsigned long>(Config::SEN0466_FAIL_COOLDOWN_MS));
         }
         return;
     }
 
+    cooldown_recover_fail_count_ = 0;
     fail_count_ = 0;
     last_data_ms_ = now;
 
@@ -141,7 +198,7 @@ bool Sen0466::pingAddress() {
     esp_err_t err = i2c_master_cmd_begin(
         Config::I2C_PORT,
         cmd,
-        pdMS_TO_TICKS(Config::I2C_TIMEOUT_MS)
+        pdMS_TO_TICKS(Config::SEN0466_I2C_TIMEOUT_MS)
     );
     i2c_cmd_link_delete(cmd);
     return err == ESP_OK;
@@ -205,7 +262,7 @@ bool Sen0466::transact(const uint8_t *tx_frame, uint8_t *rx_frame) {
         Config::SEN0466_ADDR,
         tx,
         sizeof(tx),
-        pdMS_TO_TICKS(Config::I2C_TIMEOUT_MS)
+        pdMS_TO_TICKS(Config::SEN0466_I2C_TIMEOUT_MS)
     );
     if (err != ESP_OK) {
         return false;
@@ -221,7 +278,7 @@ bool Sen0466::transact(const uint8_t *tx_frame, uint8_t *rx_frame) {
         1,
         rx_frame,
         kFrameLen,
-        pdMS_TO_TICKS(Config::I2C_TIMEOUT_MS)
+        pdMS_TO_TICKS(Config::SEN0466_I2C_TIMEOUT_MS)
     );
     return err == ESP_OK;
 }

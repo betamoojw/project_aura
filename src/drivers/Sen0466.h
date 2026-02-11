@@ -43,4 +43,7 @@ private:
     uint32_t last_poll_ms_ = 0;
     uint32_t last_data_ms_ = 0;
     uint32_t last_retry_ms_ = 0;
+    bool fail_cooldown_active_ = false;
+    uint32_t fail_cooldown_started_ms_ = 0;
+    uint8_t cooldown_recover_fail_count_ = 0;
 };

@@ -20,6 +20,12 @@
 using namespace Config;
 
 void UiController::update_datetime_ui() {
+    const bool controls_enabled = !timeManager.isManualLocked(millis());
+    // Keep editable fields in sync with system time unless user is actively editing.
+    if (!datetime_changed || !controls_enabled) {
+        timeManager.syncInputsFromSystem(set_hour, set_minute, set_day, set_month, set_year);
+    }
+
     if (objects.label_ntp_interval) {
         safe_label_set_text(objects.label_ntp_interval, UiText::NtpInterval());
     }
@@ -36,8 +42,6 @@ void UiController::update_datetime_ui() {
 
     const lv_color_t text_on = active_text_color();
     const lv_color_t text_off = color_inactive();
-    bool controls_enabled = !timeManager.isManualLocked(millis());
-
     set_button_enabled(objects.btn_set_time_hours_minus, controls_enabled);
     set_button_enabled(objects.btn_set_time_hours_plus, controls_enabled);
     set_button_enabled(objects.btn_set_time_minutes_minus, controls_enabled);

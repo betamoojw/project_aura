@@ -225,6 +225,9 @@ void UiController::poll(uint32_t now) {
     if (now - last_clock_tick_ms >= CLOCK_TICK_MS) {
         last_clock_tick_ms = now;
         clock_ui_dirty = true;
+        if (current_screen_id == SCREEN_ID_PAGE_CLOCK && !datetime_changed) {
+            datetime_ui_dirty = true;
+        }
     }
     if (now - last_blink_ms >= BLINK_PERIOD_MS) {
         last_blink_ms = now;
