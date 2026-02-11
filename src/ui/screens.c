@@ -9707,7 +9707,7 @@ void create_screen_page_main_pro() {
                             // label_nox_warmup_1
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_nox_warmup_1 = obj;
-                            lv_obj_set_pos(obj, 9, 46);
+                            lv_obj_set_pos(obj, 9, 50);
                             lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -9792,7 +9792,7 @@ void create_screen_page_main_pro() {
                             // label_voc_warmup_1
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_voc_warmup_1 = obj;
-                            lv_obj_set_pos(obj, 9, 46);
+                            lv_obj_set_pos(obj, 9, 50);
                             lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -10087,7 +10087,7 @@ void create_screen_page_main_pro() {
                             // label_co_warmup
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_co_warmup = obj;
-                            lv_obj_set_pos(obj, 8, 46);
+                            lv_obj_set_pos(obj, 8, 50);
                             lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);

@@ -25,6 +25,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     StatusMessageResult result;
 
     StatusSeverity co2_sev = STATUS_NONE;
+    StatusSeverity co_sev = STATUS_NONE;
     StatusSeverity voc_sev = STATUS_NONE;
     StatusSeverity hcho_sev = STATUS_NONE;
     StatusSeverity temp_sev = STATUS_NONE;
@@ -37,6 +38,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
     StatusSeverity ah_sev = STATUS_NONE;
 
     const char *co2_msg = nullptr;
+    const char *co_msg = nullptr;
     const char *voc_msg = nullptr;
     const char *hcho_msg = nullptr;
     const char *temp_msg = nullptr;
@@ -60,6 +62,30 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
             co2_sev = STATUS_YELLOW;
             co2_msg = text(TextId::MsgCo2Rising);
         }
+    }
+
+    if (data.co_sensor_present &&
+        data.co_valid &&
+        isfinite(data.co_ppm) &&
+        data.co_ppm >= 0.0f) {
+        result.has_valid = true;
+        if (data.co_ppm > 100.0f) {
+            co_sev = STATUS_RED;
+            co_msg = text(TextId::MsgCoDanger);
+        } else if (data.co_ppm > 35.0f) {
+            co_sev = STATUS_ORANGE;
+            co_msg = text(TextId::MsgCoElevated);
+        } else if (data.co_ppm >= 9.0f) {
+            co_sev = STATUS_YELLOW;
+            co_msg = text(TextId::MsgCoDetected);
+        }
+    }
+
+    // Safety override: when CO warning is active, show only CO status.
+    if (co_sev != STATUS_NONE && co_msg) {
+        result.count = 1;
+        result.messages[0] = {co_msg, co_sev, STATUS_SENSOR_CO};
+        return result;
     }
 
     if (data.pm25_valid && isfinite(data.pm25) && data.pm25 >= 0.0f) {
@@ -273,6 +299,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         add_msg(sev, pm1_sev, STATUS_SENSOR_PM1, pm1_msg);
         add_msg(sev, pm10_sev, STATUS_SENSOR_PM10, pm10_msg);
         add_msg(sev, voc_sev, STATUS_SENSOR_VOC, voc_msg);
+        add_msg(sev, co_sev, STATUS_SENSOR_CO, co_msg);
         add_msg(sev, co2_sev, STATUS_SENSOR_CO2, co2_msg);
         add_msg(sev, temp_sev, STATUS_SENSOR_TEMP, temp_msg);
         add_msg(sev, hum_sev, STATUS_SENSOR_HUM, hum_msg);
@@ -280,7 +307,8 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         add_msg(sev, dp_sev, STATUS_SENSOR_DP, dp_msg);
     };
 
-    const bool has_red = (co2_sev == STATUS_RED) || (voc_sev == STATUS_RED) || (hcho_sev == STATUS_RED) ||
+    const bool has_red = (co_sev == STATUS_RED) || (co2_sev == STATUS_RED) ||
+                         (voc_sev == STATUS_RED) || (hcho_sev == STATUS_RED) ||
                          (temp_sev == STATUS_RED) || (pm25_sev == STATUS_RED) || (pm1_sev == STATUS_RED) ||
                          (pm10_sev == STATUS_RED) || (nox_sev == STATUS_RED) || (hum_sev == STATUS_RED) ||
                          (dp_sev == STATUS_RED) || (ah_sev == STATUS_RED);

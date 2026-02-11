@@ -538,6 +538,9 @@ lv_color_t UiController::alert_color_for_mode(lv_color_t color) {
 
 void UiController::compute_header_style(const AirQuality &aq, lv_color_t &color, lv_opa_t &shadow_opa) {
     lv_color_t base = header_status_enabled ? aq.color : color_card_border();
+    if (co_status_alert_active) {
+        base = color_red();
+    }
     shadow_opa = header_status_enabled ? LV_OPA_COVER : LV_OPA_TRANSP;
     if (alert_blink_enabled && header_status_enabled && (base.full == color_red().full) && !blink_state) {
         color = color_inactive();
@@ -921,7 +924,8 @@ void UiController::update_ui() {
     lv_opa_t header_shadow;
     compute_header_style(aq, header_col, header_shadow);
     if (night_mode && header_status_enabled) {
-        header_col = night_alert_color(aq.color);
+        lv_color_t night_source = co_status_alert_active ? color_red() : aq.color;
+        header_col = night_alert_color(night_source);
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
     if (objects.container_header_pro) {
@@ -947,7 +951,8 @@ void UiController::update_settings_header() {
     lv_opa_t header_shadow;
     compute_header_style(aq, header_col, header_shadow);
     if (night_mode && header_status_enabled) {
-        header_col = night_alert_color(aq.color);
+        lv_color_t night_source = co_status_alert_active ? color_red() : aq.color;
+        header_col = night_alert_color(night_source);
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
     lv_obj_set_style_border_color(objects.container_settings_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -969,6 +974,13 @@ void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
     const StatusMessages::StatusMessage *messages = result.messages;
     const size_t count = result.count;
     const bool has_valid = result.has_valid;
+    co_status_alert_active = false;
+    for (size_t i = 0; i < count; ++i) {
+        if (messages[i].sensor == StatusMessages::STATUS_SENSOR_CO) {
+            co_status_alert_active = true;
+            break;
+        }
+    }
 
     uint32_t signature = static_cast<uint32_t>(count);
     for (size_t i = 0; i < count; ++i) {
