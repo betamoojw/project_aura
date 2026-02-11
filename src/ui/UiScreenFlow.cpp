@@ -16,6 +16,11 @@
 #include "ui/ThemeManager.h"
 #include "ui/ui.h"
 
+#if !defined(EEZ_FOR_LVGL)
+extern "C" void loadScreen(enum ScreensEnum screenId);
+extern "C" void unloadScreen(enum ScreensEnum screenId);
+#endif
+
 void UiScreenFlow::processPendingScreen(UiController &owner, uint32_t now_ms) {
     bool refresh_status_icons_after_switch = false;
     if (owner.pending_screen_id != 0) {
