@@ -74,6 +74,22 @@ int score_from_voc(float value) {
     return score_from_thresholds(value, 0.0f, 150.0f, 250.0f, 350.0f);
 }
 
+int score_from_co(float co_ppm) {
+    if (co_ppm <= 0.0f) {
+        return 0;
+    }
+    if (co_ppm < 9.0f) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 0.0f, 9.0f, 0.0f, 25.0f)));
+    }
+    if (co_ppm <= 35.0f) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 9.0f, 35.0f, 80.0f, 90.0f)));
+    }
+    if (co_ppm <= 100.0f) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 35.0f, 100.0f, 90.0f, 100.0f)));
+    }
+    return 100;
+}
+
 } // namespace
 
 UiController *UiController::instance_ = nullptr;
@@ -456,6 +472,15 @@ AirQuality UiController::getAirQuality(const SensorData &data) {
     bool gas_warmup = sensorManager.isWarmupActive();
     bool has_valid = false;
     int max_score = 0;
+
+    if (data.co_sensor_present &&
+        data.co_valid &&
+        isfinite(data.co_ppm) &&
+        data.co_ppm >= 0.0f) {
+        int score = score_from_co(data.co_ppm);
+        max_score = max(max_score, score);
+        has_valid = true;
+    }
 
     if (data.co2_valid && data.co2 > 0) {
         int score = score_from_thresholds(static_cast<float>(data.co2), 400.0f, 800.0f, 1000.0f, 1500.0f);
