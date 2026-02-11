@@ -94,6 +94,11 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_pm1_acceptable) safe_label_set_text_static(objects.label_pm1_acceptable, UiText::InfoPm1Acceptable());
     if (objects.label_pm1_uncomfortable) safe_label_set_text_static(objects.label_pm1_uncomfortable, UiText::InfoPm1Uncomfortable());
     if (objects.label_pm1_poor) safe_label_set_text_static(objects.label_pm1_poor, UiText::InfoPm1Poor());
+    if (objects.label_co_text) safe_label_set_text_static(objects.label_co_text, UiText::InfoCoText());
+    if (objects.label_co_excellent) safe_label_set_text_static(objects.label_co_excellent, UiText::InfoCoExcellent());
+    if (objects.label_co_acceptable) safe_label_set_text_static(objects.label_co_acceptable, UiText::InfoCoAcceptable());
+    if (objects.label_co_uncomfortable) safe_label_set_text_static(objects.label_co_uncomfortable, UiText::InfoCoUncomfortable());
+    if (objects.label_co_poor) safe_label_set_text_static(objects.label_co_poor, UiText::InfoCoPoor());
     if (objects.label_pm4_text) safe_label_set_text_static(objects.label_pm4_text, UiText::InfoPm4Text());
     if (objects.label_pm4_excellent) safe_label_set_text_static(objects.label_pm4_excellent, UiText::InfoPm4Excellent());
     if (objects.label_pm4_acceptable) safe_label_set_text_static(objects.label_pm4_acceptable, UiText::InfoPm4Acceptable());
