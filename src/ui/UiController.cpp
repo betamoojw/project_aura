@@ -230,7 +230,7 @@ void UiController::markDatetimeDirty() {
 
 void UiController::mqtt_sync_with_wifi() {
     mqttManager.syncWithWifi();
-    sync_mqtt_toggle_state();
+    // UI state is refreshed in UiRenderLoop under lvgl_port_lock.
 }
 
 void UiController::poll(uint32_t now) {
@@ -594,10 +594,17 @@ void UiController::update_clock_labels() {
     snprintf(buf, sizeof(buf), "%02d:%02d", local_tm.tm_hour, local_tm.tm_min);
     if (objects.label_time_value_1) safe_label_set_text(objects.label_time_value_1, buf);
     if (objects.label_time_value_2) safe_label_set_text(objects.label_time_value_2, buf);
-    snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
-             local_tm.tm_mday,
-             local_tm.tm_mon + 1,
-             local_tm.tm_year + 1900);
+    if (date_units_mdy) {
+        snprintf(buf, sizeof(buf), "%02d/%02d/%04d",
+                 local_tm.tm_mon + 1,
+                 local_tm.tm_mday,
+                 local_tm.tm_year + 1900);
+    } else {
+        snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
+                 local_tm.tm_mday,
+                 local_tm.tm_mon + 1,
+                 local_tm.tm_year + 1900);
+    }
     if (objects.label_date_value_1) safe_label_set_text(objects.label_date_value_1, buf);
     if (objects.label_date_value_2) safe_label_set_text(objects.label_date_value_2, buf);
 }
@@ -1083,6 +1090,7 @@ void UiController::init_ui_defaults() {
     }
 
     ui_language = storage.config().language;
+    date_units_mdy = storage.config().units_mdy;
     language_dirty = false;
     header_status_enabled = storage.config().header_status_enabled;
     UiLocalization::applyCurrentLanguage(*this);

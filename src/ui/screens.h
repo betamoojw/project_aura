@@ -51,6 +51,8 @@ typedef struct _objects_t {
     lv_obj_t *lbl_diag_rtc_label;
     lv_obj_t *lbl_diag_rtc;
     lv_obj_t *lbl_diag_error;
+    lv_obj_t *lbl_diag_co_label;
+    lv_obj_t *lbl_diag_co;
     lv_obj_t *background;
     lv_obj_t *container_content;
     lv_obj_t *container_header;
@@ -182,6 +184,8 @@ typedef struct _objects_t {
     lv_obj_t *btn_language;
     lv_obj_t *label_language_value;
     lv_obj_t *label_language_title;
+    lv_obj_t *btn_units_mdy;
+    lv_obj_t *label_btn_units_mdy;
     lv_obj_t *container_confirm;
     lv_obj_t *container_confirm_card;
     lv_obj_t *btn_confirm_ok;

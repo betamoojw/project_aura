@@ -285,6 +285,7 @@ namespace Config {
         float temp_offset = 0.0f;
         float hum_offset = 0.0f;
         bool units_c = true;
+        bool units_mdy = false;
         bool night_mode = false;
         bool header_status_enabled = true;
         bool led_indicators = true;

@@ -38,6 +38,9 @@ public:
     bool isBusy() const { return sen66_.isBusy(); }
     bool isDpsOk() const { return isPressureOk(); }
     bool isSfaOk() const { return sfa3x_.isOk(); }
+    bool isCoPresent() const { return sen0466_.isPresent(); }
+    bool isCoValid() const { return sen0466_.isDataValid(); }
+    bool isCoWarmupActive() const { return sen0466_.isWarmupActive(); }
     bool isPressureOk() const;
     PressureSensorType pressureSensorType() const { return pressure_sensor_; }
     const char *pressureSensorLabel() const;

@@ -85,6 +85,8 @@ void UiBootFlow::clearBootObjectRefs(UiController &owner) {
     objects.lbl_diag_sfa = nullptr;
     objects.lbl_diag_rtc_label = nullptr;
     objects.lbl_diag_rtc = nullptr;
+    objects.lbl_diag_co_label = nullptr;
+    objects.lbl_diag_co = nullptr;
     objects.lbl_diag_error = nullptr;
 }
 
@@ -222,6 +224,19 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
     if (objects.lbl_diag_sfa) {
         owner.safe_label_set_text(objects.lbl_diag_sfa,
                                   owner.sensorManager.isSfaOk() ? UiText::StatusOk() : UiText::StatusErr());
+    }
+    if (objects.lbl_diag_co) {
+        const char *status = UiText::BootDiagNotFound();
+        if (owner.sensorManager.isCoPresent()) {
+            if (owner.sensorManager.isCoWarmupActive()) {
+                status = UiText::BootDiagStarting();
+            } else if (owner.sensorManager.isCoValid()) {
+                status = UiText::StatusOk();
+            } else {
+                status = UiText::StatusErr();
+            }
+        }
+        owner.safe_label_set_text(objects.lbl_diag_co, status);
     }
     if (objects.lbl_diag_rtc) {
         const char *status = UiText::BootDiagNotFound();

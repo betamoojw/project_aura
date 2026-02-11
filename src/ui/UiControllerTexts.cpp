@@ -6,8 +6,14 @@
 
 #include "ui/UiController.h"
 
+#include <stdio.h>
+
 #include "ui/UiText.h"
 #include "ui/ui.h"
+
+#ifndef APP_VERSION
+#define APP_VERSION "dev"
+#endif
 
 void UiController::update_settings_texts() {
     if (objects.label_settings_title) safe_label_set_text(objects.label_settings_title, UiText::LabelSettingsTitle());
@@ -32,6 +38,13 @@ void UiController::update_settings_texts() {
             back_label = "BACK";
         }
         safe_label_set_text(objects.label_btn_about_back, back_label);
+    }
+    if (objects.container_about_text) {
+        char about_text[256];
+        snprintf(about_text, sizeof(about_text),
+                 "Project Aura\nVersion: v%s\n(c) Volodymyr Papush (21CNCStudio)\nOpen-source firmware (GPL-3.0-or-later)\n21cncstudio.com",
+                 APP_VERSION);
+        safe_label_set_text(objects.container_about_text, about_text);
     }
     if (objects.label_btn_units_led_indicators) safe_label_set_text(objects.label_btn_units_led_indicators, UiText::LabelLedIndicators());
     if (objects.label_btn_alert_blink) safe_label_set_text(objects.label_btn_alert_blink, UiText::LabelAlertBlink());

@@ -162,6 +162,7 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_backlight_schedule_toggle, UiController::on_backlight_schedule_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_night_mode, UiController::on_night_mode_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_units_c_f, UiController::on_units_c_f_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_units_mdy, UiController::on_units_mdy_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_led_indicators, UiController::on_led_indicators_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_alert_blink, UiController::on_alert_blink_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co2_calib_asc, UiController::on_co2_calib_asc_event_cb, LV_EVENT_VALUE_CHANGED},
@@ -198,6 +199,7 @@ void UiEventBinder::applyToggleStylesForAvailableObjects(UiController &owner, in
         objects.btn_wifi,
         objects.btn_mqtt,
         objects.btn_units_c_f,
+        objects.btn_units_mdy,
         objects.btn_led_indicators,
         objects.btn_alert_blink,
         objects.btn_co2_calib_asc,
@@ -250,6 +252,7 @@ void UiEventBinder::applyCheckedStatesForAvailableObjects(UiController &owner, i
     set_checked(objects.btn_head_status, owner.header_status_enabled);
     set_checked(objects.btn_night_mode, owner.night_mode);
     set_checked(objects.btn_units_c_f, owner.temp_units_c);
+    set_checked(objects.btn_units_mdy, owner.date_units_mdy);
     set_checked(objects.btn_led_indicators, owner.led_indicators_enabled);
     set_checked(objects.btn_alert_blink, owner.alert_blink_enabled);
     set_checked(objects.btn_co2_calib_asc, owner.co2_asc_enabled);
