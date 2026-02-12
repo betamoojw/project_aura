@@ -135,6 +135,8 @@ inline const char *LabelAutoNightEndTitle() { return UiStrings::text(UiStrings::
 inline const char *LabelBacklightTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightTitle); }
 inline const char *LabelBacklightHint() { return UiStrings::text(UiStrings::TextId::LabelBacklightHint); }
 inline const char *LabelBacklightScheduleTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightScheduleTitle); }
+inline const char *LabelBacklightAlarmWakeTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightAlarmWakeTitle); }
+inline const char *LabelBacklightAlarmWakeToggle() { return UiStrings::text(UiStrings::TextId::LabelBacklightAlarmWakeToggle); }
 inline const char *LabelBacklightPresetsTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightPresetsTitle); }
 inline const char *LabelBacklightSleepTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightSleepTitle); }
 inline const char *LabelBacklightWakeTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightWakeTitle); }

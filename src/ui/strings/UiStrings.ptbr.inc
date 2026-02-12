@@ -154,6 +154,8 @@
     "LUZ DE FUNDO",
     "Dispositivo monitora ar com tela apagada.\nSensores permanecem ativos. Toque para acordar.",
     "SONO PROGRAM.",
+    "ACORDAR COM ALERTA",
+    "ON / OFF",
     "ECONOMIA",
     "DORMIR ÀS",
     "ACORDAR ÀS",

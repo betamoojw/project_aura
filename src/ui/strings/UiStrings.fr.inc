@@ -154,6 +154,8 @@
     "ÉCLAIRAGE ÉCRAN",
     "Mesure l'air écran éteint.\nCapteurs actifs. Touchez pour réveiller.",
     "SOMMEIL PROGRAMMÉ",
+    "RÉVEIL SUR ALERTE",
+    "ON / OFF",
     "ÉCONOMIE ÉNERGIE",
     "DORMIR À",
     "RÉVEIL À",

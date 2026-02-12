@@ -154,6 +154,8 @@
     "RETROILLUMINAZ.",
     "Misura aria a schermo spento.\nSensori attivi. Tocca per svegliare.",
     "SONNO PROGRAM.",
+    "RISVEGLIO SU ALLARME",
+    "ON / OFF",
     "RISPARMIO",
     "DORMI ALLE",
     "SVEGLIA ALLE",

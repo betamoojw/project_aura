@@ -154,6 +154,8 @@
     "SCHERM LICHT",
     "Apparaat meet lucht met scherm uit.\nSensoren blijven actief. Tik om te wekken.",
     "SLAAPSCHEMA",
+    "WEKKEN BIJ ALARM",
+    "AAN / UIT",
     "ENERGIE",
     "SLAAP OM",
     "WAKKER OM",

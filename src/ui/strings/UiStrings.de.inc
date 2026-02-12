@@ -154,6 +154,8 @@
     "HINTERLICHT",
     "Gerät überwacht Luftqualität bei ausgeschaltetem Bildschirm.\nSensoren bleiben aktiv. Berühren zum Aufwecken.",
     "GEPLANTER SCHLAF",
+    "WECKEN BEI ALARM",
+    "AN / AUS",
     "ENERGIESPAREN",
     "SCHLAFEN UM",
     "AUFWACHEN UM",

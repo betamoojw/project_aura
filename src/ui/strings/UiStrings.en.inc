@@ -154,6 +154,8 @@
     "SCREEN BACKLIGHT",
     "Device monitors air quality while screen is off.\nSensors remain active. Touch to wake.",
     "SCHEDULED SLEEP",
+    "WAKE ON ALERT",
+    "ON / OFF",
     "POWER SAVING",
     "SLEEP AT",
     "WAKE AT",

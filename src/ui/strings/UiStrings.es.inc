@@ -154,6 +154,8 @@
     "LUZ DE PANTALLA",
     "El dispositivo mide aire con pantalla apagada.\nSensores siguen activos. Toca para despertar.",
     "SUEÑO PROGRAMADO",
+    "DESPERTAR POR ALERTA",
+    "ON / OFF",
     "AHORRO ENERGÍA",
     "DORMIR A",
     "DESPERTAR A",

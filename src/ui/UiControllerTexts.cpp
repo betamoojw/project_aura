@@ -189,6 +189,7 @@ void UiController::update_backlight_texts() {
     if (objects.label_backlight_title) safe_label_set_text(objects.label_backlight_title, UiText::LabelBacklightTitle());
     if (objects.label_backlight_hint) safe_label_set_text(objects.label_backlight_hint, UiText::LabelBacklightHint());
     if (objects.label_backlight_schedule_title) safe_label_set_text(objects.label_backlight_schedule_title, UiText::LabelBacklightScheduleTitle());
+    if (objects.label_backlight_alarm_wake_title) safe_label_set_text(objects.label_backlight_alarm_wake_title, UiText::LabelBacklightAlarmWakeTitle());
     if (objects.label_backlight_presets_title) safe_label_set_text(objects.label_backlight_presets_title, UiText::LabelBacklightPresetsTitle());
     if (objects.label_backlight_sleep_title) safe_label_set_text(objects.label_backlight_sleep_title, UiText::LabelBacklightSleepTitle());
     if (objects.label_backlight_wake_title) safe_label_set_text(objects.label_backlight_wake_title, UiText::LabelBacklightWakeTitle());
@@ -198,7 +199,7 @@ void UiController::update_backlight_texts() {
     if (objects.label_backlight_wake_minutes) safe_label_set_text(objects.label_backlight_wake_minutes, UiText::LabelSetTimeMinutes());
     if (objects.label_btn_backlight_back) safe_label_set_text(objects.label_btn_backlight_back, UiText::LabelSettingsBack());
     if (objects.label_btn_backlight_schedule_toggle) safe_label_set_text(objects.label_btn_backlight_schedule_toggle, UiText::MqttToggleLabel());
-    if (objects.label_btn_backlight_alarm_wake_toggle) safe_label_set_text(objects.label_btn_backlight_alarm_wake_toggle, UiText::MqttToggleLabel());
+    if (objects.label_btn_backlight_alarm_wake_toggle) safe_label_set_text(objects.label_btn_backlight_alarm_wake_toggle, UiText::LabelBacklightAlarmWakeToggle());
     if (objects.label_btn_backlight_always_on) safe_label_set_text(objects.label_btn_backlight_always_on, UiText::LabelBacklightAlwaysOn());
     if (objects.label_btn_backlight_30s) safe_label_set_text(objects.label_btn_backlight_30s, UiText::LabelBacklight30s());
     if (objects.label_btn_backlight_1m) safe_label_set_text(objects.label_btn_backlight_1m, UiText::LabelBacklight1m());
