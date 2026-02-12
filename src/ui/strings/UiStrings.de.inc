@@ -182,6 +182,7 @@
     "SFA30:",
     "PCF8523:",
     "Fehler erkannt",
+    "FEHLER ANZEIGEN",
     "OK (Konfig)",
     "OK (Standard)",
     "WIEDER OK",

@@ -229,5 +229,6 @@ void UiController::update_boot_diag_texts() {
     if (objects.lbl_diag_sfa_label) safe_label_set_text(objects.lbl_diag_sfa_label, UiText::LabelBootDiagSfaLabel());
     if (objects.lbl_diag_rtc_label) safe_label_set_text(objects.lbl_diag_rtc_label, UiText::LabelBootDiagRtcLabel());
     if (objects.lbl_diag_error) safe_label_set_text(objects.lbl_diag_error, UiText::LabelBootDiagErrorsDetected());
+    if (objects.label_btn_diag_errors) safe_label_set_text(objects.label_btn_diag_errors, UiText::LabelBootDiagShowErrors());
 }
 

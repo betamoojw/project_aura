@@ -182,6 +182,7 @@
     "SFA30:",
     "PCF8523:",
     "Fouten gedetecteerd",
+    "TOON FOUTEN",
     "OK (config)",
     "OK (standaard)",
     "HERSTELD",

@@ -182,6 +182,7 @@
     "SFA30:",
     "PCF8523:",
     "Errores detectados",
+    "MOSTRAR ERRORES",
     "OK (config)",
     "OK (defecto)",
     "RECUPERADO",
