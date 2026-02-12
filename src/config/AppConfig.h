@@ -212,7 +212,7 @@ namespace Config {
     constexpr uint32_t BACKLIGHT_TIMEOUT_30S = 30UL * 1000UL;
     constexpr uint32_t BACKLIGHT_TIMEOUT_1M = 60UL * 1000UL;
     constexpr uint32_t BACKLIGHT_SCHEDULE_WAKE_MS = 30UL * 1000UL;
-    constexpr uint32_t BACKLIGHT_WAKE_BLOCK_MS = 250;
+    constexpr uint32_t BACKLIGHT_WAKE_BLOCK_MS = 400;
     constexpr uint32_t AUTO_NIGHT_POLL_MS = 1000;
     constexpr uint32_t BLINK_PERIOD_MS = 500;
     constexpr uint32_t UI_TICK_MS = 30;

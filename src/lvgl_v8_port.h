@@ -183,6 +183,18 @@ bool lvgl_port_lock(int timeout_ms);
  */
 bool lvgl_port_unlock(void);
 
+/**
+ * @brief Temporarily suppress touch reads in LVGL input callback.
+ *
+ * During this window LVGL receives `RELEASED` state without querying the touch controller.
+ * Useful right after wake-up to avoid unstable I2C reads.
+ *
+ * @param duration_ms Blocking window duration in milliseconds
+ *
+ * @return true if parameter accepted
+ */
+bool lvgl_port_block_touch_read(uint32_t duration_ms);
+
 #ifdef __cplusplus
 }
 #endif

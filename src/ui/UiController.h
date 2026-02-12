@@ -280,6 +280,7 @@ private:
     void on_hum_offset_minus(lv_event_t *e);
     void on_hum_offset_plus(lv_event_t *e);
     void on_boot_diag_continue(lv_event_t *e);
+    void on_boot_diag_errors(lv_event_t *e);
 
     static void on_settings_event_cb(lv_event_t *e);
     static void on_back_event_cb(lv_event_t *e);
@@ -380,6 +381,7 @@ private:
     static void on_hum_offset_minus_cb(lv_event_t *e);
     static void on_hum_offset_plus_cb(lv_event_t *e);
     static void on_boot_diag_continue_cb(lv_event_t *e);
+    static void on_boot_diag_errors_cb(lv_event_t *e);
     static void apply_toggle_style_cb(lv_obj_t *btn);
     static void mqtt_sync_with_wifi_cb();
 

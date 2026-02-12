@@ -152,6 +152,7 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_theme_color, UiController::on_theme_color_event_cb, LV_EVENT_CLICKED},
         {objects.btn_theme_back, UiController::on_theme_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_diag_continue, UiController::on_boot_diag_continue_cb, LV_EVENT_CLICKED},
+        {objects.btn_diag_errors, UiController::on_boot_diag_errors_cb, LV_EVENT_CLICKED},
     };
 
     const EventBinding value_bindings[] = {

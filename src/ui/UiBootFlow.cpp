@@ -50,6 +50,28 @@ bool is_crash_reset(esp_reset_reason_t reason) {
     }
 }
 
+void append_error_line(char *dst, size_t dst_size, size_t &offset, const char *line) {
+    if (!dst || !line || dst_size == 0 || offset >= dst_size - 1) {
+        return;
+    }
+    if (offset != 0) {
+        int n = snprintf(dst + offset, dst_size - offset, "\n");
+        if (n > 0) {
+            offset += static_cast<size_t>(n);
+            if (offset >= dst_size) {
+                offset = dst_size - 1;
+            }
+        }
+    }
+    int n = snprintf(dst + offset, dst_size - offset, "%s", line);
+    if (n > 0) {
+        offset += static_cast<size_t>(n);
+        if (offset >= dst_size) {
+            offset = dst_size - 1;
+        }
+    }
+}
+
 } // namespace
 
 void UiBootFlow::clearBootObjectRefs(UiController &owner) {
@@ -88,6 +110,10 @@ void UiBootFlow::clearBootObjectRefs(UiController &owner) {
     objects.lbl_diag_co_label = nullptr;
     objects.lbl_diag_co = nullptr;
     objects.lbl_diag_error = nullptr;
+    objects.btn_diag_errors = nullptr;
+    objects.label_btn_diag_errors = nullptr;
+    objects.container_diag_errors = nullptr;
+    objects.label_diag_errors_text = nullptr;
 }
 
 void UiBootFlow::releaseBootScreens(UiController &owner) {
@@ -153,6 +179,8 @@ bool UiBootFlow::bootDiagHasErrors(UiController &owner, uint32_t now_ms) {
 void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
     owner.update_boot_diag_texts();
     char buf[64];
+    char error_lines[512] = {0};
+    size_t error_len = 0;
 
     if (objects.lbl_diag_app_ver) {
         snprintf(buf, sizeof(buf), "v%s", APP_VERSION);
@@ -175,6 +203,11 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
                      static_cast<unsigned long>(boot_count));
         }
         owner.safe_label_set_text(objects.lbl_diag_reason, buf);
+        if (is_crash_reset(boot_reset_reason)) {
+            char reason_line[96];
+            snprintf(reason_line, sizeof(reason_line), "Crash reset: %s", reason);
+            append_error_line(error_lines, sizeof(error_lines), error_len, reason_line);
+        }
     }
     if (objects.lbl_diag_heap) {
         size_t free_bytes = heap_caps_get_free_size(MALLOC_CAP_8BIT);
@@ -194,13 +227,22 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
         }
         owner.safe_label_set_text(objects.lbl_diag_storage, status);
     }
+    if (!owner.storage.isMounted()) {
+        append_error_line(error_lines, sizeof(error_lines), error_len, "Storage not mounted");
+    }
     if (objects.lbl_diag_i2c) {
         owner.safe_label_set_text(objects.lbl_diag_i2c,
                                   boot_i2c_recovered ? UiText::BootDiagRecovered() : UiText::BootDiagFail());
     }
+    if (!boot_i2c_recovered) {
+        append_error_line(error_lines, sizeof(error_lines), error_len, "I2C bus recovery failed");
+    }
     if (objects.lbl_diag_touch) {
         owner.safe_label_set_text(objects.lbl_diag_touch,
                                   boot_touch_detected ? UiText::BootDiagDetected() : UiText::BootDiagFail());
+    }
+    if (!boot_touch_detected) {
+        append_error_line(error_lines, sizeof(error_lines), error_len, "Touch probe failed at boot");
     }
     if (objects.lbl_diag_sen) {
         const char *status = UiText::StatusErr();
@@ -214,6 +256,14 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
         }
         owner.safe_label_set_text(objects.lbl_diag_sen, status);
     }
+    if (!owner.sensorManager.isOk()) {
+        uint32_t retry_at = owner.sensorManager.retryAtMs();
+        if (retry_at != 0 && now_ms < retry_at) {
+            append_error_line(error_lines, sizeof(error_lines), error_len, "SEN66 starting...");
+        } else {
+            append_error_line(error_lines, sizeof(error_lines), error_len, "SEN66 not found/read failed");
+        }
+    }
     if (objects.lbl_diag_dps_label) {
         owner.safe_label_set_text(objects.lbl_diag_dps_label, owner.sensorManager.pressureSensorLabel());
     }
@@ -221,9 +271,15 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
         owner.safe_label_set_text(objects.lbl_diag_dps,
                                   owner.sensorManager.isDpsOk() ? UiText::StatusOk() : UiText::StatusErr());
     }
+    if (!owner.sensorManager.isDpsOk()) {
+        append_error_line(error_lines, sizeof(error_lines), error_len, "Pressure sensor read failed");
+    }
     if (objects.lbl_diag_sfa) {
         owner.safe_label_set_text(objects.lbl_diag_sfa,
                                   owner.sensorManager.isSfaOk() ? UiText::StatusOk() : UiText::StatusErr());
+    }
+    if (!owner.sensorManager.isSfaOk()) {
+        append_error_line(error_lines, sizeof(error_lines), error_len, "SFA30 not found/read failed");
     }
     if (objects.lbl_diag_co) {
         const char *status = UiText::BootDiagNotFound();
@@ -238,6 +294,11 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
         }
         owner.safe_label_set_text(objects.lbl_diag_co, status);
     }
+    if (owner.sensorManager.isCoPresent() &&
+        !owner.sensorManager.isCoWarmupActive() &&
+        !owner.sensorManager.isCoValid()) {
+        append_error_line(error_lines, sizeof(error_lines), error_len, "SEN0466 detected but read failed");
+    }
     if (objects.lbl_diag_rtc) {
         const char *status = UiText::BootDiagNotFound();
         if (owner.timeManager.isRtcPresent()) {
@@ -251,9 +312,33 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
         }
         owner.safe_label_set_text(objects.lbl_diag_rtc, status);
     }
+    if (owner.timeManager.isRtcPresent()) {
+        if (owner.timeManager.isRtcLostPower()) {
+            append_error_line(error_lines, sizeof(error_lines), error_len, "RTC lost power");
+        } else if (!owner.timeManager.isRtcValid()) {
+            append_error_line(error_lines, sizeof(error_lines), error_len, "RTC invalid time");
+        }
+    }
 
     bool has_errors = bootDiagHasErrors(owner, now_ms);
     owner.boot_diag_has_error = has_errors;
     owner.set_visible(objects.lbl_diag_error, has_errors);
     owner.set_visible(objects.btn_diag_continue, has_errors);
+    owner.set_visible(objects.btn_diag_errors, has_errors);
+    if (objects.container_diag_errors) {
+        if (!has_errors) {
+            lv_obj_add_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    if (objects.label_diag_errors_text) {
+        if (has_errors) {
+            if (error_len == 0) {
+                owner.safe_label_set_text(objects.label_diag_errors_text, "No details");
+            } else {
+                owner.safe_label_set_text(objects.label_diag_errors_text, error_lines);
+            }
+        } else {
+            owner.safe_label_set_text(objects.label_diag_errors_text, "");
+        }
+    }
 }

@@ -522,4 +522,5 @@ void UiController::update_datetime_texts() {
     if (objects.label_rtc_title) safe_label_set_text(objects.label_rtc_title, UiText::LabelRtc());
     if (objects.label_wifi_title_1) safe_label_set_text(objects.label_wifi_title_1, UiText::LabelWifiChip());
     if (objects.label_chip_ntp_title) safe_label_set_text(objects.label_chip_ntp_title, UiText::LabelNtpChip());
+    if (objects.label_btn_units_mdy) safe_label_set_text(objects.label_btn_units_mdy, "MDY");
 }

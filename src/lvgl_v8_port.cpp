@@ -21,6 +21,18 @@ static esp_timer_handle_t lvgl_tick_timer = NULL;
 static bool lvgl_port_paused = false;
 static LCD *lvgl_port_lcd = nullptr;
 static void *lvgl_buf[LVGL_PORT_BUFFER_NUM_MAX] = {};
+static uint32_t lvgl_touch_read_block_until_ms = 0;
+static bool lvgl_touch_wait_release_after_block = false;
+
+static inline uint32_t get_monotonic_ms()
+{
+    return static_cast<uint32_t>(esp_timer_get_time() / 1000ULL);
+}
+
+static inline bool is_before_deadline(uint32_t now_ms, uint32_t deadline_ms)
+{
+    return static_cast<int32_t>(deadline_ms - now_ms) > 0;
+}
 
 #if LVGL_PORT_ROTATION_DEGREE != 0
 static void *get_next_frame_buffer(LCD *lcd)
@@ -645,6 +657,26 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
     Touch *tp = (Touch *)indev_drv->user_data;
     TouchPoint point;
 
+    const uint32_t now_ms = get_monotonic_ms();
+    if (lvgl_touch_read_block_until_ms != 0) {
+        if (is_before_deadline(now_ms, lvgl_touch_read_block_until_ms)) {
+            data->state = LV_INDEV_STATE_RELEASED;
+            return;
+        }
+        lvgl_touch_read_block_until_ms = 0;
+    }
+
+    // After wake block ends, require a clean release first. This avoids
+    // turning a wake touch into an accidental click on a UI control.
+    if (lvgl_touch_wait_release_after_block) {
+        int release_probe = tp->readPoints(&point, 1, 0);
+        if (release_probe <= 0) {
+            lvgl_touch_wait_release_after_block = false;
+        }
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
     /* Read data from touch controller */
     int read_touch_result = tp->readPoints(&point, 1, 0);
     if (read_touch_result > 0) {
@@ -824,6 +856,19 @@ bool lvgl_port_unlock(void)
 
     xSemaphoreGiveRecursive(lvgl_mux);
 
+    return true;
+}
+
+bool lvgl_port_block_touch_read(uint32_t duration_ms)
+{
+    const uint32_t now_ms = get_monotonic_ms();
+    if (duration_ms == 0) {
+        lvgl_touch_read_block_until_ms = 0;
+        lvgl_touch_wait_release_after_block = false;
+    } else {
+        lvgl_touch_read_block_until_ms = now_ms + duration_ms;
+        lvgl_touch_wait_release_after_block = true;
+    }
     return true;
 }
 

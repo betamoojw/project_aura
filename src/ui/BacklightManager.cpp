@@ -10,6 +10,7 @@
 #include <time.h>
 #include <esp_display_panel.hpp>
 #include "modules/StorageManager.h"
+#include "lvgl_v8_port.h"
 #include "ui/ui.h"
 
 namespace {
@@ -270,7 +271,6 @@ void BacklightManager::consumeInput() {
     while (indev) {
         if (lv_indev_get_type(indev) == LV_INDEV_TYPE_POINTER) {
             lv_indev_reset(indev, nullptr);
-            lv_indev_wait_release(indev);
         }
         indev = lv_indev_get_next(indev);
     }
@@ -295,6 +295,7 @@ void BacklightManager::poll(bool lvgl_ready) {
         if (activity || (alarm_wake_enabled_ && alarm_wake_active_)) {
             setOn(true);
             block_input_until_ms_ = now_ms + Config::BACKLIGHT_WAKE_BLOCK_MS;
+            lvgl_port_block_touch_read(Config::BACKLIGHT_WAKE_BLOCK_MS);
             consumeInput();
         }
         return;

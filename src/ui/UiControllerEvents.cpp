@@ -124,6 +124,7 @@ void UiController::on_temp_offset_plus_cb(lv_event_t *e) { if (instance_) instan
 void UiController::on_hum_offset_minus_cb(lv_event_t *e) { if (instance_) instance_->on_hum_offset_minus(e); }
 void UiController::on_hum_offset_plus_cb(lv_event_t *e) { if (instance_) instance_->on_hum_offset_plus(e); }
 void UiController::on_boot_diag_continue_cb(lv_event_t *e) { if (instance_) instance_->on_boot_diag_continue(e); }
+void UiController::on_boot_diag_errors_cb(lv_event_t *e) { if (instance_) instance_->on_boot_diag_errors(e); }
 void UiController::apply_toggle_style_cb(lv_obj_t *btn) { if (instance_) instance_->apply_toggle_style(btn); }
 void UiController::mqtt_sync_with_wifi_cb() { if (instance_) instance_->mqtt_sync_with_wifi(); }
 
@@ -924,6 +925,13 @@ void UiController::on_time_date_event(lv_event_t *e) {
     datetime_changed = false;
     datetime_ui_dirty = true;
     clock_ui_dirty = true;
+    if (objects.btn_units_mdy) {
+        if (date_units_mdy) {
+            lv_obj_add_state(objects.btn_units_mdy, LV_STATE_CHECKED);
+        } else {
+            lv_obj_clear_state(objects.btn_units_mdy, LV_STATE_CHECKED);
+        }
+    }
     pending_screen_id = SCREEN_ID_PAGE_CLOCK;
 }
 
@@ -1362,8 +1370,30 @@ void UiController::on_boot_diag_continue(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    if (objects.container_diag_errors &&
+        !lv_obj_has_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN)) {
+        lv_obj_add_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
+        if (objects.label_diag_errors_text) {
+            safe_label_set_text(objects.label_diag_errors_text, "");
+        }
+        return;
+    }
     pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
     boot_diag_active = false;
     data_dirty = true;
+}
+
+void UiController::on_boot_diag_errors(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    if (!objects.container_diag_errors) {
+        return;
+    }
+    if (lv_obj_has_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN)) {
+        lv_obj_clear_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 
