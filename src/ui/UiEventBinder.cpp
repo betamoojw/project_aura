@@ -171,6 +171,27 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_ntp_toggle, UiController::on_ntp_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
     };
 
+    constexpr lv_coord_t kExtendedHitAreaPx = 16;
+    lv_obj_t *extended_hit_buttons[] = {
+        objects.btn_settings_1,
+        objects.btn_back_1,
+        objects.btn_mqtt_back,
+        objects.btn_backlight_back,
+        objects.btn_auto_night_back,
+        objects.btn_co2_calib_back,
+        objects.btn_datetime_back,
+        objects.btn_theme_back,
+        objects.btn_wifi_back,
+        objects.btn_back,
+    };
+
+    for (lv_obj_t *btn : extended_hit_buttons) {
+        if (!objectBelongsToScreen(btn, screen_root)) {
+            continue;
+        }
+        lv_obj_set_ext_click_area(btn, kExtendedHitAreaPx);
+    }
+
     auto bind_events = [screen_root](const EventBinding *bindings, size_t count) {
         for (size_t i = 0; i < count; ++i) {
             const EventBinding &binding = bindings[i];
