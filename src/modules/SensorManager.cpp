@@ -222,6 +222,8 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
     sen66_.begin();
     sen66_.setOffsets(temp_offset, hum_offset);
     sen66_.loadVocState(storage);
+    sen66_start_attempts_ = 0;
+    sen66_retry_exhausted_logged_ = false;
 
     bmp580_.begin();
     if (bmp580_.start()) {
@@ -324,12 +326,27 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
     }
 
     uint32_t now = millis();
-    if (!sen66_.isOk() && !sen66_.isBusy() && now >= sen66_.retryAtMs()) {
+    if (!sen66_.isOk() &&
+        !sen66_.isBusy() &&
+        sen66_start_attempts_ < Config::SEN66_MAX_START_ATTEMPTS &&
+        now >= sen66_.retryAtMs()) {
         if (sen66_.start(co2_asc_enabled)) {
             LOGI("Sensors", "SEN66 OK");
+            sen66_start_attempts_ = 0;
+            sen66_retry_exhausted_logged_ = false;
         } else {
-            LOGW("Sensors", "SEN66 not found");
-            sen66_.scheduleRetry(Config::SEN66_START_RETRY_MS);
+            if (sen66_start_attempts_ < UINT8_MAX) {
+                ++sen66_start_attempts_;
+            }
+            LOGW("Sensors", "SEN66 not found (%u/%u)",
+                 static_cast<unsigned>(sen66_start_attempts_),
+                 static_cast<unsigned>(Config::SEN66_MAX_START_ATTEMPTS));
+            if (sen66_start_attempts_ < Config::SEN66_MAX_START_ATTEMPTS) {
+                sen66_.scheduleRetry(Config::SEN66_START_RETRY_MS);
+            } else if (!sen66_retry_exhausted_logged_) {
+                LOGW("Sensors", "SEN66 start attempts exhausted, stop probing until reboot");
+                sen66_retry_exhausted_logged_ = true;
+            }
         }
     }
 

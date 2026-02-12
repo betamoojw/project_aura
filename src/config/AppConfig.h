@@ -136,6 +136,7 @@ namespace Config {
     constexpr uint32_t SEN66_DEVICE_RESET_DELAY_MS = 1200;
     constexpr uint32_t SEN66_START_RETRY_MS = 2000;
     constexpr uint32_t SEN66_STARTUP_GRACE_MS = 5000;
+    constexpr uint8_t SEN66_MAX_START_ATTEMPTS = 3;
     constexpr uint32_t SEN66_POLL_MS = 1000;
     constexpr uint32_t SEN66_STALE_MS = 6000;
     constexpr uint32_t SEN66_STATUS_MS = 5000;
@@ -159,6 +160,7 @@ namespace Config {
     constexpr uint32_t SEN0466_POLL_MS = 3000;
     constexpr uint32_t SEN0466_STALE_MS = 18000;
     constexpr uint32_t SEN0466_RETRY_MS = 5000;
+    constexpr uint8_t SEN0466_MAX_START_ATTEMPTS = 3;
     constexpr uint32_t SEN0466_I2C_TIMEOUT_MS = 15;
     constexpr uint32_t SEN0466_FAIL_COOLDOWN_MS = 30UL * 1000UL;
     constexpr uint8_t SEN0466_MAX_COOLDOWN_RECOVERY_FAILS = 3;

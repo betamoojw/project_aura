@@ -45,7 +45,11 @@ public:
     PressureSensorType pressureSensorType() const { return pressure_sensor_; }
     const char *pressureSensorLabel() const;
     bool deviceReset() { return sen66_.deviceReset(); }
-    void scheduleRetry(uint32_t delay_ms) { sen66_.scheduleRetry(delay_ms); }
+    void scheduleRetry(uint32_t delay_ms) {
+        sen66_start_attempts_ = 0;
+        sen66_retry_exhausted_logged_ = false;
+        sen66_.scheduleRetry(delay_ms);
+    }
     uint32_t retryAtMs() const { return sen66_.retryAtMs(); }
     bool start(bool asc_enabled) { return sen66_.start(asc_enabled); }
     bool isWarmupActive() const { return sen66_.isWarmupActive(); }
@@ -65,5 +69,7 @@ private:
     Sen0466 sen0466_;
     Sen66 sen66_;
     bool warmup_active_last_ = false;
+    uint8_t sen66_start_attempts_ = 0;
+    bool sen66_retry_exhausted_logged_ = false;
     PressureSensorType pressure_sensor_ = PRESSURE_NONE;
 };

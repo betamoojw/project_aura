@@ -32,12 +32,23 @@ bool Sen0466::begin() {
     fail_cooldown_active_ = false;
     fail_cooldown_started_ms_ = 0;
     cooldown_recover_fail_count_ = 0;
+    start_attempts_ = 0;
+    start_retry_exhausted_logged_ = false;
     return true;
 }
 
 bool Sen0466::start() {
     last_retry_ms_ = millis();
     if (!pingAddress()) {
+        if (start_attempts_ < UINT8_MAX) {
+            ++start_attempts_;
+        }
+        if (!start_retry_exhausted_logged_ &&
+            start_attempts_ >= Config::SEN0466_MAX_START_ATTEMPTS) {
+            LOGW("SEN0466", "not found after %u attempts, stop probing until reboot",
+                 static_cast<unsigned>(Config::SEN0466_MAX_START_ATTEMPTS));
+            start_retry_exhausted_logged_ = true;
+        }
         present_ = false;
         data_valid_ = false;
         co_ppm_ = 0.0f;
@@ -49,6 +60,8 @@ bool Sen0466::start() {
         return false;
     }
 
+    start_attempts_ = 0;
+    start_retry_exhausted_logged_ = false;
     const bool was_present = present_;
     present_ = true;
     if (!was_present) {
@@ -72,6 +85,9 @@ void Sen0466::poll() {
     const uint32_t now = millis();
 
     if (!present_) {
+        if (start_attempts_ >= Config::SEN0466_MAX_START_ATTEMPTS) {
+            return;
+        }
         if (now - last_retry_ms_ >= Config::SEN0466_RETRY_MS) {
             start();
         }
