@@ -25,7 +25,7 @@ void ui_tick() {
 #include <stddef.h>
 #include <string.h>
 
-enum { UI_KNOWN_SCREEN_COUNT = 13 };
+enum { UI_KNOWN_SCREEN_COUNT = 12 };
 enum { UI_PAGE_SLOT_COUNT = (int)(offsetof(objects_t, label_boot_ver) / sizeof(lv_obj_t *)) };
 enum { UI_OBJECT_SLOT_COUNT = (int)(sizeof(objects_t) / sizeof(lv_obj_t *)) };
 
@@ -52,14 +52,6 @@ enum { UI_MAX_SCREEN_ID = UI_KNOWN_SCREEN_COUNT };
 static int16_t currentScreen = -1;
 static uint8_t createdScreens[UI_MAX_SCREEN_ID + 1];
 
-static enum ScreensEnum normalizeScreenId(enum ScreensEnum screenId) {
-    // Old MAIN (id=3) is deprecated; keep compatibility by redirecting to MAIN_PRO.
-    if (screenId == SCREEN_ID_PAGE_MAIN) {
-        return SCREEN_ID_PAGE_MAIN_PRO;
-    }
-    return screenId;
-}
-
 static bool isScreenIdValid(enum ScreensEnum screenId) {
     return screenId >= SCREEN_ID_PAGE_BOOT_LOGO && screenId <= UI_MAX_SCREEN_ID;
 }
@@ -70,8 +62,6 @@ static lv_obj_t *getLvglObjectFromScreenId(enum ScreensEnum screenId) {
             return objects.page_boot_logo;
         case SCREEN_ID_PAGE_BOOT_DIAG:
             return objects.page_boot_diag;
-        case SCREEN_ID_PAGE_MAIN:
-            return objects.page_main;
         case SCREEN_ID_PAGE_SETTINGS:
             return objects.page_settings;
         case SCREEN_ID_PAGE_WIFI:
@@ -129,7 +119,6 @@ static const create_screen_func_t screen_create_funcs[UI_MAX_SCREEN_ID + 1] = {
     NULL,
     create_screen_page_boot_logo,
     create_screen_page_boot_diag,
-    create_screen_page_main,
     create_screen_page_settings,
     create_screen_page_wifi,
     create_screen_page_theme,
@@ -191,7 +180,6 @@ static void ensureScreenCreated(enum ScreensEnum screenId) {
 }
 
 void loadScreen(enum ScreensEnum screenId) {
-    screenId = normalizeScreenId(screenId);
     if (!isScreenIdValid(screenId)) {
         return;
     }
@@ -205,7 +193,6 @@ void loadScreen(enum ScreensEnum screenId) {
 }
 
 void unloadScreen(enum ScreensEnum screenId) {
-    screenId = normalizeScreenId(screenId);
     if (!isScreenIdValid(screenId)) {
         return;
     }

@@ -10,7 +10,6 @@ extern "C" {
 typedef struct _objects_t {
     lv_obj_t *page_boot_logo;
     lv_obj_t *page_boot_diag;
-    lv_obj_t *page_main;
     lv_obj_t *page_settings;
     lv_obj_t *page_wifi;
     lv_obj_t *page_theme;
@@ -57,87 +56,6 @@ typedef struct _objects_t {
     lv_obj_t *label_btn_diag_errors;
     lv_obj_t *container_diag_errors;
     lv_obj_t *label_diag_errors_text;
-    lv_obj_t *background;
-    lv_obj_t *container_content;
-    lv_obj_t *container_header;
-    lv_obj_t *wifi_status_icon;
-    lv_obj_t *mqtt_status_icon;
-    lv_obj_t *label_status_title;
-    lv_obj_t *label_status_value;
-    lv_obj_t *btn_settings;
-    lv_obj_t *label_btn_settings;
-    lv_obj_t *card_co2;
-    lv_obj_t *label_co2_value;
-    lv_obj_t *co2_bar_wrap;
-    lv_obj_t *co2_bar_track;
-    lv_obj_t *co2_bar_mask;
-    lv_obj_t *co2_bar_fill;
-    lv_obj_t *grad_1;
-    lv_obj_t *grad_2;
-    lv_obj_t *grad_3;
-    lv_obj_t *co2_marker;
-    lv_obj_t *label_co2_title;
-    lv_obj_t *label_co2_unit;
-    lv_obj_t *dot_co2;
-    lv_obj_t *card_pressure;
-    lv_obj_t *label_pressure_title;
-    lv_obj_t *label_pressure_value;
-    lv_obj_t *label_pressure_unit;
-    lv_obj_t *chip_delta_3h;
-    lv_obj_t *chip_delta_24h;
-    lv_obj_t *label_delta_3h_title;
-    lv_obj_t *label_delta_24h_title;
-    lv_obj_t *label_delta_24h_value;
-    lv_obj_t *label_delta_3h_value;
-    lv_obj_t *card_time;
-    lv_obj_t *label_time_value;
-    lv_obj_t *label_date_value;
-    lv_obj_t *label_time_title;
-    lv_obj_t *card_temp;
-    lv_obj_t *label_temp_unit;
-    lv_obj_t *label_temp_value;
-    lv_obj_t *label_temp_title;
-    lv_obj_t *dot_temp;
-    lv_obj_t *card_pm25;
-    lv_obj_t *label_pm25_unit;
-    lv_obj_t *label_pm25_value;
-    lv_obj_t *label_pm25_title;
-    lv_obj_t *dot_pm25;
-    lv_obj_t *card_pm10;
-    lv_obj_t *label_pm10_unit;
-    lv_obj_t *label_pm10_value;
-    lv_obj_t *label_pm10_title;
-    lv_obj_t *dot_pm10;
-    lv_obj_t *card_hcho;
-    lv_obj_t *label_hcho_unit;
-    lv_obj_t *label_hcho_value;
-    lv_obj_t *label_hcho_title;
-    lv_obj_t *dot_hcho;
-    lv_obj_t *card_nox;
-    lv_obj_t *label_nox_unit;
-    lv_obj_t *label_nox_value;
-    lv_obj_t *label_nox_title;
-    lv_obj_t *dot_nox;
-    lv_obj_t *label_nox_warmup;
-    lv_obj_t *card_voc;
-    lv_obj_t *label_voc_unit;
-    lv_obj_t *label_voc_value;
-    lv_obj_t *label_voc_title;
-    lv_obj_t *dot_voc;
-    lv_obj_t *label_voc_warmup;
-    lv_obj_t *card_hum;
-    lv_obj_t *label_ah_unit;
-    lv_obj_t *label_ah_value;
-    lv_obj_t *label_hum_title;
-    lv_obj_t *label_dew_title;
-    lv_obj_t *label_dew_value;
-    lv_obj_t *label_dew_unit;
-    lv_obj_t *dot_dp;
-    lv_obj_t *label_ah_title;
-    lv_obj_t *label_hum_unit;
-    lv_obj_t *label_hum_value;
-    lv_obj_t *dot_ah;
-    lv_obj_t *dot_hum;
     lv_obj_t *background_1;
     lv_obj_t *container_temp_offset;
     lv_obj_t *label_temp_offset_title;
@@ -728,20 +646,83 @@ typedef struct _objects_t {
 
 extern objects_t objects;
 
+// Compatibility aliases for legacy object names used in hand-written UI code.
+// EEZ regeneration removed old PAGE_MAIN objects and kept MAIN_PRO variants.
+#define background background_1
+#define wifi_status_icon wifi_status_icon_1
+#define mqtt_status_icon mqtt_status_icon_1
+
+#define card_co2 card_co2_pro
+
+#define label_co2_value label_co2_value_1
+#define label_co2_unit label_co2_unit_1
+#define co2_bar_wrap co2_bar_wrap_1
+#define co2_bar_track co2_bar_track_1
+#define co2_bar_mask co2_bar_mask_1
+#define co2_bar_fill co2_bar_fill_1
+#define co2_marker co2_marker_1
+#define dot_co2 dot_co2_1
+
+#define label_temp_value label_temp_value_1
+#define label_temp_unit label_temp_unit_1
+#define dot_temp dot_temp_1
+
+#define label_hum_value label_hum_value_1
+#define label_hum_unit label_hum_unit_1
+#define dot_hum dot_hum_1
+
+#define label_dew_value label_dew_value_1
+#define label_dew_unit label_dew_unit_1
+#define dot_dp dot_dp_1
+
+#define label_ah_value label_ah_value_1
+#define label_ah_unit label_ah_unit_1
+#define dot_ah dot_ah_1
+
+#define label_pm25_value label_pm25_value_1
+#define label_pm25_unit label_pm25_unit_1
+#define dot_pm25 dot_pm25_1
+
+#define label_pm10_value label_pm10_value_pro
+#define label_pm10_unit label_pm10_unit_pro
+#define dot_pm10 dot_pm10_pro
+
+#define label_voc_value label_voc_value_1
+#define label_voc_unit label_voc_unit_1
+#define label_voc_warmup label_voc_warmup_1
+#define dot_voc dot_voc_1
+
+#define label_nox_value label_nox_value_1
+#define label_nox_unit label_nox_unit_1
+#define label_nox_warmup label_nox_warmup_1
+#define dot_nox dot_nox_1
+
+#define label_hcho_value label_hcho_value_1
+#define label_hcho_unit label_hcho_unit_1
+#define label_hcho_title label_hcho_title_1
+#define dot_hcho dot_hcho_1
+
+#define label_pressure_value label_pressure_value_1
+#define label_pressure_unit label_pressure_unit_1
+#define label_pressure_title label_pressure_title_1
+#define label_delta_3h_value label_delta_3h_value_1
+#define label_delta_24h_value label_delta_24h_value_1
+#define chip_delta_3h chip_delta_3h_1
+#define chip_delta_24h chip_delta_24h_1
+
 enum ScreensEnum {
     SCREEN_ID_PAGE_BOOT_LOGO = 1,
     SCREEN_ID_PAGE_BOOT_DIAG = 2,
-    SCREEN_ID_PAGE_MAIN = 3,
-    SCREEN_ID_PAGE_SETTINGS = 4,
-    SCREEN_ID_PAGE_WIFI = 5,
-    SCREEN_ID_PAGE_THEME = 6,
-    SCREEN_ID_PAGE_CLOCK = 7,
-    SCREEN_ID_PAGE_CO2_CALIB = 8,
-    SCREEN_ID_PAGE_AUTO_NIGHT_MODE = 9,
-    SCREEN_ID_PAGE_BACKLIGHT = 10,
-    SCREEN_ID_PAGE_MQTT = 11,
-    SCREEN_ID_PAGE_SENSORS_INFO = 12,
-    SCREEN_ID_PAGE_MAIN_PRO = 13,
+    SCREEN_ID_PAGE_SETTINGS = 3,
+    SCREEN_ID_PAGE_WIFI = 4,
+    SCREEN_ID_PAGE_THEME = 5,
+    SCREEN_ID_PAGE_CLOCK = 6,
+    SCREEN_ID_PAGE_CO2_CALIB = 7,
+    SCREEN_ID_PAGE_AUTO_NIGHT_MODE = 8,
+    SCREEN_ID_PAGE_BACKLIGHT = 9,
+    SCREEN_ID_PAGE_MQTT = 10,
+    SCREEN_ID_PAGE_SENSORS_INFO = 11,
+    SCREEN_ID_PAGE_MAIN_PRO = 12,
 };
 
 void create_screen_page_boot_logo();
@@ -749,9 +730,6 @@ void tick_screen_page_boot_logo();
 
 void create_screen_page_boot_diag();
 void tick_screen_page_boot_diag();
-
-void create_screen_page_main();
-void tick_screen_page_main();
 
 void create_screen_page_settings();
 void tick_screen_page_settings();

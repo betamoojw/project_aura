@@ -150,10 +150,6 @@ void UiController::init_theme_controls_if_available() {
 }
 
 void UiController::bind_screen_events_once(int screen_id) {
-    // Keep compatibility with stale references to old MAIN screen id.
-    if (screen_id == SCREEN_ID_PAGE_MAIN) {
-        screen_id = SCREEN_ID_PAGE_MAIN_PRO;
-    }
     if (screen_id <= 0 || screen_id >= static_cast<int>(kScreenSlotCount)) {
         return;
     }

@@ -26,10 +26,6 @@ void UiScreenFlow::processPendingScreen(UiController &owner, uint32_t now_ms) {
     if (owner.pending_screen_id != 0) {
         int next_screen = owner.pending_screen_id;
         int previous_screen = owner.current_screen_id;
-        // Keep compatibility with stale references to old MAIN screen id.
-        if (next_screen == SCREEN_ID_PAGE_MAIN) {
-            next_screen = SCREEN_ID_PAGE_MAIN_PRO;
-        }
         ScreensEnum next_screen_enum = static_cast<ScreensEnum>(next_screen);
         loadScreen(next_screen_enum);
         if (!UiEventBinder::screenRootById(next_screen)) {
