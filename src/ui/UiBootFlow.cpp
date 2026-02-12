@@ -50,6 +50,10 @@ bool is_crash_reset(esp_reset_reason_t reason) {
     }
 }
 
+bool is_brownout_reset(esp_reset_reason_t reason) {
+    return reason == ESP_RST_BROWNOUT;
+}
+
 void append_error_line(char *dst, size_t dst_size, size_t &offset, const char *line) {
     if (!dst || !line || dst_size == 0 || offset >= dst_size - 1) {
         return;
@@ -153,7 +157,7 @@ bool UiBootFlow::bootDiagHasErrors(UiController &owner, uint32_t now_ms) {
     if (!boot_touch_detected) {
         has_error = true;
     }
-    if (is_crash_reset(boot_reset_reason)) {
+    if (is_crash_reset(boot_reset_reason) || is_brownout_reset(boot_reset_reason)) {
         has_error = true;
     }
     if (!owner.sensorManager.isOk()) {
@@ -207,6 +211,8 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
             char reason_line[96];
             snprintf(reason_line, sizeof(reason_line), "Crash reset: %s", reason);
             append_error_line(error_lines, sizeof(error_lines), error_len, reason_line);
+        } else if (is_brownout_reset(boot_reset_reason)) {
+            append_error_line(error_lines, sizeof(error_lines), error_len, "Brownout reset detected");
         }
     }
     if (objects.lbl_diag_heap) {
