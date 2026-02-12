@@ -23,6 +23,8 @@ static LCD *lvgl_port_lcd = nullptr;
 static void *lvgl_buf[LVGL_PORT_BUFFER_NUM_MAX] = {};
 static uint32_t lvgl_touch_read_block_until_ms = 0;
 static bool lvgl_touch_wait_release_after_block = false;
+static bool lvgl_touch_wake_probe_enabled = false;
+static bool lvgl_touch_wake_pending = false;
 
 static inline uint32_t get_monotonic_ms()
 {
@@ -657,6 +659,15 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
     Touch *tp = (Touch *)indev_drv->user_data;
     TouchPoint point;
 
+    if (lvgl_touch_wake_probe_enabled) {
+        int wake_probe = tp->readPoints(&point, 1, 0);
+        if (wake_probe > 0) {
+            lvgl_touch_wake_pending = true;
+        }
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
     const uint32_t now_ms = get_monotonic_ms();
     if (lvgl_touch_read_block_until_ms != 0) {
         if (is_before_deadline(now_ms, lvgl_touch_read_block_until_ms)) {
@@ -870,6 +881,22 @@ bool lvgl_port_block_touch_read(uint32_t duration_ms)
         lvgl_touch_wait_release_after_block = true;
     }
     return true;
+}
+
+bool lvgl_port_set_wake_touch_probe(bool enabled)
+{
+    lvgl_touch_wake_probe_enabled = enabled;
+    if (enabled) {
+        lvgl_touch_wake_pending = false;
+    }
+    return true;
+}
+
+bool lvgl_port_take_wake_touch_pending(void)
+{
+    const bool pending = lvgl_touch_wake_pending;
+    lvgl_touch_wake_pending = false;
+    return pending;
 }
 
 bool lvgl_port_pause(void)

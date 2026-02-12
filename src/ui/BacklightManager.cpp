@@ -76,6 +76,7 @@ void BacklightManager::loadFromPrefs(StorageManager &storage) {
 void BacklightManager::attachBacklight(esp_panel::drivers::Backlight *backlight) {
     panel_backlight_ = backlight;
     backlight_on_ = panel_backlight_ != nullptr;
+    lvgl_port_set_wake_touch_probe(!backlight_on_);
 }
 
 uint32_t BacklightManager::normalizeTimeoutMs(uint32_t timeout_ms) const {
@@ -104,6 +105,7 @@ void BacklightManager::setOn(bool on) {
         return;
     }
     if (on == backlight_on_) {
+        lvgl_port_set_wake_touch_probe(!on);
         return;
     }
     if (on) {
@@ -112,6 +114,7 @@ void BacklightManager::setOn(bool on) {
         panel_backlight_->off();
     }
     backlight_on_ = on;
+    lvgl_port_set_wake_touch_probe(!on);
     if (on) {
         lv_disp_trig_activity(nullptr);
         last_inactive_ms_ = 0;
@@ -286,13 +289,13 @@ void BacklightManager::poll(bool lvgl_ready) {
     }
     uint32_t now_ms = millis();
     uint32_t inactive_ms = lv_disp_get_inactive_time(disp);
-    bool activity = inactive_ms < last_inactive_ms_;
     last_inactive_ms_ = inactive_ms;
 
     refreshSchedule();
 
     if (!backlight_on_) {
-        if (activity || (alarm_wake_enabled_ && alarm_wake_active_)) {
+        bool wake_touch = lvgl_port_take_wake_touch_pending();
+        if (wake_touch || (alarm_wake_enabled_ && alarm_wake_active_)) {
             setOn(true);
             block_input_until_ms_ = now_ms + Config::BACKLIGHT_WAKE_BLOCK_MS;
             lvgl_port_block_touch_read(Config::BACKLIGHT_WAKE_BLOCK_MS);

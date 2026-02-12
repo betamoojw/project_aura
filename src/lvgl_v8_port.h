@@ -195,6 +195,25 @@ bool lvgl_port_unlock(void);
  */
 bool lvgl_port_block_touch_read(uint32_t duration_ms);
 
+/**
+ * @brief Enable/disable wake-touch probe mode.
+ *
+ * In probe mode touch reads do not generate LVGL pressed events.
+ * Touch is only sampled to latch a pending wake request.
+ *
+ * @param enabled True to enable wake-touch probe mode.
+ *
+ * @return true if parameter accepted
+ */
+bool lvgl_port_set_wake_touch_probe(bool enabled);
+
+/**
+ * @brief Consume pending wake request captured by wake-touch probe mode.
+ *
+ * @return true if a wake touch was captured since the last consume call.
+ */
+bool lvgl_port_take_wake_touch_pending(void);
+
 #ifdef __cplusplus
 }
 #endif
