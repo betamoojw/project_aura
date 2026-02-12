@@ -211,7 +211,6 @@ namespace Config {
     constexpr char MQTT_AVAIL_OFFLINE[] = "offline";
     constexpr uint32_t BACKLIGHT_TIMEOUT_30S = 30UL * 1000UL;
     constexpr uint32_t BACKLIGHT_TIMEOUT_1M = 60UL * 1000UL;
-    constexpr uint32_t BACKLIGHT_TIMEOUT_5M = 5UL * 60UL * 1000UL;
     constexpr uint32_t BACKLIGHT_SCHEDULE_WAKE_MS = 30UL * 1000UL;
     constexpr uint32_t BACKLIGHT_WAKE_BLOCK_MS = 250;
     constexpr uint32_t AUTO_NIGHT_POLL_MS = 1000;
@@ -295,6 +294,7 @@ namespace Config {
 
         uint32_t backlight_timeout_s = 0;
         bool backlight_schedule_enabled = false;
+        bool backlight_alarm_wake = true;
         int backlight_sleep_hour = 23;
         int backlight_sleep_minute = 0;
         int backlight_wake_hour = 6;

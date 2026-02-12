@@ -90,6 +90,21 @@ int score_from_co(float co_ppm) {
     return 100;
 }
 
+bool should_wake_backlight_on_alert(const SensorData &data, bool gas_warmup) {
+    StatusMessages::StatusMessageResult result = StatusMessages::build_status_messages(data, gas_warmup);
+    for (size_t i = 0; i < result.count; ++i) {
+        const StatusMessages::StatusMessage &msg = result.messages[i];
+        if (msg.sensor == StatusMessages::STATUS_SENSOR_CO &&
+            msg.severity >= StatusMessages::STATUS_YELLOW) {
+            return true;
+        }
+        if (msg.severity == StatusMessages::STATUS_RED) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
 
 UiController *UiController::instance_ = nullptr;
@@ -208,6 +223,8 @@ void UiController::begin() {
 }
 
 void UiController::onSensorPoll(const SensorManager::PollResult &poll) {
+    backlightManager.setAlarmWakeActive(
+        should_wake_backlight_on_alert(currentData, sensorManager.isWarmupActive()));
     if (poll.data_changed || poll.warmup_changed) {
         data_dirty = true;
     }
@@ -234,6 +251,8 @@ void UiController::mqtt_sync_with_wifi() {
 }
 
 void UiController::poll(uint32_t now) {
+    backlightManager.setAlarmWakeActive(
+        should_wake_backlight_on_alert(currentData, sensorManager.isWarmupActive()));
     bool desired = false;
     if (nightModeManager.poll(night_mode, desired)) {
         set_night_mode_state(desired, true);
@@ -671,6 +690,17 @@ void UiController::sync_auto_dim_button_state() {
     }
 }
 
+void UiController::sync_backlight_settings_button_state() {
+    if (!objects.btn_head_status_1) {
+        return;
+    }
+    if (backlightManager.isScheduleEnabled()) {
+        lv_obj_add_state(objects.btn_head_status_1, LV_STATE_CHECKED);
+    } else {
+        lv_obj_clear_state(objects.btn_head_status_1, LV_STATE_CHECKED);
+    }
+}
+
 void UiController::confirm_show(ConfirmAction action) {
     confirm_action = action;
     if (!objects.container_confirm) {
@@ -992,6 +1022,7 @@ void UiController::update_settings_header() {
     lv_obj_set_style_shadow_opa(objects.container_settings_header, header_shadow, LV_PART_MAIN | LV_STATE_DEFAULT);
     sync_night_mode_toggle_ui();
     sync_auto_dim_button_state();
+    sync_backlight_settings_button_state();
 }
 
 void UiController::update_theme_custom_info(bool presets) {
@@ -1100,6 +1131,7 @@ void UiController::init_ui_defaults() {
     update_datetime_ui();
     backlightManager.updateUi();
     nightModeManager.updateUi();
+    sync_backlight_settings_button_state();
     update_led_indicators();
     update_temp_offset_label();
     update_hum_offset_label();

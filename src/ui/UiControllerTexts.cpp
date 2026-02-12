@@ -198,10 +198,10 @@ void UiController::update_backlight_texts() {
     if (objects.label_backlight_wake_minutes) safe_label_set_text(objects.label_backlight_wake_minutes, UiText::LabelSetTimeMinutes());
     if (objects.label_btn_backlight_back) safe_label_set_text(objects.label_btn_backlight_back, UiText::LabelSettingsBack());
     if (objects.label_btn_backlight_schedule_toggle) safe_label_set_text(objects.label_btn_backlight_schedule_toggle, UiText::MqttToggleLabel());
+    if (objects.label_btn_backlight_alarm_wake_toggle) safe_label_set_text(objects.label_btn_backlight_alarm_wake_toggle, UiText::MqttToggleLabel());
     if (objects.label_btn_backlight_always_on) safe_label_set_text(objects.label_btn_backlight_always_on, UiText::LabelBacklightAlwaysOn());
     if (objects.label_btn_backlight_30s) safe_label_set_text(objects.label_btn_backlight_30s, UiText::LabelBacklight30s());
     if (objects.label_btn_backlight_1m) safe_label_set_text(objects.label_btn_backlight_1m, UiText::LabelBacklight1m());
-    if (objects.label_btn_backlight_5m) safe_label_set_text(objects.label_btn_backlight_5m, UiText::LabelBacklight5m());
 }
 
 void UiController::update_co2_calib_texts() {

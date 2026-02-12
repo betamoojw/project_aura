@@ -422,10 +422,11 @@ typedef struct _objects_t {
     lv_obj_t *label_backlight_schedule_title;
     lv_obj_t *btn_backlight_schedule_toggle;
     lv_obj_t *label_btn_backlight_schedule_toggle;
+    lv_obj_t *label_backlight_alarm_wake_title;
+    lv_obj_t *btn_backlight_alarm_wake;
+    lv_obj_t *label_btn_backlight_alarm_wake_toggle;
     lv_obj_t *container_backlight_presets;
     lv_obj_t *label_backlight_presets_title;
-    lv_obj_t *btn_backlight_5m;
-    lv_obj_t *label_btn_backlight_5m;
     lv_obj_t *btn_backlight_1m;
     lv_obj_t *label_btn_backlight_1m;
     lv_obj_t *btn_backlight_always_on;

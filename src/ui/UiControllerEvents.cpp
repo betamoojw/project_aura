@@ -70,10 +70,10 @@ void UiController::on_time_date_event_cb(lv_event_t *e) { if (instance_) instanc
 void UiController::on_backlight_settings_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_settings_event(e); }
 void UiController::on_backlight_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_back_event(e); }
 void UiController::on_backlight_schedule_toggle_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_schedule_toggle_event(e); }
+void UiController::on_backlight_alarm_wake_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_alarm_wake_event(e); }
 void UiController::on_backlight_preset_always_on_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_always_on_event(e); }
 void UiController::on_backlight_preset_30s_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_30s_event(e); }
 void UiController::on_backlight_preset_1m_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_1m_event(e); }
-void UiController::on_backlight_preset_5m_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_5m_event(e); }
 void UiController::on_backlight_sleep_hours_minus_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_sleep_hours_minus_event(e); }
 void UiController::on_backlight_sleep_hours_plus_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_sleep_hours_plus_event(e); }
 void UiController::on_backlight_sleep_minutes_minus_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_sleep_minutes_minus_event(e); }
@@ -944,6 +944,7 @@ void UiController::on_backlight_back_event(lv_event_t *e) {
         return;
     }
     backlightManager.savePrefs(storage);
+    sync_backlight_settings_button_state();
     pending_screen_id = SCREEN_ID_PAGE_SETTINGS;
 }
 
@@ -957,6 +958,19 @@ void UiController::on_backlight_schedule_toggle_event(lv_event_t *e) {
     lv_obj_t *btn = lv_event_get_target(e);
     bool enabled = lv_obj_has_state(btn, LV_STATE_CHECKED);
     backlightManager.setScheduleEnabled(enabled);
+    sync_backlight_settings_button_state();
+}
+
+void UiController::on_backlight_alarm_wake_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    if (backlightManager.isAlarmWakeSyncing()) {
+        return;
+    }
+    lv_obj_t *btn = lv_event_get_target(e);
+    bool enabled = lv_obj_has_state(btn, LV_STATE_CHECKED);
+    backlightManager.setAlarmWakeEnabled(enabled);
 }
 
 void UiController::on_backlight_preset_always_on_event(lv_event_t *e) {
@@ -987,16 +1001,6 @@ void UiController::on_backlight_preset_1m_event(lv_event_t *e) {
         return;
     }
     backlightManager.setTimeoutMs(BACKLIGHT_TIMEOUT_1M);
-}
-
-void UiController::on_backlight_preset_5m_event(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
-        return;
-    }
-    if (backlightManager.isPresetSyncing()) {
-        return;
-    }
-    backlightManager.setTimeoutMs(BACKLIGHT_TIMEOUT_5M);
 }
 
 void UiController::on_backlight_sleep_hours_minus_event(lv_event_t *e) {

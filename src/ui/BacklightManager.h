@@ -29,6 +29,8 @@ public:
 
     void setTimeoutMs(uint32_t timeout_ms);
     void setScheduleEnabled(bool enabled);
+    void setAlarmWakeEnabled(bool enabled);
+    void setAlarmWakeActive(bool active);
     void adjustSleepHour(int delta);
     void adjustSleepMinute(int delta);
     void adjustWakeHour(int delta);
@@ -38,6 +40,9 @@ public:
     bool isUiDirty() const { return ui_dirty_; }
     bool isPresetSyncing() const { return preset_syncing_; }
     bool isScheduleSyncing() const { return schedule_syncing_; }
+    bool isAlarmWakeSyncing() const { return alarm_wake_syncing_; }
+    bool isScheduleEnabled() const { return schedule_enabled_; }
+    bool isAlarmWakeEnabled() const { return alarm_wake_enabled_; }
 
 private:
     uint32_t normalizeTimeoutMs(uint32_t timeout_ms) const;
@@ -49,6 +54,8 @@ private:
     bool backlight_on_ = true;
     uint32_t backlight_timeout_ms_ = 0;
     bool schedule_enabled_ = false;
+    bool alarm_wake_enabled_ = false;
+    bool alarm_wake_active_ = false;
     bool schedule_active_ = false;
     int sleep_hour_ = 23;
     int sleep_minute_ = 0;
@@ -59,5 +66,6 @@ private:
     bool ui_dirty_ = true;
     bool preset_syncing_ = false;
     bool schedule_syncing_ = false;
+    bool alarm_wake_syncing_ = false;
     bool prefs_dirty_ = false;
 };

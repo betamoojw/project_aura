@@ -160,6 +160,7 @@ private:
     void sync_mqtt_toggle_state();
     void sync_alert_blink_toggle_state();
     void sync_auto_dim_button_state();
+    void sync_backlight_settings_button_state();
     void sync_night_mode_toggle_ui();
 
     void apply_toggle_style(lv_obj_t *btn);
@@ -225,10 +226,10 @@ private:
     void on_backlight_settings_event(lv_event_t *e);
     void on_backlight_back_event(lv_event_t *e);
     void on_backlight_schedule_toggle_event(lv_event_t *e);
+    void on_backlight_alarm_wake_event(lv_event_t *e);
     void on_backlight_preset_always_on_event(lv_event_t *e);
     void on_backlight_preset_30s_event(lv_event_t *e);
     void on_backlight_preset_1m_event(lv_event_t *e);
-    void on_backlight_preset_5m_event(lv_event_t *e);
     void on_backlight_sleep_hours_minus_event(lv_event_t *e);
     void on_backlight_sleep_hours_plus_event(lv_event_t *e);
     void on_backlight_sleep_minutes_minus_event(lv_event_t *e);
@@ -325,10 +326,10 @@ private:
     static void on_backlight_settings_event_cb(lv_event_t *e);
     static void on_backlight_back_event_cb(lv_event_t *e);
     static void on_backlight_schedule_toggle_event_cb(lv_event_t *e);
+    static void on_backlight_alarm_wake_event_cb(lv_event_t *e);
     static void on_backlight_preset_always_on_event_cb(lv_event_t *e);
     static void on_backlight_preset_30s_event_cb(lv_event_t *e);
     static void on_backlight_preset_1m_event_cb(lv_event_t *e);
-    static void on_backlight_preset_5m_event_cb(lv_event_t *e);
     static void on_backlight_sleep_hours_minus_event_cb(lv_event_t *e);
     static void on_backlight_sleep_hours_plus_event_cb(lv_event_t *e);
     static void on_backlight_sleep_minutes_minus_event_cb(lv_event_t *e);

@@ -146,11 +146,14 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
 
     if (!gas_warmup && data.voc_valid && data.voc_index > 0) {
         result.has_valid = true;
-        if (data.voc_index >= 250) {
+        if (data.voc_index > 350) {
             voc_sev = STATUS_RED;
             voc_msg = text(TextId::MsgVocVeryHigh);
-        } else if (data.voc_index >= 151) {
+        } else if (data.voc_index > 250) {
             voc_sev = STATUS_ORANGE;
+            voc_msg = text(TextId::MsgVocHigh);
+        } else if (data.voc_index >= 151) {
+            voc_sev = STATUS_YELLOW;
             voc_msg = text(TextId::MsgVocHigh);
         }
     }
