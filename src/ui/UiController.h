@@ -153,7 +153,12 @@ private:
     lv_color_t blink_red(lv_color_t color);
     lv_color_t night_alert_color(lv_color_t color);
     lv_color_t alert_color_for_mode(lv_color_t color);
-    void compute_header_style(const AirQuality &aq, lv_color_t &color, lv_opa_t &shadow_opa);
+    void compute_header_style(const AirQuality &aq,
+                              uint8_t status_severity,
+                              bool co_alert_active,
+                              lv_color_t &color,
+                              lv_opa_t &shadow_opa);
+    void compute_status_summary(bool gas_warmup, bool &co_alert_active, uint8_t &max_severity) const;
     lv_color_t active_text_color();
 
     void sync_wifi_toggle_state();
@@ -449,6 +454,7 @@ private:
     uint32_t status_msg_signature = 0;
     uint8_t status_msg_index = 0;
     uint8_t status_msg_count = 0;
+    uint8_t status_max_severity = 0;
     bool co_status_alert_active = false;
     uint32_t last_lvgl_lock_warn_ms = 0;
     uint16_t lvgl_lock_fail_streak = 0;

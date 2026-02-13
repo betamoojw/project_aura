@@ -5,6 +5,9 @@
  */
 
 #include "esp_timer.h"
+#include "esp_debug_helpers.h"
+#include "esp_log.h"
+#include <string.h>
 #undef ESP_UTILS_LOG_TAG
 #define ESP_UTILS_LOG_TAG "LvPort"
 #include "esp_lib_utils.h"
@@ -35,6 +38,47 @@ static inline bool is_before_deadline(uint32_t now_ms, uint32_t deadline_ms)
 {
     return static_cast<int32_t>(deadline_ms - now_ms) > 0;
 }
+
+#if LV_USE_LOG
+static uint32_t lvgl_dirty_warn_seen = 0;
+static uint32_t lvgl_dirty_warn_suppressed = 0;
+static uint32_t lvgl_dirty_warn_last_report_ms = 0;
+static constexpr uint32_t LVGL_DIRTY_WARN_REPORT_PERIOD_MS = 2000;
+
+static void lvgl_log_print_cb(const char *buf)
+{
+    if (buf == nullptr) {
+        return;
+    }
+
+    // Keep standard LVGL logs in serial output.
+    printf("%s", buf);
+
+    if (strstr(buf, "detected modifying dirty areas in render") == nullptr) {
+        return;
+    }
+
+    ++lvgl_dirty_warn_seen;
+
+    const uint32_t now_ms = get_monotonic_ms();
+    if ((lvgl_dirty_warn_last_report_ms != 0) &&
+        is_before_deadline(now_ms, lvgl_dirty_warn_last_report_ms + LVGL_DIRTY_WARN_REPORT_PERIOD_MS)) {
+        ++lvgl_dirty_warn_suppressed;
+        return;
+    }
+
+    const char *task_name = pcTaskGetName(nullptr);
+    ESP_LOGW("LVGL",
+             "dirty-area mutation during render (seen=%lu, suppressed=%lu, task=%s), dumping backtrace",
+             static_cast<unsigned long>(lvgl_dirty_warn_seen),
+             static_cast<unsigned long>(lvgl_dirty_warn_suppressed),
+             task_name ? task_name : "?");
+
+    lvgl_dirty_warn_suppressed = 0;
+    lvgl_dirty_warn_last_report_ms = now_ms;
+    esp_backtrace_print(16);
+}
+#endif
 
 #if LVGL_PORT_ROTATION_DEGREE != 0
 static void *get_next_frame_buffer(LCD *lcd)
@@ -799,6 +843,9 @@ bool lvgl_port_init(LCD *lcd, Touch *tp)
     lv_indev_t *indev = nullptr;
 
     lv_init();
+#if LV_USE_LOG
+    lv_log_register_print_cb(lvgl_log_print_cb);
+#endif
 #if !LV_TICK_CUSTOM
     ESP_UTILS_CHECK_FALSE_RETURN(tick_init(), false, "Initialize LVGL tick failed");
 #endif

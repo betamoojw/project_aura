@@ -576,9 +576,27 @@ lv_color_t UiController::alert_color_for_mode(lv_color_t color) {
     return blink_red(color);
 }
 
-void UiController::compute_header_style(const AirQuality &aq, lv_color_t &color, lv_opa_t &shadow_opa) {
-    lv_color_t base = header_status_enabled ? aq.color : color_card_border();
-    if (co_status_alert_active) {
+void UiController::compute_header_style(const AirQuality &aq,
+                                        uint8_t status_severity,
+                                        bool co_alert_active,
+                                        lv_color_t &color,
+                                        lv_opa_t &shadow_opa) {
+    (void)aq;
+
+    lv_color_t base = color_card_border();
+    if (header_status_enabled) {
+        if (status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_RED)) {
+            base = color_red();
+        } else if (status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_ORANGE)) {
+            base = color_orange();
+        } else if (status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_YELLOW)) {
+            base = color_yellow();
+        } else {
+            // "All good" stays green by design.
+            base = color_green();
+        }
+    }
+    if (co_alert_active) {
         base = color_red();
     }
     shadow_opa = header_status_enabled ? LV_OPA_COVER : LV_OPA_TRANSP;
@@ -980,10 +998,11 @@ void UiController::update_ui() {
     update_status_message(now_ms, gas_warmup);
     lv_color_t header_col;
     lv_opa_t header_shadow;
-    compute_header_style(aq, header_col, header_shadow);
+    compute_header_style(aq, status_max_severity, co_status_alert_active, header_col, header_shadow);
     if (night_mode && header_status_enabled) {
-        lv_color_t night_source = co_status_alert_active ? color_red() : aq.color;
-        header_col = night_alert_color(night_source);
+        const bool status_red =
+            status_max_severity >= static_cast<uint8_t>(StatusMessages::STATUS_RED);
+        header_col = (co_status_alert_active || status_red) ? color_red() : color_inactive();
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
     if (objects.container_header_pro) {
@@ -1005,12 +1024,16 @@ void UiController::update_settings_header() {
         return;
     }
     AirQuality aq = getAirQuality(currentData);
+    bool co_alert_active = false;
+    uint8_t status_severity = static_cast<uint8_t>(StatusMessages::STATUS_NONE);
+    compute_status_summary(sensorManager.isWarmupActive(), co_alert_active, status_severity);
     lv_color_t header_col;
     lv_opa_t header_shadow;
-    compute_header_style(aq, header_col, header_shadow);
+    compute_header_style(aq, status_severity, co_alert_active, header_col, header_shadow);
     if (night_mode && header_status_enabled) {
-        lv_color_t night_source = co_status_alert_active ? color_red() : aq.color;
-        header_col = night_alert_color(night_source);
+        const bool status_red =
+            status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_RED);
+        header_col = (co_alert_active || status_red) ? color_red() : color_inactive();
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
     lv_obj_set_style_border_color(objects.container_settings_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1028,16 +1051,40 @@ void UiController::update_theme_custom_info(bool presets) {
     }
 }
 
+void UiController::compute_status_summary(bool gas_warmup,
+                                          bool &co_alert_active,
+                                          uint8_t &max_severity) const {
+    co_alert_active = false;
+    max_severity = static_cast<uint8_t>(StatusMessages::STATUS_NONE);
+
+    StatusMessages::StatusMessageResult result =
+        StatusMessages::build_status_messages(currentData, gas_warmup);
+    for (size_t i = 0; i < result.count; ++i) {
+        const StatusMessages::StatusMessage &msg = result.messages[i];
+        if (msg.sensor == StatusMessages::STATUS_SENSOR_CO) {
+            co_alert_active = true;
+        }
+        const uint8_t sev = static_cast<uint8_t>(msg.severity);
+        if (sev > max_severity) {
+            max_severity = sev;
+        }
+    }
+}
+
 void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
     StatusMessages::StatusMessageResult result = StatusMessages::build_status_messages(currentData, gas_warmup);
     const StatusMessages::StatusMessage *messages = result.messages;
     const size_t count = result.count;
     const bool has_valid = result.has_valid;
     co_status_alert_active = false;
+    status_max_severity = static_cast<uint8_t>(StatusMessages::STATUS_NONE);
     for (size_t i = 0; i < count; ++i) {
+        const uint8_t sev = static_cast<uint8_t>(messages[i].severity);
+        if (sev > status_max_severity) {
+            status_max_severity = sev;
+        }
         if (messages[i].sensor == StatusMessages::STATUS_SENSOR_CO) {
             co_status_alert_active = true;
-            break;
         }
     }
 
