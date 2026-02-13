@@ -148,6 +148,9 @@ void UiBootFlow::releaseBootScreens(UiController &owner) {
 
 bool UiBootFlow::bootDiagHasErrors(UiController &owner, uint32_t now_ms) {
     bool has_error = false;
+    if (boot_ui_auto_recovery_reboot) {
+        has_error = true;
+    }
     if (!owner.storage.isMounted()) {
         has_error = true;
     }
@@ -207,6 +210,10 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
                      static_cast<unsigned long>(boot_count));
         }
         owner.safe_label_set_text(objects.lbl_diag_reason, buf);
+        if (boot_ui_auto_recovery_reboot) {
+            append_error_line(error_lines, sizeof(error_lines), error_len,
+                              "UI auto-recovery reboot (display task stalled)");
+        }
         if (is_crash_reset(boot_reset_reason)) {
             char reason_line[96];
             snprintf(reason_line, sizeof(reason_line), "Crash reset: %s", reason);

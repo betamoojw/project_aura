@@ -76,6 +76,7 @@ void wifi_state_change_cb(AuraNetworkManager::WifiState,
 StorageManager::BootAction AppInit::handleBootState() {
     esp_reset_reason_t reset_reason = esp_reset_reason();
     boot_reset_reason = reset_reason;
+    boot_ui_auto_recovery_reboot = boot_consume_ui_auto_recovery_reboot();
     bool crash_reset = BootHelpers::isCrashReset(reset_reason);
     StorageManager::BootAction boot_action =
         BootPolicy::apply(crash_reset,
@@ -86,6 +87,9 @@ StorageManager::BootAction AppInit::handleBootState() {
          reset_reason,
          resetReasonName(reset_reason),
          boot_count);
+    if (boot_ui_auto_recovery_reboot) {
+        LOGW("Main", "Previous boot ended with UI auto-recovery reboot");
+    }
     if (boot_action == StorageManager::BootAction::SafeRollback) {
         LOGW("Main", "SAFE BOOT: restoring last known good config");
     } else if (boot_action == StorageManager::BootAction::SafeFactoryReset) {

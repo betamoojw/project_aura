@@ -13,6 +13,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <esp_system.h>
 
 #include "lvgl_v8_port.h"
 #include "ui/ui.h"
@@ -21,6 +22,7 @@
 #include "ui/StatusMessages.h"
 #include "web/WebHandlers.h"
 #include "config/AppConfig.h"
+#include "core/BootState.h"
 #include "core/Logger.h"
 #include "modules/StorageManager.h"
 #include "modules/NetworkManager.h"
@@ -48,6 +50,8 @@ constexpr uint32_t UI_LVGL_DIAG_HEARTBEAT_MS = 60000;
 constexpr uint32_t UI_LVGL_DIAG_STALL_MS = 15000;
 constexpr uint32_t UI_LVGL_DIAG_STALL_LOG_COOLDOWN_MS = 30000;
 constexpr uint32_t UI_LVGL_DIAG_RECOVER_MS = 3000;
+constexpr uint32_t UI_LVGL_DIAG_REBOOT_STALL_MS = 45000;
+constexpr uint32_t UI_LVGL_DIAG_REBOOT_FLUSH_LOG_MS = 80;
 constexpr uint32_t UI_LVGL_DIAG_AGE_UNKNOWN_MS = 0xFFFFFFFFu;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
@@ -207,6 +211,7 @@ void UiController::begin() {
     lvgl_diag_last_heartbeat_ms = millis();
     lvgl_diag_last_stall_warn_ms = 0;
     lvgl_diag_stall_active = false;
+    lvgl_diag_stall_since_ms = 0;
     boot_release_at_ms = 0;
     boot_ui_released = false;
     deferred_unload_.reset();
@@ -222,9 +227,10 @@ void UiController::begin() {
         boot_logo_active = true;
         boot_logo_start_ms = millis();
     }
-    LOGI("UI", "LVGL diagnostics enabled (heartbeat=%lu ms, stall=%lu ms)",
+    LOGI("UI", "LVGL diagnostics enabled (heartbeat=%lu ms, stall=%lu ms, auto-reboot=%lu ms)",
          static_cast<unsigned long>(UI_LVGL_DIAG_HEARTBEAT_MS),
-         static_cast<unsigned long>(UI_LVGL_DIAG_STALL_MS));
+         static_cast<unsigned long>(UI_LVGL_DIAG_STALL_MS),
+         static_cast<unsigned long>(UI_LVGL_DIAG_REBOOT_STALL_MS));
     lvgl_port_unlock();
     last_clock_tick_ms = millis();
 }
@@ -314,6 +320,9 @@ void UiController::poll(uint32_t now) {
                                      handler_age_known &&
                                      lvgl_diag.timer_handler_age_ms >= UI_LVGL_DIAG_STALL_MS;
         if (stall_suspected) {
+            if (!lvgl_diag_stall_active) {
+                lvgl_diag_stall_since_ms = now;
+            }
             const bool can_log = !lvgl_diag_stall_active ||
                                  (now - lvgl_diag_last_stall_warn_ms) >= UI_LVGL_DIAG_STALL_LOG_COOLDOWN_MS;
             if (can_log) {
@@ -329,15 +338,29 @@ void UiController::poll(uint32_t now) {
                      static_cast<unsigned long>(lvgl_diag.touch_read_error_count));
             }
             lvgl_diag_stall_active = true;
+
+            if ((now - lvgl_diag_stall_since_ms) >= UI_LVGL_DIAG_REBOOT_STALL_MS) {
+                const uint32_t stall_for_ms = now - lvgl_diag_stall_since_ms;
+                LOGE("UI",
+                     "LVGL stall persisted %lu ms, scheduling controlled reboot",
+                     static_cast<unsigned long>(stall_for_ms));
+                boot_mark_ui_auto_recovery_reboot();
+                delay(UI_LVGL_DIAG_REBOOT_FLUSH_LOG_MS);
+                esp_restart();
+                return;
+            }
         } else if (lvgl_diag_stall_active &&
                    handler_age_known &&
                    lvgl_diag.timer_handler_age_ms <= UI_LVGL_DIAG_RECOVER_MS) {
             lvgl_diag_stall_active = false;
+            lvgl_diag_stall_since_ms = 0;
             LOGI("UI",
                  "LVGL heartbeat recovered (handler_age=%lu ms, flush_age=%lu ms, vsync_age=%lu ms)",
                  static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
                  static_cast<unsigned long>(lvgl_diag.flush_age_ms),
                  static_cast<unsigned long>(lvgl_diag.vsync_age_ms));
+        } else if (!lvgl_diag_stall_active) {
+            lvgl_diag_stall_since_ms = 0;
         }
     }
 

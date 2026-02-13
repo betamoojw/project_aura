@@ -461,6 +461,7 @@ private:
     uint32_t lvgl_diag_last_heartbeat_ms = 0;
     uint32_t lvgl_diag_last_stall_warn_ms = 0;
     bool lvgl_diag_stall_active = false;
+    uint32_t lvgl_diag_stall_since_ms = 0;
     UiDeferredUnload deferred_unload_;
     bool boot_logo_active = false;
     uint32_t boot_logo_start_ms = 0;
