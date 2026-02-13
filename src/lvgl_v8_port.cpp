@@ -28,6 +28,41 @@ static uint32_t lvgl_touch_read_block_until_ms = 0;
 static bool lvgl_touch_wait_release_after_block = false;
 static bool lvgl_touch_wake_probe_enabled = false;
 static bool lvgl_touch_wake_pending = false;
+static volatile uint32_t lvgl_diag_timer_handler_count = 0;
+static volatile uint32_t lvgl_diag_timer_handler_last_ms = 0;
+static volatile uint32_t lvgl_diag_flush_count = 0;
+static volatile uint32_t lvgl_diag_flush_last_ms = 0;
+static volatile uint32_t lvgl_diag_vsync_count = 0;
+static volatile uint32_t lvgl_diag_vsync_last_ms = 0;
+static volatile uint32_t lvgl_diag_lock_fail_count = 0;
+static volatile uint32_t lvgl_diag_touch_read_error_count = 0;
+
+static inline uint32_t get_rtos_ms()
+{
+    return static_cast<uint32_t>(xTaskGetTickCount()) * portTICK_PERIOD_MS;
+}
+
+static inline uint32_t get_rtos_ms_isr()
+{
+    return static_cast<uint32_t>(xTaskGetTickCountFromISR()) * portTICK_PERIOD_MS;
+}
+
+static inline void lvgl_diag_mark_timer_handler()
+{
+    lvgl_diag_timer_handler_last_ms = get_rtos_ms();
+    ++lvgl_diag_timer_handler_count;
+}
+
+static inline void lvgl_diag_mark_flush()
+{
+    lvgl_diag_flush_last_ms = get_rtos_ms();
+    ++lvgl_diag_flush_count;
+}
+
+static inline uint32_t lvgl_diag_age_ms(uint32_t now_ms, uint32_t stamp_ms)
+{
+    return (stamp_ms == 0) ? UINT32_MAX : (now_ms - stamp_ms);
+}
 
 static inline uint32_t get_monotonic_ms()
 {
@@ -361,6 +396,7 @@ static void flush_dirty_copy(void *dst, void *src, lv_port_dirty_area_t *dirty_a
 
 static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
+    lvgl_diag_mark_flush();
     LCD *lcd = (LCD *)drv->user_data;
     const int offsetx1 = area->x1;
     const int offsetx2 = area->x2;
@@ -439,6 +475,7 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
 
 static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
+    lvgl_diag_mark_flush();
     LCD *lcd = (LCD *)drv->user_data;
 
     /* Action after last area refresh */
@@ -459,6 +496,7 @@ static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t
 
 static void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
+    lvgl_diag_mark_flush();
     LCD *lcd = (LCD *)drv->user_data;
 
     /* Switch the current LCD frame buffer to `color_map` */
@@ -481,6 +519,7 @@ static void *lvgl_port_flush_next_buf = NULL;
 
 void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
+    lvgl_diag_mark_flush();
     LCD *lcd = (LCD *)drv->user_data;
 
 #if LVGL_PORT_ROTATION_DEGREE != 0
@@ -516,6 +555,8 @@ void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color
 IRAM_ATTR bool onLcdVsyncCallback(void *user_data)
 {
     BaseType_t need_yield = pdFALSE;
+    lvgl_diag_vsync_last_ms = get_rtos_ms_isr();
+    ++lvgl_diag_vsync_count;
 #if LVGL_PORT_FULL_REFRESH && (LVGL_PORT_DISP_BUFFER_NUM == 3) && (LVGL_PORT_ROTATION_DEGREE == 0)
     if (lvgl_port_lcd_next_buf != lvgl_port_lcd_last_buf) {
         lvgl_port_flush_next_buf = lvgl_port_lcd_last_buf;
@@ -533,6 +574,7 @@ IRAM_ATTR bool onLcdVsyncCallback(void *user_data)
 
 void flush_callback(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
+    lvgl_diag_mark_flush();
     LCD *lcd = (LCD *)drv->user_data;
     const int offsetx1 = area->x1;
     const int offsetx2 = area->x2;
@@ -707,6 +749,8 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
         int wake_probe = tp->readPoints(&point, 1, 0);
         if (wake_probe > 0) {
             lvgl_touch_wake_pending = true;
+        } else if (wake_probe < 0) {
+            ++lvgl_diag_touch_read_error_count;
         }
         data->state = LV_INDEV_STATE_RELEASED;
         return;
@@ -727,6 +771,9 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
         int release_probe = tp->readPoints(&point, 1, 0);
         if (release_probe <= 0) {
             lvgl_touch_wait_release_after_block = false;
+            if (release_probe < 0) {
+                ++lvgl_diag_touch_read_error_count;
+            }
         }
         data->state = LV_INDEV_STATE_RELEASED;
         return;
@@ -739,6 +786,9 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
         data->point.y = point.y;
         data->state = LV_INDEV_STATE_PRESSED;
     } else {
+        if (read_touch_result < 0) {
+            ++lvgl_diag_touch_read_error_count;
+        }
         data->state = LV_INDEV_STATE_RELEASED;
     }
 }
@@ -803,6 +853,7 @@ static void lvgl_port_task(void *arg)
     uint32_t task_delay_ms = LVGL_PORT_TASK_MAX_DELAY_MS;
     while (1) {
         if (lvgl_port_lock(-1)) {
+            lvgl_diag_mark_timer_handler();
             task_delay_ms = lv_timer_handler();
             lvgl_port_unlock();
         }
@@ -905,7 +956,11 @@ bool lvgl_port_lock(int timeout_ms)
     ESP_UTILS_CHECK_NULL_RETURN(lvgl_mux, false, "LVGL mutex is not initialized");
 
     const TickType_t timeout_ticks = (timeout_ms < 0) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    return (xSemaphoreTakeRecursive(lvgl_mux, timeout_ticks) == pdTRUE);
+    const bool locked = (xSemaphoreTakeRecursive(lvgl_mux, timeout_ticks) == pdTRUE);
+    if (!locked) {
+        ++lvgl_diag_lock_fail_count;
+    }
+    return locked;
 }
 
 bool lvgl_port_unlock(void)
@@ -944,6 +999,29 @@ bool lvgl_port_take_wake_touch_pending(void)
     const bool pending = lvgl_touch_wake_pending;
     lvgl_touch_wake_pending = false;
     return pending;
+}
+
+bool lvgl_port_get_diagnostics(lvgl_port_diagnostics_t *out)
+{
+    ESP_UTILS_CHECK_FALSE_RETURN(out != nullptr, false, "Invalid diagnostics snapshot");
+
+    const uint32_t now_ms = get_rtos_ms();
+    const uint32_t timer_last_ms = lvgl_diag_timer_handler_last_ms;
+    const uint32_t flush_last_ms = lvgl_diag_flush_last_ms;
+    const uint32_t vsync_last_ms = lvgl_diag_vsync_last_ms;
+
+    out->sample_ms = now_ms;
+    out->timer_handler_count = lvgl_diag_timer_handler_count;
+    out->timer_handler_age_ms = lvgl_diag_age_ms(now_ms, timer_last_ms);
+    out->flush_count = lvgl_diag_flush_count;
+    out->flush_age_ms = lvgl_diag_age_ms(now_ms, flush_last_ms);
+    out->vsync_count = lvgl_diag_vsync_count;
+    out->vsync_age_ms = lvgl_diag_age_ms(now_ms, vsync_last_ms);
+    out->lock_fail_count = lvgl_diag_lock_fail_count;
+    out->touch_read_error_count = lvgl_diag_touch_read_error_count;
+    out->paused = lvgl_port_paused;
+
+    return true;
 }
 
 bool lvgl_port_pause(void)

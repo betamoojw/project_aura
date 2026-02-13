@@ -44,6 +44,11 @@ constexpr uint32_t STATUS_ROTATE_MS = 5000;
 constexpr int UI_LVGL_LOCK_TIMEOUT_MS = 500;
 constexpr uint32_t UI_LVGL_LOCK_WARN_MS = 60000;
 constexpr uint16_t UI_LVGL_LOCK_WARN_FAIL_STREAK = 3;
+constexpr uint32_t UI_LVGL_DIAG_HEARTBEAT_MS = 60000;
+constexpr uint32_t UI_LVGL_DIAG_STALL_MS = 15000;
+constexpr uint32_t UI_LVGL_DIAG_STALL_LOG_COOLDOWN_MS = 30000;
+constexpr uint32_t UI_LVGL_DIAG_RECOVER_MS = 3000;
+constexpr uint32_t UI_LVGL_DIAG_AGE_UNKNOWN_MS = 0xFFFFFFFFu;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -199,6 +204,9 @@ void UiController::begin() {
     theme_events_bound_ = false;
     lvgl_lock_fail_streak = 0;
     last_lvgl_lock_warn_ms = 0;
+    lvgl_diag_last_heartbeat_ms = millis();
+    lvgl_diag_last_stall_warn_ms = 0;
+    lvgl_diag_stall_active = false;
     boot_release_at_ms = 0;
     boot_ui_released = false;
     deferred_unload_.reset();
@@ -214,6 +222,9 @@ void UiController::begin() {
         boot_logo_active = true;
         boot_logo_start_ms = millis();
     }
+    LOGI("UI", "LVGL diagnostics enabled (heartbeat=%lu ms, stall=%lu ms)",
+         static_cast<unsigned long>(UI_LVGL_DIAG_HEARTBEAT_MS),
+         static_cast<unsigned long>(UI_LVGL_DIAG_STALL_MS));
     lvgl_port_unlock();
     last_clock_tick_ms = millis();
 }
@@ -279,6 +290,55 @@ void UiController::poll(uint32_t now) {
 
     if (!lvgl_ready) {
         return;
+    }
+
+    lvgl_port_diagnostics_t lvgl_diag = {};
+    if (lvgl_port_get_diagnostics(&lvgl_diag)) {
+        if ((now - lvgl_diag_last_heartbeat_ms) >= UI_LVGL_DIAG_HEARTBEAT_MS) {
+            lvgl_diag_last_heartbeat_ms = now;
+            LOGD("UI",
+                 "LVGL heartbeat: handler=%lu(age=%lu ms), flush=%lu(age=%lu ms), vsync=%lu(age=%lu ms), lock_fail=%lu, touch_err=%lu, paused=%s",
+                 static_cast<unsigned long>(lvgl_diag.timer_handler_count),
+                 static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
+                 static_cast<unsigned long>(lvgl_diag.flush_count),
+                 static_cast<unsigned long>(lvgl_diag.flush_age_ms),
+                 static_cast<unsigned long>(lvgl_diag.vsync_count),
+                 static_cast<unsigned long>(lvgl_diag.vsync_age_ms),
+                 static_cast<unsigned long>(lvgl_diag.lock_fail_count),
+                 static_cast<unsigned long>(lvgl_diag.touch_read_error_count),
+                 lvgl_diag.paused ? "YES" : "NO");
+        }
+
+        const bool handler_age_known = lvgl_diag.timer_handler_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
+        const bool stall_suspected = !lvgl_diag.paused &&
+                                     handler_age_known &&
+                                     lvgl_diag.timer_handler_age_ms >= UI_LVGL_DIAG_STALL_MS;
+        if (stall_suspected) {
+            const bool can_log = !lvgl_diag_stall_active ||
+                                 (now - lvgl_diag_last_stall_warn_ms) >= UI_LVGL_DIAG_STALL_LOG_COOLDOWN_MS;
+            if (can_log) {
+                lvgl_diag_last_stall_warn_ms = now;
+                LOGW("UI",
+                     "LVGL stall suspected (screen=%d, backlight=%s, handler_age=%lu ms, flush_age=%lu ms, vsync_age=%lu ms, lock_fail=%lu, touch_err=%lu)",
+                     current_screen_id,
+                     backlightManager.isOn() ? "ON" : "OFF",
+                     static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.flush_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.vsync_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.lock_fail_count),
+                     static_cast<unsigned long>(lvgl_diag.touch_read_error_count));
+            }
+            lvgl_diag_stall_active = true;
+        } else if (lvgl_diag_stall_active &&
+                   handler_age_known &&
+                   lvgl_diag.timer_handler_age_ms <= UI_LVGL_DIAG_RECOVER_MS) {
+            lvgl_diag_stall_active = false;
+            LOGI("UI",
+                 "LVGL heartbeat recovered (handler_age=%lu ms, flush_age=%lu ms, vsync_age=%lu ms)",
+                 static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
+                 static_cast<unsigned long>(lvgl_diag.flush_age_ms),
+                 static_cast<unsigned long>(lvgl_diag.vsync_age_ms));
+        }
     }
 
     if (boot_logo_active &&

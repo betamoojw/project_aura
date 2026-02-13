@@ -214,6 +214,28 @@ bool lvgl_port_set_wake_touch_probe(bool enabled);
  */
 bool lvgl_port_take_wake_touch_pending(void);
 
+typedef struct {
+    uint32_t sample_ms;
+    uint32_t timer_handler_count;
+    uint32_t timer_handler_age_ms;
+    uint32_t flush_count;
+    uint32_t flush_age_ms;
+    uint32_t vsync_count;
+    uint32_t vsync_age_ms;
+    uint32_t lock_fail_count;
+    uint32_t touch_read_error_count;
+    bool paused;
+} lvgl_port_diagnostics_t;
+
+/**
+ * @brief Return LVGL/runtime diagnostics snapshot for freeze investigation.
+ *
+ * @param out Pointer to destination snapshot.
+ *
+ * @return true if snapshot stored, false for invalid argument.
+ */
+bool lvgl_port_get_diagnostics(lvgl_port_diagnostics_t *out);
+
 #ifdef __cplusplus
 }
 #endif
