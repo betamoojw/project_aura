@@ -48,6 +48,8 @@ constexpr uint32_t UI_LVGL_LOCK_WARN_MS = 60000;
 constexpr uint16_t UI_LVGL_LOCK_WARN_FAIL_STREAK = 3;
 constexpr uint32_t UI_LVGL_DIAG_HEARTBEAT_MS = 60000;
 constexpr uint32_t UI_LVGL_DIAG_STALL_MS = 15000;
+constexpr uint32_t UI_LVGL_DIAG_VSYNC_STALL_MS = 5000;
+constexpr uint32_t UI_LVGL_DIAG_FLUSH_STALL_MS = 15000;
 constexpr uint32_t UI_LVGL_DIAG_STALL_LOG_COOLDOWN_MS = 30000;
 constexpr uint32_t UI_LVGL_DIAG_RECOVER_MS = 3000;
 constexpr uint32_t UI_LVGL_DIAG_REBOOT_STALL_MS = 45000;
@@ -316,9 +318,18 @@ void UiController::poll(uint32_t now) {
         }
 
         const bool handler_age_known = lvgl_diag.timer_handler_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
+        const bool vsync_age_known = lvgl_diag.vsync_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
+        const bool flush_age_known = lvgl_diag.flush_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
+        const bool handler_stall = handler_age_known &&
+                                   lvgl_diag.timer_handler_age_ms >= UI_LVGL_DIAG_STALL_MS;
+        const bool vsync_stall = backlightManager.isOn() &&
+                                 vsync_age_known &&
+                                 lvgl_diag.vsync_age_ms >= UI_LVGL_DIAG_VSYNC_STALL_MS;
+        const bool flush_stall = backlightManager.isOn() &&
+                                 flush_age_known &&
+                                 lvgl_diag.flush_age_ms >= UI_LVGL_DIAG_FLUSH_STALL_MS;
         const bool stall_suspected = !lvgl_diag.paused &&
-                                     handler_age_known &&
-                                     lvgl_diag.timer_handler_age_ms >= UI_LVGL_DIAG_STALL_MS;
+                                     (handler_stall || vsync_stall || flush_stall);
         if (stall_suspected) {
             if (!lvgl_diag_stall_active) {
                 lvgl_diag_stall_since_ms = now;
@@ -328,9 +339,12 @@ void UiController::poll(uint32_t now) {
             if (can_log) {
                 lvgl_diag_last_stall_warn_ms = now;
                 LOGW("UI",
-                     "LVGL stall suspected (screen=%d, backlight=%s, handler_age=%lu ms, flush_age=%lu ms, vsync_age=%lu ms, lock_fail=%lu, touch_err=%lu)",
+                     "LVGL/display stall suspected (screen=%d, backlight=%s, handler=%s, vsync=%s, flush=%s, handler_age=%lu ms, flush_age=%lu ms, vsync_age=%lu ms, lock_fail=%lu, touch_err=%lu)",
                      current_screen_id,
                      backlightManager.isOn() ? "ON" : "OFF",
+                     handler_stall ? "STALL" : "OK",
+                     vsync_stall ? "STALL" : "OK",
+                     flush_stall ? "STALL" : "OK",
                      static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
                      static_cast<unsigned long>(lvgl_diag.flush_age_ms),
                      static_cast<unsigned long>(lvgl_diag.vsync_age_ms),
