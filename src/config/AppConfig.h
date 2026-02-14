@@ -90,6 +90,11 @@ namespace Config {
     constexpr uint16_t SFA3X_CMD_START = 0x0006;
     constexpr uint16_t SFA3X_CMD_STOP = 0x0104;
     constexpr uint16_t SFA3X_CMD_READ_VALUES = 0x0327;
+    constexpr uint8_t SEN0466_ADDR = 0x74;
+    constexpr uint8_t SEN0466_CMD_CHANGE_MODE = 0x78;
+    constexpr uint8_t SEN0466_CMD_READ_GAS = 0x86;
+    constexpr uint8_t SEN0466_MODE_PASSIVE = 0x04;
+    constexpr uint8_t SEN0466_GAS_TYPE_CO = 0x04;
     constexpr uint8_t PCF8523_ADDR = 0x68;
     constexpr uint8_t PCF8523_REG_CONTROL_3 = 0x02;
     constexpr uint8_t PCF8523_REG_SECONDS = 0x03;
@@ -131,6 +136,7 @@ namespace Config {
     constexpr uint32_t SEN66_DEVICE_RESET_DELAY_MS = 1200;
     constexpr uint32_t SEN66_START_RETRY_MS = 2000;
     constexpr uint32_t SEN66_STARTUP_GRACE_MS = 5000;
+    constexpr uint8_t SEN66_MAX_START_ATTEMPTS = 3;
     constexpr uint32_t SEN66_POLL_MS = 1000;
     constexpr uint32_t SEN66_STALE_MS = 6000;
     constexpr uint32_t SEN66_STATUS_MS = 5000;
@@ -150,6 +156,16 @@ namespace Config {
     constexpr uint32_t SFA3X_READ_DELAY_MS = 5;
     constexpr uint32_t SFA3X_POLL_MS = 1000;
     constexpr uint32_t SFA3X_STALE_MS = 3000;
+    constexpr uint32_t SEN0466_CMD_DELAY_MS = 10;
+    constexpr uint32_t SEN0466_POLL_MS = 3000;
+    constexpr uint32_t SEN0466_STALE_MS = 18000;
+    constexpr uint32_t SEN0466_RETRY_MS = 5000;
+    constexpr uint8_t SEN0466_MAX_START_ATTEMPTS = 3;
+    constexpr uint32_t SEN0466_I2C_TIMEOUT_MS = 15;
+    constexpr uint32_t SEN0466_FAIL_COOLDOWN_MS = 30UL * 1000UL;
+    constexpr uint8_t SEN0466_MAX_COOLDOWN_RECOVERY_FAILS = 3;
+    constexpr uint32_t SEN0466_WARMUP_MS = 300UL * 1000UL;
+    constexpr uint8_t SEN0466_MAX_FAILS = 3;
     // Sensor sanity filter ranges (hard limits from datasheets).
     constexpr float SEN66_TEMP_MIN_C = -10.0f;
     constexpr float SEN66_TEMP_MAX_C = 60.0f;
@@ -171,6 +187,8 @@ namespace Config {
     constexpr float DPS310_PRESSURE_MAX_HPA = 1200.0f;
     constexpr float SFA3X_HCHO_MIN_PPB = 0.0f;
     constexpr float SFA3X_HCHO_MAX_PPB = 1000.0f;
+    constexpr float SEN0466_CO_MIN_PPM = 0.0f;
+    constexpr float SEN0466_CO_MAX_PPM = 1000.0f;
 
     constexpr uint32_t CLOCK_TICK_MS = 1000;
     constexpr uint32_t NTP_SYNC_INTERVAL_MS = 6UL * 60UL * 60UL * 1000UL;
@@ -195,9 +213,8 @@ namespace Config {
     constexpr char MQTT_AVAIL_OFFLINE[] = "offline";
     constexpr uint32_t BACKLIGHT_TIMEOUT_30S = 30UL * 1000UL;
     constexpr uint32_t BACKLIGHT_TIMEOUT_1M = 60UL * 1000UL;
-    constexpr uint32_t BACKLIGHT_TIMEOUT_5M = 5UL * 60UL * 1000UL;
     constexpr uint32_t BACKLIGHT_SCHEDULE_WAKE_MS = 30UL * 1000UL;
-    constexpr uint32_t BACKLIGHT_WAKE_BLOCK_MS = 250;
+    constexpr uint32_t BACKLIGHT_WAKE_BLOCK_MS = 400;
     constexpr uint32_t AUTO_NIGHT_POLL_MS = 1000;
     constexpr uint32_t BLINK_PERIOD_MS = 500;
     constexpr uint32_t UI_TICK_MS = 30;
@@ -269,6 +286,7 @@ namespace Config {
         float temp_offset = 0.0f;
         float hum_offset = 0.0f;
         bool units_c = true;
+        bool units_mdy = false;
         bool night_mode = false;
         bool header_status_enabled = true;
         bool led_indicators = true;
@@ -278,6 +296,7 @@ namespace Config {
 
         uint32_t backlight_timeout_s = 0;
         bool backlight_schedule_enabled = false;
+        bool backlight_alarm_wake = true;
         int backlight_sleep_hour = 23;
         int backlight_sleep_minute = 0;
         int backlight_wake_hour = 6;

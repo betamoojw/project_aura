@@ -16,14 +16,19 @@
 
 namespace {
 
-// CO sensor integration is not wired into SensorData yet.
-// Keep PM4 fallback active until dedicated CO data/valid flags are added.
-bool has_co_sensor_data(const SensorData &) {
-    return false;
+bool has_co_sensor_data(const SensorData &data) {
+    return data.co_sensor_present;
 }
 
-float get_co_ppm_value(const SensorData &) {
-    return NAN;
+bool has_valid_co_sensor_data(const SensorData &data) {
+    return data.co_sensor_present &&
+           data.co_valid &&
+           isfinite(data.co_ppm) &&
+           data.co_ppm >= 0.0f;
+}
+
+float get_co_ppm_value(const SensorData &data) {
+    return data.co_ppm;
 }
 
 } // namespace
@@ -358,11 +363,12 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         set_dot_color(objects.dot_hcho_1, alert_color_for_mode(hcho_col));
     }
 
-    // PRO card fallback: PM4 until dedicated CO sensor data is available.
-    const bool co_available = has_co_sensor_data(currentData);
+    const bool co_sensor_present = has_co_sensor_data(currentData);
+    const bool co_warmup = co_sensor_present && currentData.co_warmup;
+    const bool co_available = has_valid_co_sensor_data(currentData);
     const bool pm4_available = currentData.pm_valid && isfinite(currentData.pm4) && currentData.pm4 >= 0.0f;
     if (objects.label_co_title) {
-        safe_label_set_text_static(objects.label_co_title, co_available ? "CO" : "PM4");
+        safe_label_set_text_static(objects.label_co_title, co_sensor_present ? "CO" : "PM4");
     }
     if (objects.label_co_unit) {
         const lv_font_t *unit_font = (ui_language == Config::Language::ZH)
@@ -373,15 +379,27 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         if (current_font != unit_font) {
             lv_obj_set_style_text_font(objects.label_co_unit, unit_font, LV_PART_MAIN | LV_STATE_DEFAULT);
         }
-        safe_label_set_text_static(objects.label_co_unit, co_available ? "ppm" : "ug/m\xC2\xB3");
+        safe_label_set_text_static(objects.label_co_unit, co_sensor_present ? "ppm" : "ug/m\xC2\xB3");
+    }
+    if (objects.label_co_warmup) {
+        co_warmup ? lv_obj_clear_flag(objects.label_co_warmup, LV_OBJ_FLAG_HIDDEN)
+                  : lv_obj_add_flag(objects.label_co_warmup, LV_OBJ_FLAG_HIDDEN);
     }
     if (objects.label_co_value) {
-        if (co_available) {
-            float co_ppm = get_co_ppm_value(currentData);
-            if (isfinite(co_ppm) && co_ppm >= 0.0f) {
+        co_warmup ? lv_obj_add_flag(objects.label_co_value, LV_OBJ_FLAG_HIDDEN)
+                  : lv_obj_clear_flag(objects.label_co_value, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (objects.label_co_unit) {
+        co_warmup ? lv_obj_add_flag(objects.label_co_unit, LV_OBJ_FLAG_HIDDEN)
+                  : lv_obj_clear_flag(objects.label_co_unit, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (objects.label_co_value) {
+        if (co_sensor_present) {
+            if (co_available) {
+                float co_ppm = get_co_ppm_value(currentData);
                 snprintf(buf, sizeof(buf), "%.0f", co_ppm);
             } else {
-                strcpy(buf, UiText::ValueMissing());
+                strcpy(buf, UiText::ValueMissingShort());
             }
         } else if (pm4_available) {
             if (currentData.pm4 < 10.0f) {
@@ -396,16 +414,16 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     }
     if (objects.dot_co) {
         lv_color_t co_card_col = color_inactive();
-        if (co_available) {
-            const float co_ppm = get_co_ppm_value(currentData);
-            if (isfinite(co_ppm) && co_ppm >= 0.0f) {
-                // Placeholder mapping until dedicated CO thresholds are added.
-                co_card_col = getPM10Color(co_ppm);
+        if (co_sensor_present) {
+            if (co_warmup) {
+                co_card_col = color_blue();
+            } else if (co_available) {
+                co_card_col = getCOColor(get_co_ppm_value(currentData));
             }
         } else if (pm4_available) {
             co_card_col = getPM4Color(currentData.pm4);
         }
-        set_dot_color(objects.dot_co, alert_color_for_mode(co_card_col));
+        set_dot_color(objects.dot_co, co_warmup ? co_card_col : alert_color_for_mode(co_card_col));
     }
 
     // PRO divider lines follow active theme border color, no shadow.

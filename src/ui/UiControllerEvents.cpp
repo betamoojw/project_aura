@@ -59,6 +59,7 @@ void UiController::on_confirm_ok_event_cb(lv_event_t *e) { if (instance_) instan
 void UiController::on_confirm_cancel_event_cb(lv_event_t *e) { if (instance_) instance_->on_confirm_cancel_event(e); }
 void UiController::on_night_mode_event_cb(lv_event_t *e) { if (instance_) instance_->on_night_mode_event(e); }
 void UiController::on_units_c_f_event_cb(lv_event_t *e) { if (instance_) instance_->on_units_c_f_event(e); }
+void UiController::on_units_mdy_event_cb(lv_event_t *e) { if (instance_) instance_->on_units_mdy_event(e); }
 void UiController::on_led_indicators_event_cb(lv_event_t *e) { if (instance_) instance_->on_led_indicators_event(e); }
 void UiController::on_alert_blink_event_cb(lv_event_t *e) { if (instance_) instance_->on_alert_blink_event(e); }
 void UiController::on_co2_calib_event_cb(lv_event_t *e) { if (instance_) instance_->on_co2_calib_event(e); }
@@ -69,10 +70,10 @@ void UiController::on_time_date_event_cb(lv_event_t *e) { if (instance_) instanc
 void UiController::on_backlight_settings_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_settings_event(e); }
 void UiController::on_backlight_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_back_event(e); }
 void UiController::on_backlight_schedule_toggle_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_schedule_toggle_event(e); }
+void UiController::on_backlight_alarm_wake_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_alarm_wake_event(e); }
 void UiController::on_backlight_preset_always_on_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_always_on_event(e); }
 void UiController::on_backlight_preset_30s_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_30s_event(e); }
 void UiController::on_backlight_preset_1m_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_1m_event(e); }
-void UiController::on_backlight_preset_5m_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_preset_5m_event(e); }
 void UiController::on_backlight_sleep_hours_minus_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_sleep_hours_minus_event(e); }
 void UiController::on_backlight_sleep_hours_plus_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_sleep_hours_plus_event(e); }
 void UiController::on_backlight_sleep_minutes_minus_event_cb(lv_event_t *e) { if (instance_) instance_->on_backlight_sleep_minutes_minus_event(e); }
@@ -123,6 +124,7 @@ void UiController::on_temp_offset_plus_cb(lv_event_t *e) { if (instance_) instan
 void UiController::on_hum_offset_minus_cb(lv_event_t *e) { if (instance_) instance_->on_hum_offset_minus(e); }
 void UiController::on_hum_offset_plus_cb(lv_event_t *e) { if (instance_) instance_->on_hum_offset_plus(e); }
 void UiController::on_boot_diag_continue_cb(lv_event_t *e) { if (instance_) instance_->on_boot_diag_continue(e); }
+void UiController::on_boot_diag_errors_cb(lv_event_t *e) { if (instance_) instance_->on_boot_diag_errors(e); }
 void UiController::apply_toggle_style_cb(lv_obj_t *btn) { if (instance_) instance_->apply_toggle_style(btn); }
 void UiController::mqtt_sync_with_wifi_cb() { if (instance_) instance_->mqtt_sync_with_wifi(); }
 
@@ -587,6 +589,22 @@ void UiController::on_units_c_f_event(lv_event_t *e) {
     update_ui();
 }
 
+void UiController::on_units_mdy_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    lv_obj_t *btn = lv_event_get_target(e);
+    bool use_mdy = lv_obj_has_state(btn, LV_STATE_CHECKED);
+    if (use_mdy == date_units_mdy) {
+        return;
+    }
+    date_units_mdy = use_mdy;
+    storage.config().units_mdy = date_units_mdy;
+    storage.saveConfig(true);
+    clock_ui_dirty = true;
+    update_clock_labels();
+}
+
 void UiController::on_restart_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
@@ -907,6 +925,13 @@ void UiController::on_time_date_event(lv_event_t *e) {
     datetime_changed = false;
     datetime_ui_dirty = true;
     clock_ui_dirty = true;
+    if (objects.btn_units_mdy) {
+        if (date_units_mdy) {
+            lv_obj_add_state(objects.btn_units_mdy, LV_STATE_CHECKED);
+        } else {
+            lv_obj_clear_state(objects.btn_units_mdy, LV_STATE_CHECKED);
+        }
+    }
     pending_screen_id = SCREEN_ID_PAGE_CLOCK;
 }
 
@@ -927,6 +952,7 @@ void UiController::on_backlight_back_event(lv_event_t *e) {
         return;
     }
     backlightManager.savePrefs(storage);
+    sync_backlight_settings_button_state();
     pending_screen_id = SCREEN_ID_PAGE_SETTINGS;
 }
 
@@ -940,6 +966,19 @@ void UiController::on_backlight_schedule_toggle_event(lv_event_t *e) {
     lv_obj_t *btn = lv_event_get_target(e);
     bool enabled = lv_obj_has_state(btn, LV_STATE_CHECKED);
     backlightManager.setScheduleEnabled(enabled);
+    sync_backlight_settings_button_state();
+}
+
+void UiController::on_backlight_alarm_wake_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    if (backlightManager.isAlarmWakeSyncing()) {
+        return;
+    }
+    lv_obj_t *btn = lv_event_get_target(e);
+    bool enabled = lv_obj_has_state(btn, LV_STATE_CHECKED);
+    backlightManager.setAlarmWakeEnabled(enabled);
 }
 
 void UiController::on_backlight_preset_always_on_event(lv_event_t *e) {
@@ -970,16 +1009,6 @@ void UiController::on_backlight_preset_1m_event(lv_event_t *e) {
         return;
     }
     backlightManager.setTimeoutMs(BACKLIGHT_TIMEOUT_1M);
-}
-
-void UiController::on_backlight_preset_5m_event(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
-        return;
-    }
-    if (backlightManager.isPresetSyncing()) {
-        return;
-    }
-    backlightManager.setTimeoutMs(BACKLIGHT_TIMEOUT_5M);
 }
 
 void UiController::on_backlight_sleep_hours_minus_event(lv_event_t *e) {
@@ -1341,8 +1370,30 @@ void UiController::on_boot_diag_continue(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    if (objects.container_diag_errors &&
+        !lv_obj_has_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN)) {
+        lv_obj_add_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
+        if (objects.label_diag_errors_text) {
+            safe_label_set_text(objects.label_diag_errors_text, "");
+        }
+        return;
+    }
     pending_screen_id = SCREEN_ID_PAGE_MAIN_PRO;
     boot_diag_active = false;
     data_dirty = true;
+}
+
+void UiController::on_boot_diag_errors(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    if (!objects.container_diag_errors) {
+        return;
+    }
+    if (lv_obj_has_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN)) {
+        lv_obj_clear_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 

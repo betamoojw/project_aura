@@ -13,6 +13,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <esp_system.h>
 
 #include "lvgl_v8_port.h"
 #include "ui/ui.h"
@@ -21,6 +22,7 @@
 #include "ui/StatusMessages.h"
 #include "web/WebHandlers.h"
 #include "config/AppConfig.h"
+#include "core/BootState.h"
 #include "core/Logger.h"
 #include "modules/StorageManager.h"
 #include "modules/NetworkManager.h"
@@ -44,6 +46,15 @@ constexpr uint32_t STATUS_ROTATE_MS = 5000;
 constexpr int UI_LVGL_LOCK_TIMEOUT_MS = 500;
 constexpr uint32_t UI_LVGL_LOCK_WARN_MS = 60000;
 constexpr uint16_t UI_LVGL_LOCK_WARN_FAIL_STREAK = 3;
+constexpr uint32_t UI_LVGL_DIAG_HEARTBEAT_MS = 60000;
+constexpr uint32_t UI_LVGL_DIAG_STALL_MS = 15000;
+constexpr uint32_t UI_LVGL_DIAG_VSYNC_STALL_MS = 5000;
+constexpr uint32_t UI_LVGL_DIAG_FLUSH_STALL_MS = 15000;
+constexpr uint32_t UI_LVGL_DIAG_STALL_LOG_COOLDOWN_MS = 30000;
+constexpr uint32_t UI_LVGL_DIAG_RECOVER_MS = 3000;
+constexpr uint32_t UI_LVGL_DIAG_REBOOT_STALL_MS = 45000;
+constexpr uint32_t UI_LVGL_DIAG_REBOOT_FLUSH_LOG_MS = 80;
+constexpr uint32_t UI_LVGL_DIAG_AGE_UNKNOWN_MS = 0xFFFFFFFFu;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -72,6 +83,37 @@ int score_from_thresholds(float value, float min_val, float t_good, float t_mod,
 
 int score_from_voc(float value) {
     return score_from_thresholds(value, 0.0f, 150.0f, 250.0f, 350.0f);
+}
+
+int score_from_co(float co_ppm) {
+    if (co_ppm <= 0.0f) {
+        return 0;
+    }
+    if (co_ppm < 9.0f) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 0.0f, 9.0f, 0.0f, 25.0f)));
+    }
+    if (co_ppm <= 35.0f) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 9.0f, 35.0f, 80.0f, 90.0f)));
+    }
+    if (co_ppm <= 100.0f) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 35.0f, 100.0f, 90.0f, 100.0f)));
+    }
+    return 100;
+}
+
+bool should_wake_backlight_on_alert(const SensorData &data, bool gas_warmup) {
+    StatusMessages::StatusMessageResult result = StatusMessages::build_status_messages(data, gas_warmup);
+    for (size_t i = 0; i < result.count; ++i) {
+        const StatusMessages::StatusMessage &msg = result.messages[i];
+        if (msg.sensor == StatusMessages::STATUS_SENSOR_CO &&
+            msg.severity >= StatusMessages::STATUS_YELLOW) {
+            return true;
+        }
+        if (msg.severity == StatusMessages::STATUS_RED) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace
@@ -119,10 +161,6 @@ void UiController::init_theme_controls_if_available() {
 }
 
 void UiController::bind_screen_events_once(int screen_id) {
-    // Keep compatibility with stale references to old MAIN screen id.
-    if (screen_id == SCREEN_ID_PAGE_MAIN) {
-        screen_id = SCREEN_ID_PAGE_MAIN_PRO;
-    }
     if (screen_id <= 0 || screen_id >= static_cast<int>(kScreenSlotCount)) {
         return;
     }
@@ -172,6 +210,12 @@ void UiController::begin() {
     theme_events_bound_ = false;
     lvgl_lock_fail_streak = 0;
     last_lvgl_lock_warn_ms = 0;
+    lvgl_diag_last_heartbeat_ms = millis();
+    lvgl_diag_prev_heartbeat_lock_fail_count = 0;
+    lvgl_diag_prev_heartbeat_touch_err_count = 0;
+    lvgl_diag_last_stall_warn_ms = 0;
+    lvgl_diag_stall_active = false;
+    lvgl_diag_stall_since_ms = 0;
     boot_release_at_ms = 0;
     boot_ui_released = false;
     deferred_unload_.reset();
@@ -187,11 +231,17 @@ void UiController::begin() {
         boot_logo_active = true;
         boot_logo_start_ms = millis();
     }
+    LOGI("UI", "LVGL diagnostics enabled (heartbeat=%lu ms, stall=%lu ms, auto-reboot=%lu ms)",
+         static_cast<unsigned long>(UI_LVGL_DIAG_HEARTBEAT_MS),
+         static_cast<unsigned long>(UI_LVGL_DIAG_STALL_MS),
+         static_cast<unsigned long>(UI_LVGL_DIAG_REBOOT_STALL_MS));
     lvgl_port_unlock();
     last_clock_tick_ms = millis();
 }
 
 void UiController::onSensorPoll(const SensorManager::PollResult &poll) {
+    backlightManager.setAlarmWakeActive(
+        should_wake_backlight_on_alert(currentData, sensorManager.isWarmupActive()));
     if (poll.data_changed || poll.warmup_changed) {
         data_dirty = true;
     }
@@ -214,10 +264,12 @@ void UiController::markDatetimeDirty() {
 
 void UiController::mqtt_sync_with_wifi() {
     mqttManager.syncWithWifi();
-    sync_mqtt_toggle_state();
+    // UI state is refreshed in UiRenderLoop under lvgl_port_lock.
 }
 
 void UiController::poll(uint32_t now) {
+    backlightManager.setAlarmWakeActive(
+        should_wake_backlight_on_alert(currentData, sensorManager.isWarmupActive()));
     bool desired = false;
     if (nightModeManager.poll(night_mode, desired)) {
         set_night_mode_state(desired, true);
@@ -225,6 +277,9 @@ void UiController::poll(uint32_t now) {
     if (now - last_clock_tick_ms >= CLOCK_TICK_MS) {
         last_clock_tick_ms = now;
         clock_ui_dirty = true;
+        if (current_screen_id == SCREEN_ID_PAGE_CLOCK && !datetime_changed) {
+            datetime_ui_dirty = true;
+        }
     }
     if (now - last_blink_ms >= BLINK_PERIOD_MS) {
         last_blink_ms = now;
@@ -245,6 +300,99 @@ void UiController::poll(uint32_t now) {
 
     if (!lvgl_ready) {
         return;
+    }
+
+    lvgl_port_diagnostics_t lvgl_diag = {};
+    if (lvgl_port_get_diagnostics(&lvgl_diag)) {
+        if ((now - lvgl_diag_last_heartbeat_ms) >= UI_LVGL_DIAG_HEARTBEAT_MS) {
+            lvgl_diag_last_heartbeat_ms = now;
+            const uint32_t lock_fail_delta =
+                (lvgl_diag.lock_fail_count >= lvgl_diag_prev_heartbeat_lock_fail_count)
+                    ? (lvgl_diag.lock_fail_count - lvgl_diag_prev_heartbeat_lock_fail_count)
+                    : lvgl_diag.lock_fail_count;
+            const uint32_t touch_err_delta =
+                (lvgl_diag.touch_read_error_count >= lvgl_diag_prev_heartbeat_touch_err_count)
+                    ? (lvgl_diag.touch_read_error_count - lvgl_diag_prev_heartbeat_touch_err_count)
+                    : lvgl_diag.touch_read_error_count;
+            lvgl_diag_prev_heartbeat_lock_fail_count = lvgl_diag.lock_fail_count;
+            lvgl_diag_prev_heartbeat_touch_err_count = lvgl_diag.touch_read_error_count;
+
+            if (lvgl_diag.paused || lock_fail_delta > 0 || touch_err_delta > 0) {
+                LOGW("UI",
+                     "LVGL heartbeat: handler=%lu(age=%lu ms), flush=%lu(age=%lu ms), vsync=%lu(age=%lu ms), lock_fail=%lu(+%lu), touch_err=%lu(+%lu), paused=%s",
+                     static_cast<unsigned long>(lvgl_diag.timer_handler_count),
+                     static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.flush_count),
+                     static_cast<unsigned long>(lvgl_diag.flush_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.vsync_count),
+                     static_cast<unsigned long>(lvgl_diag.vsync_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.lock_fail_count),
+                     static_cast<unsigned long>(lock_fail_delta),
+                     static_cast<unsigned long>(lvgl_diag.touch_read_error_count),
+                     static_cast<unsigned long>(touch_err_delta),
+                     lvgl_diag.paused ? "YES" : "NO");
+            }
+        }
+
+        const bool handler_age_known = lvgl_diag.timer_handler_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
+        const bool vsync_age_known = lvgl_diag.vsync_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
+        const bool flush_age_known = lvgl_diag.flush_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
+        const bool handler_stall = handler_age_known &&
+                                   lvgl_diag.timer_handler_age_ms >= UI_LVGL_DIAG_STALL_MS;
+        const bool vsync_stall = backlightManager.isOn() &&
+                                 vsync_age_known &&
+                                 lvgl_diag.vsync_age_ms >= UI_LVGL_DIAG_VSYNC_STALL_MS;
+        const bool flush_stall = backlightManager.isOn() &&
+                                 flush_age_known &&
+                                 lvgl_diag.flush_age_ms >= UI_LVGL_DIAG_FLUSH_STALL_MS;
+        const bool stall_suspected = !lvgl_diag.paused &&
+                                     (handler_stall || vsync_stall || flush_stall);
+        if (stall_suspected) {
+            if (!lvgl_diag_stall_active) {
+                lvgl_diag_stall_since_ms = now;
+            }
+            const bool can_log = !lvgl_diag_stall_active ||
+                                 (now - lvgl_diag_last_stall_warn_ms) >= UI_LVGL_DIAG_STALL_LOG_COOLDOWN_MS;
+            if (can_log) {
+                lvgl_diag_last_stall_warn_ms = now;
+                LOGW("UI",
+                     "LVGL/display stall suspected (screen=%d, backlight=%s, handler=%s, vsync=%s, flush=%s, handler_age=%lu ms, flush_age=%lu ms, vsync_age=%lu ms, lock_fail=%lu, touch_err=%lu)",
+                     current_screen_id,
+                     backlightManager.isOn() ? "ON" : "OFF",
+                     handler_stall ? "STALL" : "OK",
+                     vsync_stall ? "STALL" : "OK",
+                     flush_stall ? "STALL" : "OK",
+                     static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.flush_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.vsync_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.lock_fail_count),
+                     static_cast<unsigned long>(lvgl_diag.touch_read_error_count));
+            }
+            lvgl_diag_stall_active = true;
+
+            if ((now - lvgl_diag_stall_since_ms) >= UI_LVGL_DIAG_REBOOT_STALL_MS) {
+                const uint32_t stall_for_ms = now - lvgl_diag_stall_since_ms;
+                LOGE("UI",
+                     "LVGL stall persisted %lu ms, scheduling controlled reboot",
+                     static_cast<unsigned long>(stall_for_ms));
+                boot_mark_ui_auto_recovery_reboot();
+                delay(UI_LVGL_DIAG_REBOOT_FLUSH_LOG_MS);
+                esp_restart();
+                return;
+            }
+        } else if (lvgl_diag_stall_active &&
+                   handler_age_known &&
+                   lvgl_diag.timer_handler_age_ms <= UI_LVGL_DIAG_RECOVER_MS) {
+            lvgl_diag_stall_active = false;
+            lvgl_diag_stall_since_ms = 0;
+            LOGI("UI",
+                 "LVGL heartbeat recovered (handler_age=%lu ms, flush_age=%lu ms, vsync_age=%lu ms)",
+                 static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
+                 static_cast<unsigned long>(lvgl_diag.flush_age_ms),
+                 static_cast<unsigned long>(lvgl_diag.vsync_age_ms));
+        } else if (!lvgl_diag_stall_active) {
+            lvgl_diag_stall_since_ms = 0;
+        }
     }
 
     if (boot_logo_active &&
@@ -376,6 +524,13 @@ lv_color_t UiController::getCO2Color(int co2) {
     return color_red();
 }
 
+lv_color_t UiController::getCOColor(float co_ppm) {
+    if (co_ppm < 9.0f) return color_green();
+    if (co_ppm <= 35.0f) return color_yellow();
+    if (co_ppm <= 100.0f) return color_orange();
+    return color_red();
+}
+
 lv_color_t UiController::getPM25Color(float pm) {
     if (pm <= 12.0f) return color_green();
     if (pm <= 35.0f) return color_yellow();
@@ -446,6 +601,15 @@ AirQuality UiController::getAirQuality(const SensorData &data) {
     bool gas_warmup = sensorManager.isWarmupActive();
     bool has_valid = false;
     int max_score = 0;
+
+    if (data.co_sensor_present &&
+        data.co_valid &&
+        isfinite(data.co_ppm) &&
+        data.co_ppm >= 0.0f) {
+        int score = score_from_co(data.co_ppm);
+        max_score = max(max_score, score);
+        has_valid = true;
+    }
 
     if (data.co2_valid && data.co2 > 0) {
         int score = score_from_thresholds(static_cast<float>(data.co2), 400.0f, 800.0f, 1000.0f, 1500.0f);
@@ -526,8 +690,29 @@ lv_color_t UiController::alert_color_for_mode(lv_color_t color) {
     return blink_red(color);
 }
 
-void UiController::compute_header_style(const AirQuality &aq, lv_color_t &color, lv_opa_t &shadow_opa) {
-    lv_color_t base = header_status_enabled ? aq.color : color_card_border();
+void UiController::compute_header_style(const AirQuality &aq,
+                                        uint8_t status_severity,
+                                        bool co_alert_active,
+                                        lv_color_t &color,
+                                        lv_opa_t &shadow_opa) {
+    (void)aq;
+
+    lv_color_t base = color_card_border();
+    if (header_status_enabled) {
+        if (status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_RED)) {
+            base = color_red();
+        } else if (status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_ORANGE)) {
+            base = color_orange();
+        } else if (status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_YELLOW)) {
+            base = color_yellow();
+        } else {
+            // "All good" stays green by design.
+            base = color_green();
+        }
+    }
+    if (co_alert_active) {
+        base = color_red();
+    }
     shadow_opa = header_status_enabled ? LV_OPA_COVER : LV_OPA_TRANSP;
     if (alert_blink_enabled && header_status_enabled && (base.full == color_red().full) && !blink_state) {
         color = color_inactive();
@@ -556,10 +741,17 @@ void UiController::update_clock_labels() {
     snprintf(buf, sizeof(buf), "%02d:%02d", local_tm.tm_hour, local_tm.tm_min);
     if (objects.label_time_value_1) safe_label_set_text(objects.label_time_value_1, buf);
     if (objects.label_time_value_2) safe_label_set_text(objects.label_time_value_2, buf);
-    snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
-             local_tm.tm_mday,
-             local_tm.tm_mon + 1,
-             local_tm.tm_year + 1900);
+    if (date_units_mdy) {
+        snprintf(buf, sizeof(buf), "%02d/%02d/%04d",
+                 local_tm.tm_mon + 1,
+                 local_tm.tm_mday,
+                 local_tm.tm_year + 1900);
+    } else {
+        snprintf(buf, sizeof(buf), "%02d.%02d.%04d",
+                 local_tm.tm_mday,
+                 local_tm.tm_mon + 1,
+                 local_tm.tm_year + 1900);
+    }
     if (objects.label_date_value_1) safe_label_set_text(objects.label_date_value_1, buf);
     if (objects.label_date_value_2) safe_label_set_text(objects.label_date_value_2, buf);
 }
@@ -586,6 +778,9 @@ void UiController::set_night_mode_state(bool enabled, bool save_pref) {
     if (!lvgl_ready) {
         return;
     }
+
+    // Theme/style updates must be serialized with LVGL rendering.
+    lvgl_port_lock(-1);
     if (enabled) {
         night_mode_on_enter();
     }
@@ -594,6 +789,7 @@ void UiController::set_night_mode_state(bool enabled, bool save_pref) {
         night_mode_on_exit();
     }
     data_dirty = true;
+    lvgl_port_unlock();
 }
 
 void UiController::apply_auto_night_now() {
@@ -623,6 +819,17 @@ void UiController::sync_auto_dim_button_state() {
         lv_obj_add_state(objects.btn_auto_dim, LV_STATE_CHECKED);
     } else {
         lv_obj_clear_state(objects.btn_auto_dim, LV_STATE_CHECKED);
+    }
+}
+
+void UiController::sync_backlight_settings_button_state() {
+    if (!objects.btn_head_status_1) {
+        return;
+    }
+    if (backlightManager.isScheduleEnabled()) {
+        lv_obj_add_state(objects.btn_head_status_1, LV_STATE_CHECKED);
+    } else {
+        lv_obj_clear_state(objects.btn_head_status_1, LV_STATE_CHECKED);
     }
 }
 
@@ -909,9 +1116,11 @@ void UiController::update_ui() {
     update_status_message(now_ms, gas_warmup);
     lv_color_t header_col;
     lv_opa_t header_shadow;
-    compute_header_style(aq, header_col, header_shadow);
+    compute_header_style(aq, status_max_severity, co_status_alert_active, header_col, header_shadow);
     if (night_mode && header_status_enabled) {
-        header_col = night_alert_color(aq.color);
+        const bool status_red =
+            status_max_severity >= static_cast<uint8_t>(StatusMessages::STATUS_RED);
+        header_col = (co_status_alert_active || status_red) ? color_red() : color_inactive();
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
     if (objects.container_header_pro) {
@@ -933,11 +1142,16 @@ void UiController::update_settings_header() {
         return;
     }
     AirQuality aq = getAirQuality(currentData);
+    bool co_alert_active = false;
+    uint8_t status_severity = static_cast<uint8_t>(StatusMessages::STATUS_NONE);
+    compute_status_summary(sensorManager.isWarmupActive(), co_alert_active, status_severity);
     lv_color_t header_col;
     lv_opa_t header_shadow;
-    compute_header_style(aq, header_col, header_shadow);
+    compute_header_style(aq, status_severity, co_alert_active, header_col, header_shadow);
     if (night_mode && header_status_enabled) {
-        header_col = night_alert_color(aq.color);
+        const bool status_red =
+            status_severity >= static_cast<uint8_t>(StatusMessages::STATUS_RED);
+        header_col = (co_alert_active || status_red) ? color_red() : color_inactive();
         header_shadow = (header_col.full == color_red().full) ? LV_OPA_COVER : LV_OPA_TRANSP;
     }
     lv_obj_set_style_border_color(objects.container_settings_header, header_col, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -945,6 +1159,7 @@ void UiController::update_settings_header() {
     lv_obj_set_style_shadow_opa(objects.container_settings_header, header_shadow, LV_PART_MAIN | LV_STATE_DEFAULT);
     sync_night_mode_toggle_ui();
     sync_auto_dim_button_state();
+    sync_backlight_settings_button_state();
 }
 
 void UiController::update_theme_custom_info(bool presets) {
@@ -954,11 +1169,42 @@ void UiController::update_theme_custom_info(bool presets) {
     }
 }
 
+void UiController::compute_status_summary(bool gas_warmup,
+                                          bool &co_alert_active,
+                                          uint8_t &max_severity) const {
+    co_alert_active = false;
+    max_severity = static_cast<uint8_t>(StatusMessages::STATUS_NONE);
+
+    StatusMessages::StatusMessageResult result =
+        StatusMessages::build_status_messages(currentData, gas_warmup);
+    for (size_t i = 0; i < result.count; ++i) {
+        const StatusMessages::StatusMessage &msg = result.messages[i];
+        if (msg.sensor == StatusMessages::STATUS_SENSOR_CO) {
+            co_alert_active = true;
+        }
+        const uint8_t sev = static_cast<uint8_t>(msg.severity);
+        if (sev > max_severity) {
+            max_severity = sev;
+        }
+    }
+}
+
 void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
     StatusMessages::StatusMessageResult result = StatusMessages::build_status_messages(currentData, gas_warmup);
     const StatusMessages::StatusMessage *messages = result.messages;
     const size_t count = result.count;
     const bool has_valid = result.has_valid;
+    co_status_alert_active = false;
+    status_max_severity = static_cast<uint8_t>(StatusMessages::STATUS_NONE);
+    for (size_t i = 0; i < count; ++i) {
+        const uint8_t sev = static_cast<uint8_t>(messages[i].severity);
+        if (sev > status_max_severity) {
+            status_max_severity = sev;
+        }
+        if (messages[i].sensor == StatusMessages::STATUS_SENSOR_CO) {
+            co_status_alert_active = true;
+        }
+    }
 
     uint32_t signature = static_cast<uint32_t>(count);
     for (size_t i = 0; i < count; ++i) {
@@ -1036,6 +1282,7 @@ void UiController::init_ui_defaults() {
     }
 
     ui_language = storage.config().language;
+    date_units_mdy = storage.config().units_mdy;
     language_dirty = false;
     header_status_enabled = storage.config().header_status_enabled;
     UiLocalization::applyCurrentLanguage(*this);
@@ -1045,6 +1292,7 @@ void UiController::init_ui_defaults() {
     update_datetime_ui();
     backlightManager.updateUi();
     nightModeManager.updateUi();
+    sync_backlight_settings_button_state();
     update_led_indicators();
     update_temp_offset_label();
     update_hum_offset_label();

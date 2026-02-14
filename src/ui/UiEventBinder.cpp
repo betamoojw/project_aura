@@ -9,6 +9,7 @@
 #include <stddef.h>
 
 #include "ui/UiController.h"
+#include "ui/BacklightManager.h"
 #include "ui/ThemeManager.h"
 #include "ui/ui.h"
 
@@ -113,7 +114,6 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_backlight_always_on, UiController::on_backlight_preset_always_on_event_cb, LV_EVENT_CLICKED},
         {objects.btn_backlight_30s, UiController::on_backlight_preset_30s_event_cb, LV_EVENT_CLICKED},
         {objects.btn_backlight_1m, UiController::on_backlight_preset_1m_event_cb, LV_EVENT_CLICKED},
-        {objects.btn_backlight_5m, UiController::on_backlight_preset_5m_event_cb, LV_EVENT_CLICKED},
         {objects.btn_backlight_sleep_hours_minus, UiController::on_backlight_sleep_hours_minus_event_cb, LV_EVENT_CLICKED},
         {objects.btn_backlight_sleep_hours_plus, UiController::on_backlight_sleep_hours_plus_event_cb, LV_EVENT_CLICKED},
         {objects.btn_backlight_sleep_minutes_minus, UiController::on_backlight_sleep_minutes_minus_event_cb, LV_EVENT_CLICKED},
@@ -152,6 +152,7 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_theme_color, UiController::on_theme_color_event_cb, LV_EVENT_CLICKED},
         {objects.btn_theme_back, UiController::on_theme_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_diag_continue, UiController::on_boot_diag_continue_cb, LV_EVENT_CLICKED},
+        {objects.btn_diag_errors, UiController::on_boot_diag_errors_cb, LV_EVENT_CLICKED},
     };
 
     const EventBinding value_bindings[] = {
@@ -160,13 +161,36 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_mqtt_toggle, UiController::on_mqtt_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_auto_night_toggle, UiController::on_auto_night_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_backlight_schedule_toggle, UiController::on_backlight_schedule_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_backlight_alarm_wake, UiController::on_backlight_alarm_wake_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_night_mode, UiController::on_night_mode_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_units_c_f, UiController::on_units_c_f_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_units_mdy, UiController::on_units_mdy_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_led_indicators, UiController::on_led_indicators_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_alert_blink, UiController::on_alert_blink_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co2_calib_asc, UiController::on_co2_calib_asc_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_ntp_toggle, UiController::on_ntp_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
     };
+
+    constexpr lv_coord_t kExtendedHitAreaPx = 16;
+    lv_obj_t *extended_hit_buttons[] = {
+        objects.btn_settings_1,
+        objects.btn_back_1,
+        objects.btn_mqtt_back,
+        objects.btn_backlight_back,
+        objects.btn_auto_night_back,
+        objects.btn_co2_calib_back,
+        objects.btn_datetime_back,
+        objects.btn_theme_back,
+        objects.btn_wifi_back,
+        objects.btn_back,
+    };
+
+    for (lv_obj_t *btn : extended_hit_buttons) {
+        if (!objectBelongsToScreen(btn, screen_root)) {
+            continue;
+        }
+        lv_obj_set_ext_click_area(btn, kExtendedHitAreaPx);
+    }
 
     auto bind_events = [screen_root](const EventBinding *bindings, size_t count) {
         for (size_t i = 0; i < count; ++i) {
@@ -195,9 +219,11 @@ void UiEventBinder::applyToggleStylesForAvailableObjects(UiController &owner, in
     lv_obj_t *toggle_buttons[] = {
         objects.btn_night_mode,
         objects.btn_auto_dim,
+        objects.btn_head_status_1,
         objects.btn_wifi,
         objects.btn_mqtt,
         objects.btn_units_c_f,
+        objects.btn_units_mdy,
         objects.btn_led_indicators,
         objects.btn_alert_blink,
         objects.btn_co2_calib_asc,
@@ -206,10 +232,10 @@ void UiEventBinder::applyToggleStylesForAvailableObjects(UiController &owner, in
         objects.btn_mqtt_toggle,
         objects.btn_ntp_toggle,
         objects.btn_backlight_schedule_toggle,
+        objects.btn_backlight_alarm_wake,
         objects.btn_backlight_always_on,
         objects.btn_backlight_30s,
         objects.btn_backlight_1m,
-        objects.btn_backlight_5m,
         objects.btn_auto_night_toggle,
         objects.btn_rh_info,
         objects.btn_ah_info,
@@ -248,8 +274,11 @@ void UiEventBinder::applyCheckedStatesForAvailableObjects(UiController &owner, i
     };
 
     set_checked(objects.btn_head_status, owner.header_status_enabled);
+    set_checked(objects.btn_head_status_1, owner.backlightManager.isScheduleEnabled());
+    set_checked(objects.btn_backlight_alarm_wake, owner.backlightManager.isAlarmWakeEnabled());
     set_checked(objects.btn_night_mode, owner.night_mode);
     set_checked(objects.btn_units_c_f, owner.temp_units_c);
+    set_checked(objects.btn_units_mdy, owner.date_units_mdy);
     set_checked(objects.btn_led_indicators, owner.led_indicators_enabled);
     set_checked(objects.btn_alert_blink, owner.alert_blink_enabled);
     set_checked(objects.btn_co2_calib_asc, owner.co2_asc_enabled);

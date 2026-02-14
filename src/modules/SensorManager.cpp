@@ -34,6 +34,44 @@ int clampi(int value, int min_value, int max_value) {
     return value;
 }
 
+bool sync_co_fields(SensorData &data, const Sen0466 &co_sensor) {
+    bool co_present = co_sensor.isPresent();
+    bool co_warmup = co_sensor.isWarmupActive();
+    bool co_valid = co_sensor.isDataValid();
+    float co_ppm = co_sensor.coPpm();
+
+    if (!co_present) {
+        co_warmup = false;
+        co_valid = false;
+        co_ppm = 0.0f;
+    } else if (!co_valid || !isfinite(co_ppm) || co_ppm < Config::SEN0466_CO_MIN_PPM) {
+        co_valid = false;
+        co_ppm = 0.0f;
+    } else if (co_ppm > Config::SEN0466_CO_MAX_PPM) {
+        co_ppm = Config::SEN0466_CO_MAX_PPM;
+    }
+
+    bool changed = false;
+    if (data.co_sensor_present != co_present) {
+        data.co_sensor_present = co_present;
+        changed = true;
+    }
+    if (data.co_warmup != co_warmup) {
+        data.co_warmup = co_warmup;
+        changed = true;
+    }
+    if (data.co_valid != co_valid) {
+        data.co_valid = co_valid;
+        changed = true;
+    }
+    if (!isfinite(data.co_ppm) || fabsf(data.co_ppm - co_ppm) > 0.01f) {
+        data.co_ppm = co_ppm;
+        changed = true;
+    }
+
+    return changed;
+}
+
 bool apply_sanity_filters(SensorData &data) {
     bool changed = false;
 
@@ -184,6 +222,8 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
     sen66_.begin();
     sen66_.setOffsets(temp_offset, hum_offset);
     sen66_.loadVocState(storage);
+    sen66_start_attempts_ = 0;
+    sen66_retry_exhausted_logged_ = false;
 
     bmp580_.begin();
     if (bmp580_.start()) {
@@ -206,6 +246,14 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
         LOGI("Sensors", "SFA30 OK");
     } else {
         LOGW("Sensors", "SFA30 not found");
+    }
+
+    sen0466_.begin();
+    if (sen0466_.start()) {
+        Logger::log(Logger::Info, "Sensors", "SEN0466 CO OK at 0x%02X",
+                    static_cast<unsigned>(Config::SEN0466_ADDR));
+    } else {
+        LOGW("Sensors", "SEN0466 CO not found, PM4 fallback active");
     }
 
     sen66_.scheduleRetry(Config::SEN66_STARTUP_GRACE_MS);
@@ -233,6 +281,8 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         data.hcho_valid = true;
         result.data_changed = true;
     }
+
+    sen0466_.poll();
 
     float pressure_hpa = 0.0f;
     float temperature_c = 0.0f;
@@ -276,12 +326,27 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
     }
 
     uint32_t now = millis();
-    if (!sen66_.isOk() && !sen66_.isBusy() && now >= sen66_.retryAtMs()) {
+    if (!sen66_.isOk() &&
+        !sen66_.isBusy() &&
+        sen66_start_attempts_ < Config::SEN66_MAX_START_ATTEMPTS &&
+        now >= sen66_.retryAtMs()) {
         if (sen66_.start(co2_asc_enabled)) {
             LOGI("Sensors", "SEN66 OK");
+            sen66_start_attempts_ = 0;
+            sen66_retry_exhausted_logged_ = false;
         } else {
-            LOGW("Sensors", "SEN66 not found");
-            sen66_.scheduleRetry(Config::SEN66_START_RETRY_MS);
+            if (sen66_start_attempts_ < UINT8_MAX) {
+                ++sen66_start_attempts_;
+            }
+            LOGW("Sensors", "SEN66 not found (%u/%u)",
+                 static_cast<unsigned>(sen66_start_attempts_),
+                 static_cast<unsigned>(Config::SEN66_MAX_START_ATTEMPTS));
+            if (sen66_start_attempts_ < Config::SEN66_MAX_START_ATTEMPTS) {
+                sen66_.scheduleRetry(Config::SEN66_START_RETRY_MS);
+            } else if (!sen66_retry_exhausted_logged_) {
+                LOGW("Sensors", "SEN66 start attempts exhausted, stop probing until reboot");
+                sen66_retry_exhausted_logged_ = true;
+            }
         }
     }
 
@@ -306,6 +371,10 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         (now - sfa_last_ms > Config::SFA3X_STALE_MS)) {
         data.hcho_valid = false;
         sfa3x_.invalidate();
+        result.data_changed = true;
+    }
+
+    if (sync_co_fields(data, sen0466_)) {
         result.data_changed = true;
     }
 

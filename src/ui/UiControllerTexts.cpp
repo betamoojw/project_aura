@@ -6,8 +6,14 @@
 
 #include "ui/UiController.h"
 
+#include <stdio.h>
+
 #include "ui/UiText.h"
 #include "ui/ui.h"
+
+#ifndef APP_VERSION
+#define APP_VERSION "dev"
+#endif
 
 void UiController::update_settings_texts() {
     if (objects.label_settings_title) safe_label_set_text(objects.label_settings_title, UiText::LabelSettingsTitle());
@@ -33,6 +39,13 @@ void UiController::update_settings_texts() {
         }
         safe_label_set_text(objects.label_btn_about_back, back_label);
     }
+    if (objects.container_about_text) {
+        char about_text[256];
+        snprintf(about_text, sizeof(about_text),
+                 "Project Aura\nVersion: v%s\n(c) Volodymyr Papush (21CNCStudio)\nOpen-source firmware (GPL-3.0-or-later)\n21cncstudio.com",
+                 APP_VERSION);
+        safe_label_set_text(objects.container_about_text, about_text);
+    }
     if (objects.label_btn_units_led_indicators) safe_label_set_text(objects.label_btn_units_led_indicators, UiText::LabelLedIndicators());
     if (objects.label_btn_alert_blink) safe_label_set_text(objects.label_btn_alert_blink, UiText::LabelAlertBlink());
     if (objects.label_voc_reset) safe_label_set_text(objects.label_voc_reset, UiText::LabelVocRelearn());
@@ -47,6 +60,7 @@ void UiController::update_main_texts() {
     if (objects.label_time_title_2) safe_label_set_text(objects.label_time_title_2, UiText::LabelTimeCard());
     if (objects.label_voc_warmup_1) safe_label_set_text(objects.label_voc_warmup_1, UiText::LabelWarmup());
     if (objects.label_nox_warmup_1) safe_label_set_text(objects.label_nox_warmup_1, UiText::LabelWarmup());
+    if (objects.label_co_warmup) safe_label_set_text(objects.label_co_warmup, UiText::LabelWarmup());
     if (objects.label_voc_unit_1) safe_label_set_text(objects.label_voc_unit_1, UiText::UnitIndex());
     if (objects.label_nox_unit_1) safe_label_set_text(objects.label_nox_unit_1, UiText::UnitIndex());
 }
@@ -93,6 +107,11 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_pm1_acceptable) safe_label_set_text_static(objects.label_pm1_acceptable, UiText::InfoPm1Acceptable());
     if (objects.label_pm1_uncomfortable) safe_label_set_text_static(objects.label_pm1_uncomfortable, UiText::InfoPm1Uncomfortable());
     if (objects.label_pm1_poor) safe_label_set_text_static(objects.label_pm1_poor, UiText::InfoPm1Poor());
+    if (objects.label_co_text) safe_label_set_text_static(objects.label_co_text, UiText::InfoCoText());
+    if (objects.label_co_excellent) safe_label_set_text_static(objects.label_co_excellent, UiText::InfoCoExcellent());
+    if (objects.label_co_acceptable) safe_label_set_text_static(objects.label_co_acceptable, UiText::InfoCoAcceptable());
+    if (objects.label_co_uncomfortable) safe_label_set_text_static(objects.label_co_uncomfortable, UiText::InfoCoUncomfortable());
+    if (objects.label_co_poor) safe_label_set_text_static(objects.label_co_poor, UiText::InfoCoPoor());
     if (objects.label_pm4_text) safe_label_set_text_static(objects.label_pm4_text, UiText::InfoPm4Text());
     if (objects.label_pm4_excellent) safe_label_set_text_static(objects.label_pm4_excellent, UiText::InfoPm4Excellent());
     if (objects.label_pm4_acceptable) safe_label_set_text_static(objects.label_pm4_acceptable, UiText::InfoPm4Acceptable());
@@ -170,6 +189,7 @@ void UiController::update_backlight_texts() {
     if (objects.label_backlight_title) safe_label_set_text(objects.label_backlight_title, UiText::LabelBacklightTitle());
     if (objects.label_backlight_hint) safe_label_set_text(objects.label_backlight_hint, UiText::LabelBacklightHint());
     if (objects.label_backlight_schedule_title) safe_label_set_text(objects.label_backlight_schedule_title, UiText::LabelBacklightScheduleTitle());
+    if (objects.label_backlight_alarm_wake_title) safe_label_set_text(objects.label_backlight_alarm_wake_title, UiText::LabelBacklightAlarmWakeTitle());
     if (objects.label_backlight_presets_title) safe_label_set_text(objects.label_backlight_presets_title, UiText::LabelBacklightPresetsTitle());
     if (objects.label_backlight_sleep_title) safe_label_set_text(objects.label_backlight_sleep_title, UiText::LabelBacklightSleepTitle());
     if (objects.label_backlight_wake_title) safe_label_set_text(objects.label_backlight_wake_title, UiText::LabelBacklightWakeTitle());
@@ -179,10 +199,10 @@ void UiController::update_backlight_texts() {
     if (objects.label_backlight_wake_minutes) safe_label_set_text(objects.label_backlight_wake_minutes, UiText::LabelSetTimeMinutes());
     if (objects.label_btn_backlight_back) safe_label_set_text(objects.label_btn_backlight_back, UiText::LabelSettingsBack());
     if (objects.label_btn_backlight_schedule_toggle) safe_label_set_text(objects.label_btn_backlight_schedule_toggle, UiText::MqttToggleLabel());
+    if (objects.label_btn_backlight_alarm_wake_toggle) safe_label_set_text(objects.label_btn_backlight_alarm_wake_toggle, UiText::LabelBacklightAlarmWakeToggle());
     if (objects.label_btn_backlight_always_on) safe_label_set_text(objects.label_btn_backlight_always_on, UiText::LabelBacklightAlwaysOn());
     if (objects.label_btn_backlight_30s) safe_label_set_text(objects.label_btn_backlight_30s, UiText::LabelBacklight30s());
     if (objects.label_btn_backlight_1m) safe_label_set_text(objects.label_btn_backlight_1m, UiText::LabelBacklight1m());
-    if (objects.label_btn_backlight_5m) safe_label_set_text(objects.label_btn_backlight_5m, UiText::LabelBacklight5m());
 }
 
 void UiController::update_co2_calib_texts() {
@@ -209,5 +229,6 @@ void UiController::update_boot_diag_texts() {
     if (objects.lbl_diag_sfa_label) safe_label_set_text(objects.lbl_diag_sfa_label, UiText::LabelBootDiagSfaLabel());
     if (objects.lbl_diag_rtc_label) safe_label_set_text(objects.lbl_diag_rtc_label, UiText::LabelBootDiagRtcLabel());
     if (objects.lbl_diag_error) safe_label_set_text(objects.lbl_diag_error, UiText::LabelBootDiagErrorsDetected());
+    if (objects.label_btn_diag_errors) safe_label_set_text(objects.label_btn_diag_errors, UiText::LabelBootDiagShowErrors());
 }
 

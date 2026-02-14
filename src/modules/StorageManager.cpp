@@ -425,6 +425,7 @@ bool StorageManager::loadConfig() {
         readValue(ui, "temp_offset", loaded.temp_offset);
         readValue(ui, "hum_offset", loaded.hum_offset);
         readValue(ui, "units_c", loaded.units_c);
+        readValue(ui, "units_mdy", loaded.units_mdy);
         readValue(ui, "night_mode", loaded.night_mode);
         readValue(ui, "header_status_enabled", loaded.header_status_enabled);
         readValue(ui, "led_indicators", loaded.led_indicators);
@@ -439,6 +440,7 @@ bool StorageManager::loadConfig() {
     if (!backlight.isNull()) {
         readValue(backlight, "timeout_s", loaded.backlight_timeout_s);
         readValue(backlight, "schedule_enabled", loaded.backlight_schedule_enabled);
+        readValue(backlight, "alarm_wake", loaded.backlight_alarm_wake);
         readValue(backlight, "sleep_hour", loaded.backlight_sleep_hour);
         readValue(backlight, "sleep_minute", loaded.backlight_sleep_minute);
         readValue(backlight, "wake_hour", loaded.backlight_wake_hour);
@@ -515,6 +517,7 @@ bool StorageManager::saveConfigInternal() {
     ui["temp_offset"] = config_.temp_offset;
     ui["hum_offset"] = config_.hum_offset;
     ui["units_c"] = config_.units_c;
+    ui["units_mdy"] = config_.units_mdy;
     ui["night_mode"] = config_.night_mode;
     ui["header_status_enabled"] = config_.header_status_enabled;
     ui["led_indicators"] = config_.led_indicators;
@@ -525,6 +528,7 @@ bool StorageManager::saveConfigInternal() {
     ArduinoJson::JsonObject backlight = root["backlight"].to<ArduinoJson::JsonObject>();
     backlight["timeout_s"] = config_.backlight_timeout_s;
     backlight["schedule_enabled"] = config_.backlight_schedule_enabled;
+    backlight["alarm_wake"] = config_.backlight_alarm_wake;
     backlight["sleep_hour"] = config_.backlight_sleep_hour;
     backlight["sleep_minute"] = config_.backlight_sleep_minute;
     backlight["wake_hour"] = config_.backlight_wake_hour;

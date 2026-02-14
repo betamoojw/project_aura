@@ -140,6 +140,7 @@ private:
     lv_color_t getAbsoluteHumidityColor(float ah);
     lv_color_t getDewPointColor(float dew_c);
     lv_color_t getCO2Color(int co2);
+    lv_color_t getCOColor(float co_ppm);
     lv_color_t getPM25Color(float pm);
     lv_color_t getPM10Color(float pm);
     lv_color_t getPM1Color(float pm);
@@ -152,13 +153,19 @@ private:
     lv_color_t blink_red(lv_color_t color);
     lv_color_t night_alert_color(lv_color_t color);
     lv_color_t alert_color_for_mode(lv_color_t color);
-    void compute_header_style(const AirQuality &aq, lv_color_t &color, lv_opa_t &shadow_opa);
+    void compute_header_style(const AirQuality &aq,
+                              uint8_t status_severity,
+                              bool co_alert_active,
+                              lv_color_t &color,
+                              lv_opa_t &shadow_opa);
+    void compute_status_summary(bool gas_warmup, bool &co_alert_active, uint8_t &max_severity) const;
     lv_color_t active_text_color();
 
     void sync_wifi_toggle_state();
     void sync_mqtt_toggle_state();
     void sync_alert_blink_toggle_state();
     void sync_auto_dim_button_state();
+    void sync_backlight_settings_button_state();
     void sync_night_mode_toggle_ui();
 
     void apply_toggle_style(lv_obj_t *btn);
@@ -213,6 +220,7 @@ private:
     void on_confirm_cancel_event(lv_event_t *e);
     void on_night_mode_event(lv_event_t *e);
     void on_units_c_f_event(lv_event_t *e);
+    void on_units_mdy_event(lv_event_t *e);
     void on_led_indicators_event(lv_event_t *e);
     void on_alert_blink_event(lv_event_t *e);
     void on_co2_calib_event(lv_event_t *e);
@@ -223,10 +231,10 @@ private:
     void on_backlight_settings_event(lv_event_t *e);
     void on_backlight_back_event(lv_event_t *e);
     void on_backlight_schedule_toggle_event(lv_event_t *e);
+    void on_backlight_alarm_wake_event(lv_event_t *e);
     void on_backlight_preset_always_on_event(lv_event_t *e);
     void on_backlight_preset_30s_event(lv_event_t *e);
     void on_backlight_preset_1m_event(lv_event_t *e);
-    void on_backlight_preset_5m_event(lv_event_t *e);
     void on_backlight_sleep_hours_minus_event(lv_event_t *e);
     void on_backlight_sleep_hours_plus_event(lv_event_t *e);
     void on_backlight_sleep_minutes_minus_event(lv_event_t *e);
@@ -277,6 +285,7 @@ private:
     void on_hum_offset_minus(lv_event_t *e);
     void on_hum_offset_plus(lv_event_t *e);
     void on_boot_diag_continue(lv_event_t *e);
+    void on_boot_diag_errors(lv_event_t *e);
 
     static void on_settings_event_cb(lv_event_t *e);
     static void on_back_event_cb(lv_event_t *e);
@@ -312,6 +321,7 @@ private:
     static void on_confirm_cancel_event_cb(lv_event_t *e);
     static void on_night_mode_event_cb(lv_event_t *e);
     static void on_units_c_f_event_cb(lv_event_t *e);
+    static void on_units_mdy_event_cb(lv_event_t *e);
     static void on_led_indicators_event_cb(lv_event_t *e);
     static void on_alert_blink_event_cb(lv_event_t *e);
     static void on_co2_calib_event_cb(lv_event_t *e);
@@ -322,10 +332,10 @@ private:
     static void on_backlight_settings_event_cb(lv_event_t *e);
     static void on_backlight_back_event_cb(lv_event_t *e);
     static void on_backlight_schedule_toggle_event_cb(lv_event_t *e);
+    static void on_backlight_alarm_wake_event_cb(lv_event_t *e);
     static void on_backlight_preset_always_on_event_cb(lv_event_t *e);
     static void on_backlight_preset_30s_event_cb(lv_event_t *e);
     static void on_backlight_preset_1m_event_cb(lv_event_t *e);
-    static void on_backlight_preset_5m_event_cb(lv_event_t *e);
     static void on_backlight_sleep_hours_minus_event_cb(lv_event_t *e);
     static void on_backlight_sleep_hours_plus_event_cb(lv_event_t *e);
     static void on_backlight_sleep_minutes_minus_event_cb(lv_event_t *e);
@@ -376,6 +386,7 @@ private:
     static void on_hum_offset_minus_cb(lv_event_t *e);
     static void on_hum_offset_plus_cb(lv_event_t *e);
     static void on_boot_diag_continue_cb(lv_event_t *e);
+    static void on_boot_diag_errors_cb(lv_event_t *e);
     static void apply_toggle_style_cb(lv_obj_t *btn);
     static void mqtt_sync_with_wifi_cb();
 
@@ -433,6 +444,7 @@ private:
     bool hum_offset_dirty = false;
     bool hum_offset_ui_dirty = false;
     Config::Language ui_language = Config::Language::EN;
+    bool date_units_mdy = false;
     bool language_dirty = false;
     bool blink_state = true;
     uint32_t last_blink_ms = 0;
@@ -442,8 +454,16 @@ private:
     uint32_t status_msg_signature = 0;
     uint8_t status_msg_index = 0;
     uint8_t status_msg_count = 0;
+    uint8_t status_max_severity = 0;
+    bool co_status_alert_active = false;
     uint32_t last_lvgl_lock_warn_ms = 0;
     uint16_t lvgl_lock_fail_streak = 0;
+    uint32_t lvgl_diag_last_heartbeat_ms = 0;
+    uint32_t lvgl_diag_prev_heartbeat_lock_fail_count = 0;
+    uint32_t lvgl_diag_prev_heartbeat_touch_err_count = 0;
+    uint32_t lvgl_diag_last_stall_warn_ms = 0;
+    bool lvgl_diag_stall_active = false;
+    uint32_t lvgl_diag_stall_since_ms = 0;
     UiDeferredUnload deferred_unload_;
     bool boot_logo_active = false;
     uint32_t boot_logo_start_ms = 0;

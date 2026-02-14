@@ -31,6 +31,27 @@ struct WifiStateContext {
 
 WifiStateContext g_wifi_state_ctx;
 
+const char *resetReasonName(esp_reset_reason_t reason) {
+    switch (reason) {
+        case ESP_RST_UNKNOWN:   return "UNKNOWN";
+        case ESP_RST_POWERON:   return "POWERON";
+        case ESP_RST_EXT:       return "EXT";
+        case ESP_RST_SW:        return "SW";
+        case ESP_RST_PANIC:     return "PANIC";
+        case ESP_RST_INT_WDT:   return "INT_WDT";
+        case ESP_RST_TASK_WDT:  return "TASK_WDT";
+        case ESP_RST_WDT:       return "WDT";
+        case ESP_RST_DEEPSLEEP: return "DEEPSLEEP";
+#ifdef ESP_RST_BROWNOUT
+        case ESP_RST_BROWNOUT:  return "BROWNOUT";
+#endif
+#ifdef ESP_RST_SDIO
+        case ESP_RST_SDIO:      return "SDIO";
+#endif
+        default:                return "UNMAPPED";
+    }
+}
+
 void mqtt_sync_with_wifi_cb() {
     if (g_ui_controller) {
         g_ui_controller->mqtt_sync_with_wifi();
@@ -55,13 +76,20 @@ void wifi_state_change_cb(AuraNetworkManager::WifiState,
 StorageManager::BootAction AppInit::handleBootState() {
     esp_reset_reason_t reset_reason = esp_reset_reason();
     boot_reset_reason = reset_reason;
+    boot_ui_auto_recovery_reboot = boot_consume_ui_auto_recovery_reboot();
     bool crash_reset = BootHelpers::isCrashReset(reset_reason);
     StorageManager::BootAction boot_action =
         BootPolicy::apply(crash_reset,
                           boot_count,
                           safe_boot_stage,
                           Config::SAFE_BOOT_MAX_REBOOTS);
-    LOGI("Main", "Reset reason: %d, boot count: %u", reset_reason, boot_count);
+    LOGI("Main", "Reset reason: %d (%s), boot count: %u",
+         reset_reason,
+         resetReasonName(reset_reason),
+         boot_count);
+    if (boot_ui_auto_recovery_reboot) {
+        LOGW("Main", "Previous boot ended with UI auto-recovery reboot");
+    }
     if (boot_action == StorageManager::BootAction::SafeRollback) {
         LOGW("Main", "SAFE BOOT: restoring last known good config");
     } else if (boot_action == StorageManager::BootAction::SafeFactoryReset) {

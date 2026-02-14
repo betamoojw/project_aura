@@ -8,6 +8,7 @@
 #include "modules/StorageManager.h"
 #include "drivers/Bmp580.h"
 #include "drivers/Dps310.h"
+#include "drivers/Sen0466.h"
 #include "drivers/Sen66.h"
 #include "drivers/Sfa3x.h"
 
@@ -16,6 +17,7 @@ static void resetDriverStates() {
     Sen66::state() = Sen66TestState();
     Dps310::state() = Dps310TestState();
     Sfa3x::state() = Sfa3xTestState();
+    Sen0466::state() = Sen0466TestState();
 }
 
 void setUp() {

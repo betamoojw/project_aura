@@ -135,6 +135,8 @@ inline const char *LabelAutoNightEndTitle() { return UiStrings::text(UiStrings::
 inline const char *LabelBacklightTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightTitle); }
 inline const char *LabelBacklightHint() { return UiStrings::text(UiStrings::TextId::LabelBacklightHint); }
 inline const char *LabelBacklightScheduleTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightScheduleTitle); }
+inline const char *LabelBacklightAlarmWakeTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightAlarmWakeTitle); }
+inline const char *LabelBacklightAlarmWakeToggle() { return UiStrings::text(UiStrings::TextId::LabelBacklightAlarmWakeToggle); }
 inline const char *LabelBacklightPresetsTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightPresetsTitle); }
 inline const char *LabelBacklightSleepTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightSleepTitle); }
 inline const char *LabelBacklightWakeTitle() { return UiStrings::text(UiStrings::TextId::LabelBacklightWakeTitle); }
@@ -161,6 +163,7 @@ inline const char *LabelBootDiagSenLabel() { return UiStrings::text(UiStrings::T
 inline const char *LabelBootDiagSfaLabel() { return UiStrings::text(UiStrings::TextId::LabelBootDiagSfaLabel); }
 inline const char *LabelBootDiagRtcLabel() { return UiStrings::text(UiStrings::TextId::LabelBootDiagRtcLabel); }
 inline const char *LabelBootDiagErrorsDetected() { return UiStrings::text(UiStrings::TextId::LabelBootDiagErrorsDetected); }
+inline const char *LabelBootDiagShowErrors() { return UiStrings::text(UiStrings::TextId::LabelBootDiagShowErrors); }
 inline const char *BootDiagStorageOkConfig() { return UiStrings::text(UiStrings::TextId::BootDiagStorageOkConfig); }
 inline const char *BootDiagStorageOkDefaults() { return UiStrings::text(UiStrings::TextId::BootDiagStorageOkDefaults); }
 inline const char *BootDiagRecovered() { return UiStrings::text(UiStrings::TextId::BootDiagRecovered); }
@@ -210,6 +213,11 @@ inline const char *InfoPm1Excellent() { return UiStrings::text(UiStrings::TextId
 inline const char *InfoPm1Acceptable() { return UiStrings::text(UiStrings::TextId::InfoPm1Acceptable); }
 inline const char *InfoPm1Uncomfortable() { return UiStrings::text(UiStrings::TextId::InfoPm1Uncomfortable); }
 inline const char *InfoPm1Poor() { return UiStrings::text(UiStrings::TextId::InfoPm1Poor); }
+inline const char *InfoCoText() { return UiStrings::text(UiStrings::TextId::InfoCoText); }
+inline const char *InfoCoExcellent() { return UiStrings::text(UiStrings::TextId::InfoCoExcellent); }
+inline const char *InfoCoAcceptable() { return UiStrings::text(UiStrings::TextId::InfoCoAcceptable); }
+inline const char *InfoCoUncomfortable() { return UiStrings::text(UiStrings::TextId::InfoCoUncomfortable); }
+inline const char *InfoCoPoor() { return UiStrings::text(UiStrings::TextId::InfoCoPoor); }
 inline const char *InfoPm4Text() { return UiStrings::text(UiStrings::TextId::InfoPm4Text); }
 inline const char *InfoPm4Excellent() { return UiStrings::text(UiStrings::TextId::InfoPm4Excellent); }
 inline const char *InfoPm4Acceptable() { return UiStrings::text(UiStrings::TextId::InfoPm4Acceptable); }

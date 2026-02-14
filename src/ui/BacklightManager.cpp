@@ -10,6 +10,7 @@
 #include <time.h>
 #include <esp_display_panel.hpp>
 #include "modules/StorageManager.h"
+#include "lvgl_v8_port.h"
 #include "ui/ui.h"
 
 namespace {
@@ -57,6 +58,7 @@ void BacklightManager::loadFromPrefs(StorageManager &storage) {
     uint32_t timeout_s = cfg.backlight_timeout_s;
     backlight_timeout_ms_ = normalizeTimeoutMs(timeout_s * 1000UL);
     schedule_enabled_ = cfg.backlight_schedule_enabled;
+    alarm_wake_enabled_ = cfg.backlight_alarm_wake;
     sleep_hour_ = cfg.backlight_sleep_hour;
     sleep_minute_ = cfg.backlight_sleep_minute;
     wake_hour_ = cfg.backlight_wake_hour;
@@ -74,13 +76,16 @@ void BacklightManager::loadFromPrefs(StorageManager &storage) {
 void BacklightManager::attachBacklight(esp_panel::drivers::Backlight *backlight) {
     panel_backlight_ = backlight;
     backlight_on_ = panel_backlight_ != nullptr;
+    lvgl_port_set_wake_touch_probe(!backlight_on_);
 }
 
 uint32_t BacklightManager::normalizeTimeoutMs(uint32_t timeout_ms) const {
     if (timeout_ms == Config::BACKLIGHT_TIMEOUT_30S ||
-        timeout_ms == Config::BACKLIGHT_TIMEOUT_1M ||
-        timeout_ms == Config::BACKLIGHT_TIMEOUT_5M) {
+        timeout_ms == Config::BACKLIGHT_TIMEOUT_1M) {
         return timeout_ms;
+    }
+    if (timeout_ms > 0) {
+        return Config::BACKLIGHT_TIMEOUT_1M;
     }
     return 0;
 }
@@ -100,6 +105,7 @@ void BacklightManager::setOn(bool on) {
         return;
     }
     if (on == backlight_on_) {
+        lvgl_port_set_wake_touch_probe(!on);
         return;
     }
     if (on) {
@@ -108,6 +114,7 @@ void BacklightManager::setOn(bool on) {
         panel_backlight_->off();
     }
     backlight_on_ = on;
+    lvgl_port_set_wake_touch_probe(!on);
     if (on) {
         lv_disp_trig_activity(nullptr);
         last_inactive_ms_ = 0;
@@ -125,6 +132,7 @@ void BacklightManager::savePrefs(StorageManager &storage) {
     auto &cfg = storage.config();
     cfg.backlight_timeout_s = backlight_timeout_ms_ / 1000;
     cfg.backlight_schedule_enabled = schedule_enabled_;
+    cfg.backlight_alarm_wake = alarm_wake_enabled_;
     cfg.backlight_sleep_hour = sleep_hour_;
     cfg.backlight_sleep_minute = sleep_minute_;
     cfg.backlight_wake_hour = wake_hour_;
@@ -141,6 +149,19 @@ void BacklightManager::setScheduleEnabled(bool enabled) {
     prefs_dirty_ = true;
     refreshSchedule();
     ui_dirty_ = true;
+}
+
+void BacklightManager::setAlarmWakeEnabled(bool enabled) {
+    if (enabled == alarm_wake_enabled_) {
+        return;
+    }
+    alarm_wake_enabled_ = enabled;
+    prefs_dirty_ = true;
+    ui_dirty_ = true;
+}
+
+void BacklightManager::setAlarmWakeActive(bool active) {
+    alarm_wake_active_ = active;
 }
 
 void BacklightManager::adjustSleepHour(int delta) {
@@ -220,6 +241,16 @@ void BacklightManager::updateUi() {
     }
     schedule_syncing_ = false;
 
+    alarm_wake_syncing_ = true;
+    if (objects.btn_backlight_alarm_wake) {
+        if (alarm_wake_enabled_) {
+            lv_obj_add_state(objects.btn_backlight_alarm_wake, LV_STATE_CHECKED);
+        } else {
+            lv_obj_clear_state(objects.btn_backlight_alarm_wake, LV_STATE_CHECKED);
+        }
+    }
+    alarm_wake_syncing_ = false;
+
     preset_syncing_ = true;
     bool always_on = backlight_timeout_ms_ == 0;
     if (objects.btn_backlight_always_on) {
@@ -234,10 +265,6 @@ void BacklightManager::updateUi() {
         if (backlight_timeout_ms_ == Config::BACKLIGHT_TIMEOUT_1M) lv_obj_add_state(objects.btn_backlight_1m, LV_STATE_CHECKED);
         else lv_obj_clear_state(objects.btn_backlight_1m, LV_STATE_CHECKED);
     }
-    if (objects.btn_backlight_5m) {
-        if (backlight_timeout_ms_ == Config::BACKLIGHT_TIMEOUT_5M) lv_obj_add_state(objects.btn_backlight_5m, LV_STATE_CHECKED);
-        else lv_obj_clear_state(objects.btn_backlight_5m, LV_STATE_CHECKED);
-    }
     preset_syncing_ = false;
     ui_dirty_ = false;
 }
@@ -247,7 +274,6 @@ void BacklightManager::consumeInput() {
     while (indev) {
         if (lv_indev_get_type(indev) == LV_INDEV_TYPE_POINTER) {
             lv_indev_reset(indev, nullptr);
-            lv_indev_wait_release(indev);
         }
         indev = lv_indev_get_next(indev);
     }
@@ -263,15 +289,16 @@ void BacklightManager::poll(bool lvgl_ready) {
     }
     uint32_t now_ms = millis();
     uint32_t inactive_ms = lv_disp_get_inactive_time(disp);
-    bool activity = inactive_ms < last_inactive_ms_;
     last_inactive_ms_ = inactive_ms;
 
     refreshSchedule();
 
     if (!backlight_on_) {
-        if (activity) {
+        bool wake_touch = lvgl_port_take_wake_touch_pending();
+        if (wake_touch || (alarm_wake_enabled_ && alarm_wake_active_)) {
             setOn(true);
             block_input_until_ms_ = now_ms + Config::BACKLIGHT_WAKE_BLOCK_MS;
+            lvgl_port_block_touch_read(Config::BACKLIGHT_WAKE_BLOCK_MS);
             consumeInput();
         }
         return;
@@ -286,6 +313,9 @@ void BacklightManager::poll(bool lvgl_ready) {
     uint32_t effective_timeout_ms = backlight_timeout_ms_;
     if (schedule_active_ && effective_timeout_ms == 0) {
         effective_timeout_ms = Config::BACKLIGHT_SCHEDULE_WAKE_MS;
+    }
+    if (alarm_wake_enabled_ && alarm_wake_active_) {
+        return;
     }
     if (effective_timeout_ms > 0 && inactive_ms >= effective_timeout_ms) {
         setOn(false);

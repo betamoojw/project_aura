@@ -397,9 +397,10 @@ void AuraNetworkManager::startSta() {
     wifi_state_ = WIFI_STATE_STA_CONNECTING;
     wifi_connect_start_ms_ = millis();
     wifi_ui_dirty_ = true;
+    String safe_ssid = wifi_label_safe(wifi_ssid_);
     Logger::log(Logger::Info, "WiFi",
                 "connecting to: %s",
-                wifi_label_safe(wifi_ssid_));
+                safe_ssid.c_str());
 }
 
 void AuraNetworkManager::startAp() {

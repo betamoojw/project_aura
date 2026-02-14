@@ -183,6 +183,59 @@ bool lvgl_port_lock(int timeout_ms);
  */
 bool lvgl_port_unlock(void);
 
+/**
+ * @brief Temporarily suppress touch reads in LVGL input callback.
+ *
+ * During this window LVGL receives `RELEASED` state without querying the touch controller.
+ * Useful right after wake-up to avoid unstable I2C reads.
+ *
+ * @param duration_ms Blocking window duration in milliseconds
+ *
+ * @return true if parameter accepted
+ */
+bool lvgl_port_block_touch_read(uint32_t duration_ms);
+
+/**
+ * @brief Enable/disable wake-touch probe mode.
+ *
+ * In probe mode touch reads do not generate LVGL pressed events.
+ * Touch is only sampled to latch a pending wake request.
+ *
+ * @param enabled True to enable wake-touch probe mode.
+ *
+ * @return true if parameter accepted
+ */
+bool lvgl_port_set_wake_touch_probe(bool enabled);
+
+/**
+ * @brief Consume pending wake request captured by wake-touch probe mode.
+ *
+ * @return true if a wake touch was captured since the last consume call.
+ */
+bool lvgl_port_take_wake_touch_pending(void);
+
+typedef struct {
+    uint32_t sample_ms;
+    uint32_t timer_handler_count;
+    uint32_t timer_handler_age_ms;
+    uint32_t flush_count;
+    uint32_t flush_age_ms;
+    uint32_t vsync_count;
+    uint32_t vsync_age_ms;
+    uint32_t lock_fail_count;
+    uint32_t touch_read_error_count;
+    bool paused;
+} lvgl_port_diagnostics_t;
+
+/**
+ * @brief Return LVGL/runtime diagnostics snapshot for freeze investigation.
+ *
+ * @param out Pointer to destination snapshot.
+ *
+ * @return true if snapshot stored, false for invalid argument.
+ */
+bool lvgl_port_get_diagnostics(lvgl_port_diagnostics_t *out);
+
 #ifdef __cplusplus
 }
 #endif

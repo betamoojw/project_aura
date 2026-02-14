@@ -484,7 +484,12 @@ bool Sen66::forceIdle() {
 
 bool Sen66::start(bool asc_enabled) {
     busy_ = true;
-    forceIdle();
+    if (!forceIdle()) {
+        ok_ = false;
+        measuring_ = false;
+        busy_ = false;
+        return false;
+    }
     if (!applyTempOffsetParams()) {
         LOGW("SEN66", "temp offset set failed");
     } else {

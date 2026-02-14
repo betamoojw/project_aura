@@ -10,6 +10,7 @@
 #include "config/AppData.h"
 #include "drivers/Bmp580.h"
 #include "drivers/Dps310.h"
+#include "drivers/Sen0466.h"
 #include "drivers/Sen66.h"
 #include "drivers/Sfa3x.h"
 
@@ -37,11 +38,18 @@ public:
     bool isBusy() const { return sen66_.isBusy(); }
     bool isDpsOk() const { return isPressureOk(); }
     bool isSfaOk() const { return sfa3x_.isOk(); }
+    bool isCoPresent() const { return sen0466_.isPresent(); }
+    bool isCoValid() const { return sen0466_.isDataValid(); }
+    bool isCoWarmupActive() const { return sen0466_.isWarmupActive(); }
     bool isPressureOk() const;
     PressureSensorType pressureSensorType() const { return pressure_sensor_; }
     const char *pressureSensorLabel() const;
     bool deviceReset() { return sen66_.deviceReset(); }
-    void scheduleRetry(uint32_t delay_ms) { sen66_.scheduleRetry(delay_ms); }
+    void scheduleRetry(uint32_t delay_ms) {
+        sen66_start_attempts_ = 0;
+        sen66_retry_exhausted_logged_ = false;
+        sen66_.scheduleRetry(delay_ms);
+    }
     uint32_t retryAtMs() const { return sen66_.retryAtMs(); }
     bool start(bool asc_enabled) { return sen66_.start(asc_enabled); }
     bool isWarmupActive() const { return sen66_.isWarmupActive(); }
@@ -58,7 +66,10 @@ private:
     Bmp580 bmp580_;
     Dps310 dps310_;
     Sfa3x sfa3x_;
+    Sen0466 sen0466_;
     Sen66 sen66_;
     bool warmup_active_last_ = false;
+    uint8_t sen66_start_attempts_ = 0;
+    bool sen66_retry_exhausted_logged_ = false;
     PressureSensorType pressure_sensor_ = PRESSURE_NONE;
 };
