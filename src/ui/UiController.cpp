@@ -761,6 +761,9 @@ void UiController::set_night_mode_state(bool enabled, bool save_pref) {
     if (!lvgl_ready) {
         return;
     }
+
+    // Theme/style updates must be serialized with LVGL rendering.
+    lvgl_port_lock(-1);
     if (enabled) {
         night_mode_on_enter();
     }
@@ -769,6 +772,7 @@ void UiController::set_night_mode_state(bool enabled, bool save_pref) {
         night_mode_on_exit();
     }
     data_dirty = true;
+    lvgl_port_unlock();
 }
 
 void UiController::apply_auto_night_now() {
