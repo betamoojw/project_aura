@@ -459,6 +459,8 @@ private:
     uint32_t last_lvgl_lock_warn_ms = 0;
     uint16_t lvgl_lock_fail_streak = 0;
     uint32_t lvgl_diag_last_heartbeat_ms = 0;
+    uint32_t lvgl_diag_prev_heartbeat_lock_fail_count = 0;
+    uint32_t lvgl_diag_prev_heartbeat_touch_err_count = 0;
     uint32_t lvgl_diag_last_stall_warn_ms = 0;
     bool lvgl_diag_stall_active = false;
     uint32_t lvgl_diag_stall_since_ms = 0;

@@ -211,6 +211,8 @@ void UiController::begin() {
     lvgl_lock_fail_streak = 0;
     last_lvgl_lock_warn_ms = 0;
     lvgl_diag_last_heartbeat_ms = millis();
+    lvgl_diag_prev_heartbeat_lock_fail_count = 0;
+    lvgl_diag_prev_heartbeat_touch_err_count = 0;
     lvgl_diag_last_stall_warn_ms = 0;
     lvgl_diag_stall_active = false;
     lvgl_diag_stall_since_ms = 0;
@@ -304,17 +306,32 @@ void UiController::poll(uint32_t now) {
     if (lvgl_port_get_diagnostics(&lvgl_diag)) {
         if ((now - lvgl_diag_last_heartbeat_ms) >= UI_LVGL_DIAG_HEARTBEAT_MS) {
             lvgl_diag_last_heartbeat_ms = now;
-            LOGD("UI",
-                 "LVGL heartbeat: handler=%lu(age=%lu ms), flush=%lu(age=%lu ms), vsync=%lu(age=%lu ms), lock_fail=%lu, touch_err=%lu, paused=%s",
-                 static_cast<unsigned long>(lvgl_diag.timer_handler_count),
-                 static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
-                 static_cast<unsigned long>(lvgl_diag.flush_count),
-                 static_cast<unsigned long>(lvgl_diag.flush_age_ms),
-                 static_cast<unsigned long>(lvgl_diag.vsync_count),
-                 static_cast<unsigned long>(lvgl_diag.vsync_age_ms),
-                 static_cast<unsigned long>(lvgl_diag.lock_fail_count),
-                 static_cast<unsigned long>(lvgl_diag.touch_read_error_count),
-                 lvgl_diag.paused ? "YES" : "NO");
+            const uint32_t lock_fail_delta =
+                (lvgl_diag.lock_fail_count >= lvgl_diag_prev_heartbeat_lock_fail_count)
+                    ? (lvgl_diag.lock_fail_count - lvgl_diag_prev_heartbeat_lock_fail_count)
+                    : lvgl_diag.lock_fail_count;
+            const uint32_t touch_err_delta =
+                (lvgl_diag.touch_read_error_count >= lvgl_diag_prev_heartbeat_touch_err_count)
+                    ? (lvgl_diag.touch_read_error_count - lvgl_diag_prev_heartbeat_touch_err_count)
+                    : lvgl_diag.touch_read_error_count;
+            lvgl_diag_prev_heartbeat_lock_fail_count = lvgl_diag.lock_fail_count;
+            lvgl_diag_prev_heartbeat_touch_err_count = lvgl_diag.touch_read_error_count;
+
+            if (lvgl_diag.paused || lock_fail_delta > 0 || touch_err_delta > 0) {
+                LOGW("UI",
+                     "LVGL heartbeat: handler=%lu(age=%lu ms), flush=%lu(age=%lu ms), vsync=%lu(age=%lu ms), lock_fail=%lu(+%lu), touch_err=%lu(+%lu), paused=%s",
+                     static_cast<unsigned long>(lvgl_diag.timer_handler_count),
+                     static_cast<unsigned long>(lvgl_diag.timer_handler_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.flush_count),
+                     static_cast<unsigned long>(lvgl_diag.flush_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.vsync_count),
+                     static_cast<unsigned long>(lvgl_diag.vsync_age_ms),
+                     static_cast<unsigned long>(lvgl_diag.lock_fail_count),
+                     static_cast<unsigned long>(lock_fail_delta),
+                     static_cast<unsigned long>(lvgl_diag.touch_read_error_count),
+                     static_cast<unsigned long>(touch_err_delta),
+                     lvgl_diag.paused ? "YES" : "NO");
+            }
         }
 
         const bool handler_age_known = lvgl_diag.timer_handler_age_ms != UI_LVGL_DIAG_AGE_UNKNOWN_MS;
