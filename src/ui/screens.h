@@ -10,6 +10,7 @@ extern "C" {
 typedef struct _objects_t {
     lv_obj_t *page_boot_logo;
     lv_obj_t *page_boot_diag;
+    lv_obj_t *page_main_pro;
     lv_obj_t *page_settings;
     lv_obj_t *page_wifi;
     lv_obj_t *page_theme;
@@ -19,7 +20,7 @@ typedef struct _objects_t {
     lv_obj_t *page_backlight;
     lv_obj_t *page_mqtt;
     lv_obj_t *page_sensors_info;
-    lv_obj_t *page_main_pro;
+    lv_obj_t *page_dac_settings;
     lv_obj_t *label_boot_ver;
     lv_obj_t *background_boot_diag;
     lv_obj_t *btn_diag_continue;
@@ -56,6 +57,105 @@ typedef struct _objects_t {
     lv_obj_t *label_btn_diag_errors;
     lv_obj_t *container_diag_errors;
     lv_obj_t *label_diag_errors_text;
+    lv_obj_t *background_pro;
+    lv_obj_t *container_content_pro;
+    lv_obj_t *container_header_pro;
+    lv_obj_t *wifi_status_icon_4;
+    lv_obj_t *mqtt_status_icon_4;
+    lv_obj_t *label_status_title_1;
+    lv_obj_t *label_status_value_1;
+    lv_obj_t *btn_settings_1;
+    lv_obj_t *label_btn_settings_1;
+    lv_obj_t *card_co2_pro;
+    lv_obj_t *label_co2_value_1;
+    lv_obj_t *co2_bar_wrap_1;
+    lv_obj_t *co2_bar_track_1;
+    lv_obj_t *co2_bar_mask_1;
+    lv_obj_t *co2_bar_fill_1;
+    lv_obj_t *grad_4;
+    lv_obj_t *grad_5;
+    lv_obj_t *grad_6;
+    lv_obj_t *co2_marker_1;
+    lv_obj_t *label_co2_title_1;
+    lv_obj_t *label_co2_unit_1;
+    lv_obj_t *dot_co2_1;
+    lv_obj_t *card_pressure_pro;
+    lv_obj_t *label_pressure_title_1;
+    lv_obj_t *label_pressure_value_1;
+    lv_obj_t *label_pressure_unit_1;
+    lv_obj_t *chip_delta_4;
+    lv_obj_t *chip_delta_25;
+    lv_obj_t *label_delta_4;
+    lv_obj_t *label_delta_25;
+    lv_obj_t *label_delta_26;
+    lv_obj_t *label_delta_5;
+    lv_obj_t *card_time_pro;
+    lv_obj_t *label_time_value_2;
+    lv_obj_t *label_date_value_2;
+    lv_obj_t *label_time_title_2;
+    lv_obj_t *card_temp_pro;
+    lv_obj_t *label_temp_unit_1;
+    lv_obj_t *label_temp_value_1;
+    lv_obj_t *label_temp_title_1;
+    lv_obj_t *dot_temp_1;
+    lv_obj_t *card_pm1_pro;
+    lv_obj_t *label_pm1_unit;
+    lv_obj_t *label_pm1_value;
+    lv_obj_t *label_pm1_title;
+    lv_obj_t *dot_pm1;
+    lv_obj_t *card_hcho_pro;
+    lv_obj_t *label_hcho_unit_1;
+    lv_obj_t *label_hcho_value_1;
+    lv_obj_t *label_hcho_title_1;
+    lv_obj_t *dot_hcho_1;
+    lv_obj_t *card_nox_pro;
+    lv_obj_t *label_nox_unit_1;
+    lv_obj_t *label_nox_value_1;
+    lv_obj_t *label_nox_title_1;
+    lv_obj_t *dot_nox_1;
+    lv_obj_t *label_nox_warmup_1;
+    lv_obj_t *card_voc_pro;
+    lv_obj_t *label_voc_unit_1;
+    lv_obj_t *label_voc_value_1;
+    lv_obj_t *label_voc_title_1;
+    lv_obj_t *dot_voc_1;
+    lv_obj_t *label_voc_warmup_1;
+    lv_obj_t *card_hum_pro;
+    lv_obj_t *label_ah_unit_1;
+    lv_obj_t *label_ah_value_1;
+    lv_obj_t *label_hum_title_1;
+    lv_obj_t *label_ah_title_1;
+    lv_obj_t *label_hum_unit_1;
+    lv_obj_t *label_hum_value_1;
+    lv_obj_t *dot_ah_1;
+    lv_obj_t *dot_hum_1;
+    lv_obj_t *line_1;
+    lv_obj_t *card_pm25_pro;
+    lv_obj_t *label_pm25_unit_1;
+    lv_obj_t *label_pm25_value_1;
+    lv_obj_t *label_pm25_title_1;
+    lv_obj_t *dot_pm25_1;
+    lv_obj_t *card_co_pro;
+    lv_obj_t *label_co_unit;
+    lv_obj_t *label_co_value;
+    lv_obj_t *label_co_title;
+    lv_obj_t *dot_co;
+    lv_obj_t *label_co_warmup;
+    lv_obj_t *card_hum_2;
+    lv_obj_t *label_mr_title;
+    lv_obj_t *label_dew_title_1;
+    lv_obj_t *label_dew_value_1;
+    lv_obj_t *label_dew_unit_1;
+    lv_obj_t *dot_dp_1;
+    lv_obj_t *label_mr_value;
+    lv_obj_t *dot_mr;
+    lv_obj_t *label_mr_unit;
+    lv_obj_t *line_2;
+    lv_obj_t *card_pm10_pro;
+    lv_obj_t *label_pm10_unit_pro;
+    lv_obj_t *label_pm10_value_pro;
+    lv_obj_t *label_pm10_title_pro;
+    lv_obj_t *dot_pm10_pro;
     lv_obj_t *background_1;
     lv_obj_t *container_temp_offset;
     lv_obj_t *label_temp_offset_title;
@@ -106,6 +206,8 @@ typedef struct _objects_t {
     lv_obj_t *btn_language;
     lv_obj_t *label_language_value;
     lv_obj_t *label_language_title;
+    lv_obj_t *btn_dac_settings;
+    lv_obj_t *label_dac_settings;
     lv_obj_t *container_confirm;
     lv_obj_t *container_confirm_card;
     lv_obj_t *btn_confirm_ok;
@@ -543,186 +645,79 @@ typedef struct _objects_t {
     lv_obj_t *label_co_acceptable;
     lv_obj_t *label_co_uncomfortable;
     lv_obj_t *label_co_poor;
-    lv_obj_t *background_pro;
-    lv_obj_t *container_content_pro;
-    lv_obj_t *container_header_pro;
-    lv_obj_t *wifi_status_icon_4;
-    lv_obj_t *mqtt_status_icon_4;
-    lv_obj_t *label_status_title_1;
-    lv_obj_t *label_status_value_1;
-    lv_obj_t *btn_settings_1;
-    lv_obj_t *label_btn_settings_1;
-    lv_obj_t *card_co2_pro;
-    lv_obj_t *label_co2_value_1;
-    lv_obj_t *co2_bar_wrap_1;
-    lv_obj_t *co2_bar_track_1;
-    lv_obj_t *co2_bar_mask_1;
-    lv_obj_t *co2_bar_fill_1;
-    lv_obj_t *grad_4;
-    lv_obj_t *grad_5;
-    lv_obj_t *grad_6;
-    lv_obj_t *co2_marker_1;
-    lv_obj_t *label_co2_title_1;
-    lv_obj_t *label_co2_unit_1;
-    lv_obj_t *dot_co2_1;
-    lv_obj_t *card_pressure_pro;
-    lv_obj_t *label_pressure_title_1;
-    lv_obj_t *label_pressure_value_1;
-    lv_obj_t *label_pressure_unit_1;
-    lv_obj_t *chip_delta_4;
-    lv_obj_t *chip_delta_25;
-    lv_obj_t *label_delta_4;
-    lv_obj_t *label_delta_25;
-    lv_obj_t *label_delta_26;
-    lv_obj_t *label_delta_5;
-    lv_obj_t *card_time_pro;
-    lv_obj_t *label_time_value_2;
-    lv_obj_t *label_date_value_2;
-    lv_obj_t *label_time_title_2;
-    lv_obj_t *card_temp_pro;
-    lv_obj_t *label_temp_unit_1;
-    lv_obj_t *label_temp_value_1;
-    lv_obj_t *label_temp_title_1;
-    lv_obj_t *dot_temp_1;
-    lv_obj_t *card_pm1_pro;
-    lv_obj_t *label_pm1_unit;
-    lv_obj_t *label_pm1_value;
-    lv_obj_t *label_pm1_title;
-    lv_obj_t *dot_pm1;
-    lv_obj_t *card_hcho_pro;
-    lv_obj_t *label_hcho_unit_1;
-    lv_obj_t *label_hcho_value_1;
-    lv_obj_t *label_hcho_title_1;
-    lv_obj_t *dot_hcho_1;
-    lv_obj_t *card_nox_pro;
-    lv_obj_t *label_nox_unit_1;
-    lv_obj_t *label_nox_value_1;
-    lv_obj_t *label_nox_title_1;
-    lv_obj_t *dot_nox_1;
-    lv_obj_t *label_nox_warmup_1;
-    lv_obj_t *card_voc_pro;
-    lv_obj_t *label_voc_unit_1;
-    lv_obj_t *label_voc_value_1;
-    lv_obj_t *label_voc_title_1;
-    lv_obj_t *dot_voc_1;
-    lv_obj_t *label_voc_warmup_1;
-    lv_obj_t *card_hum_pro;
-    lv_obj_t *label_ah_unit_1;
-    lv_obj_t *label_ah_value_1;
-    lv_obj_t *label_hum_title_1;
-    lv_obj_t *label_ah_title_1;
-    lv_obj_t *label_hum_unit_1;
-    lv_obj_t *label_hum_value_1;
-    lv_obj_t *dot_ah_1;
-    lv_obj_t *dot_hum_1;
-    lv_obj_t *line_1;
-    lv_obj_t *card_pm25_pro;
-    lv_obj_t *label_pm25_unit_1;
-    lv_obj_t *label_pm25_value_1;
-    lv_obj_t *label_pm25_title_1;
-    lv_obj_t *dot_pm25_1;
-    lv_obj_t *card_co_pro;
-    lv_obj_t *label_co_unit;
-    lv_obj_t *label_co_value;
-    lv_obj_t *label_co_title;
-    lv_obj_t *dot_co;
-    lv_obj_t *label_co_warmup;
-    lv_obj_t *card_hum_2;
-    lv_obj_t *label_mr_title;
-    lv_obj_t *label_dew_title_1;
-    lv_obj_t *label_dew_value_1;
-    lv_obj_t *label_dew_unit_1;
-    lv_obj_t *dot_dp_1;
-    lv_obj_t *label_mr_value;
-    lv_obj_t *dot_mr;
-    lv_obj_t *label_mr_unit;
-    lv_obj_t *line_2;
-    lv_obj_t *card_pm10_pro;
-    lv_obj_t *label_pm10_unit_pro;
-    lv_obj_t *label_pm10_value_pro;
-    lv_obj_t *label_pm10_title_pro;
-    lv_obj_t *dot_pm10_pro;
+    lv_obj_t *sensors_dac_settings_bg;
+    lv_obj_t *dac_manual_container;
+    lv_obj_t *btn_dak_manual_toggle_1;
+    lv_obj_t *label_btn_dak_manual_toggle_1;
+    lv_obj_t *btn_dak_manual_toggle_2;
+    lv_obj_t *label_btn_dak_manual_toggle_2;
+    lv_obj_t *btn_dak_manual_toggle_3;
+    lv_obj_t *label_btn_dak_manual_toggle_3;
+    lv_obj_t *btn_dak_manual_toggle_4;
+    lv_obj_t *label_btn_dak_manual_toggle_4;
+    lv_obj_t *btn_dak_manual_toggle_5;
+    lv_obj_t *label_btn_dak_manual_toggle_5;
+    lv_obj_t *btn_dak_manual_toggle_6;
+    lv_obj_t *label_btn_dak_manual_toggle_6;
+    lv_obj_t *btn_dak_manual_toggle_7;
+    lv_obj_t *label_btn_dak_manual_toggle_7;
+    lv_obj_t *btn_dak_manual_toggle_8;
+    lv_obj_t *label_btn_dak_manual_toggle_8;
+    lv_obj_t *btn_dak_manual_toggle_9;
+    lv_obj_t *label_btn_dak_manual_toggle_9;
+    lv_obj_t *btn_dak_manual_toggle_10;
+    lv_obj_t *label_btn_dak_manual_toggle_10;
+    lv_obj_t *btn_dak_manual_start;
+    lv_obj_t *label_btn_dak_manual_start;
+    lv_obj_t *btn_dak_manual_timer_toggle_30sec;
+    lv_obj_t *label_btn_dak_manual_timer_toggle_30sec;
+    lv_obj_t *btn_dak_manual_timer_toggle_1min;
+    lv_obj_t *label_btn_dak_manual_timer_toggle_1min;
+    lv_obj_t *btn_dak_manual_timer_toggle_5min;
+    lv_obj_t *label_btn_dak_manual_timer_toggle_5min;
+    lv_obj_t *btn_dak_manual_timer_toggle_15min;
+    lv_obj_t *label_btn_dak_manual_timer_toggle_15min;
+    lv_obj_t *btn_dak_manual_timer_toggle_30min;
+    lv_obj_t *label_btn_dak_manual_timer_toggle_30min;
+    lv_obj_t *btn_dak_manual_timer_toggle_1h;
+    lv_obj_t *label_btn_dak_manual_timer_toggle_1h;
+    lv_obj_t *btn_dak_manual_stop;
+    lv_obj_t *label_btn_dak_manual_stop;
+    lv_obj_t *container_dac_timer;
+    lv_obj_t *label_dac_timer_value;
+    lv_obj_t *label_dac_timer;
+    lv_obj_t *btn_dac_auto_on;
+    lv_obj_t *label_btn_dac_auto_on;
+    lv_obj_t *btn_dac_manual_on;
+    lv_obj_t *label_btn_btn_dac_manual_on;
+    lv_obj_t *dac_auto_container;
+    lv_obj_t *container_dac_settings_header;
+    lv_obj_t *label_dac_settings_title;
+    lv_obj_t *btn_dac_settings_back;
+    lv_obj_t *label_btn_dac_settings_back;
+    lv_obj_t *chip_dac_status;
+    lv_obj_t *label_dac_status;
+    lv_obj_t *container_dac_output;
+    lv_obj_t *label_dac_output_value;
+    lv_obj_t *label_dac_output;
 } objects_t;
 
 extern objects_t objects;
 
-// Compatibility aliases for legacy object names used in hand-written UI code.
-// EEZ regeneration removed old PAGE_MAIN objects and kept MAIN_PRO variants.
-#define background background_1
-#define wifi_status_icon wifi_status_icon_1
-#define mqtt_status_icon mqtt_status_icon_1
-
-#define card_co2 card_co2_pro
-
-#define label_co2_value label_co2_value_1
-#define label_co2_unit label_co2_unit_1
-#define co2_bar_wrap co2_bar_wrap_1
-#define co2_bar_track co2_bar_track_1
-#define co2_bar_mask co2_bar_mask_1
-#define co2_bar_fill co2_bar_fill_1
-#define co2_marker co2_marker_1
-#define dot_co2 dot_co2_1
-
-#define label_temp_value label_temp_value_1
-#define label_temp_unit label_temp_unit_1
-#define dot_temp dot_temp_1
-
-#define label_hum_value label_hum_value_1
-#define label_hum_unit label_hum_unit_1
-#define dot_hum dot_hum_1
-
-#define label_dew_value label_dew_value_1
-#define label_dew_unit label_dew_unit_1
-#define dot_dp dot_dp_1
-
-#define label_ah_value label_ah_value_1
-#define label_ah_unit label_ah_unit_1
-#define dot_ah dot_ah_1
-
-#define label_pm25_value label_pm25_value_1
-#define label_pm25_unit label_pm25_unit_1
-#define dot_pm25 dot_pm25_1
-
-#define label_pm10_value label_pm10_value_pro
-#define label_pm10_unit label_pm10_unit_pro
-#define dot_pm10 dot_pm10_pro
-
-#define label_voc_value label_voc_value_1
-#define label_voc_unit label_voc_unit_1
-#define label_voc_warmup label_voc_warmup_1
-#define dot_voc dot_voc_1
-
-#define label_nox_value label_nox_value_1
-#define label_nox_unit label_nox_unit_1
-#define label_nox_warmup label_nox_warmup_1
-#define dot_nox dot_nox_1
-
-#define label_hcho_value label_hcho_value_1
-#define label_hcho_unit label_hcho_unit_1
-#define label_hcho_title label_hcho_title_1
-#define dot_hcho dot_hcho_1
-
-#define label_pressure_value label_pressure_value_1
-#define label_pressure_unit label_pressure_unit_1
-#define label_pressure_title label_pressure_title_1
-#define label_delta_3h_value label_delta_3h_value_1
-#define label_delta_24h_value label_delta_24h_value_1
-#define chip_delta_3h chip_delta_3h_1
-#define chip_delta_24h chip_delta_24h_1
-
 enum ScreensEnum {
     SCREEN_ID_PAGE_BOOT_LOGO = 1,
     SCREEN_ID_PAGE_BOOT_DIAG = 2,
-    SCREEN_ID_PAGE_SETTINGS = 3,
-    SCREEN_ID_PAGE_WIFI = 4,
-    SCREEN_ID_PAGE_THEME = 5,
-    SCREEN_ID_PAGE_CLOCK = 6,
-    SCREEN_ID_PAGE_CO2_CALIB = 7,
-    SCREEN_ID_PAGE_AUTO_NIGHT_MODE = 8,
-    SCREEN_ID_PAGE_BACKLIGHT = 9,
-    SCREEN_ID_PAGE_MQTT = 10,
-    SCREEN_ID_PAGE_SENSORS_INFO = 11,
-    SCREEN_ID_PAGE_MAIN_PRO = 12,
+    SCREEN_ID_PAGE_MAIN_PRO = 3,
+    SCREEN_ID_PAGE_SETTINGS = 4,
+    SCREEN_ID_PAGE_WIFI = 5,
+    SCREEN_ID_PAGE_THEME = 6,
+    SCREEN_ID_PAGE_CLOCK = 7,
+    SCREEN_ID_PAGE_CO2_CALIB = 8,
+    SCREEN_ID_PAGE_AUTO_NIGHT_MODE = 9,
+    SCREEN_ID_PAGE_BACKLIGHT = 10,
+    SCREEN_ID_PAGE_MQTT = 11,
+    SCREEN_ID_PAGE_SENSORS_INFO = 12,
+    SCREEN_ID_PAGE_DAC_SETTINGS = 13,
 };
 
 void create_screen_page_boot_logo();
@@ -730,6 +725,9 @@ void tick_screen_page_boot_logo();
 
 void create_screen_page_boot_diag();
 void tick_screen_page_boot_diag();
+
+void create_screen_page_main_pro();
+void tick_screen_page_main_pro();
 
 void create_screen_page_settings();
 void tick_screen_page_settings();
@@ -758,8 +756,8 @@ void tick_screen_page_mqtt();
 void create_screen_page_sensors_info();
 void tick_screen_page_sensors_info();
 
-void create_screen_page_main_pro();
-void tick_screen_page_main_pro();
+void create_screen_page_dac_settings();
+void tick_screen_page_dac_settings();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);

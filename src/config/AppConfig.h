@@ -154,8 +154,8 @@ namespace Config {
     constexpr uint32_t SFA3X_START_DELAY_MS = 1;
     constexpr uint32_t SFA3X_STOP_DELAY_MS = 50;
     constexpr uint32_t SFA3X_READ_DELAY_MS = 5;
-    constexpr uint32_t SFA3X_POLL_MS = 1000;
-    constexpr uint32_t SFA3X_STALE_MS = 3000;
+    constexpr uint32_t SFA3X_POLL_MS = 3000;
+    constexpr uint32_t SFA3X_STALE_MS = 10000;
     constexpr uint32_t SEN0466_CMD_DELAY_MS = 10;
     constexpr uint32_t SEN0466_POLL_MS = 3000;
     constexpr uint32_t SEN0466_STALE_MS = 18000;
