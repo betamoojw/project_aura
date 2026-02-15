@@ -77,7 +77,7 @@ void UiController::update_sensor_info_ui() {
             const char *unit = nullptr;
             if (objects.label_hcho_unit_1) {
                 unit = lv_label_get_text(objects.label_hcho_unit_1);
-    } else {
+            } else {
                 unit = UiText::UnitPpb();
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -96,7 +96,7 @@ void UiController::update_sensor_info_ui() {
             const char *unit = nullptr;
             if (objects.label_co2_unit_1) {
                 unit = lv_label_get_text(objects.label_co2_unit_1);
-    } else {
+            } else {
                 unit = "ppm";
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -212,7 +212,7 @@ void UiController::update_sensor_info_ui() {
             const char *unit = nullptr;
             if (objects.label_pm25_unit_1) {
                 unit = lv_label_get_text(objects.label_pm25_unit_1);
-    } else {
+            } else {
                 unit = "ug/m3";
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -232,7 +232,7 @@ void UiController::update_sensor_info_ui() {
             const char *unit = nullptr;
             if (objects.label_pm10_unit_pro) {
                 unit = lv_label_get_text(objects.label_pm10_unit_pro);
-    } else {
+            } else {
                 unit = "ug/m3";
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -307,7 +307,7 @@ void UiController::update_sensor_info_ui() {
             const char *unit = nullptr;
             if (objects.label_pressure_unit_1) {
                 unit = lv_label_get_text(objects.label_pressure_unit_1);
-    } else {
+            } else {
                 unit = "hPa";
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -364,14 +364,14 @@ void UiController::restore_sensor_info_selection() {
             const char *value = nullptr;
             if (objects.label_temp_value_1) {
                 value = lv_label_get_text(objects.label_temp_value_1);
-    } else {
+            } else {
                 value = UiText::ValueMissing();
             }
             safe_label_set_text(objects.label_sensor_value, value);
             const char *unit = nullptr;
             if (objects.label_temp_unit_1) {
                 unit = lv_label_get_text(objects.label_temp_unit_1);
-    } else {
+            } else {
                 unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -387,7 +387,7 @@ void UiController::restore_sensor_info_selection() {
             const char *unit = nullptr;
             if (objects.label_voc_unit_1) {
                 unit = lv_label_get_text(objects.label_voc_unit_1);
-    } else {
+            } else {
                 unit = UiText::UnitIndex();
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -403,7 +403,7 @@ void UiController::restore_sensor_info_selection() {
             const char *unit = nullptr;
             if (objects.label_nox_unit_1) {
                 unit = lv_label_get_text(objects.label_nox_unit_1);
-    } else {
+            } else {
                 unit = UiText::UnitIndex();
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -419,7 +419,7 @@ void UiController::restore_sensor_info_selection() {
             const char *unit = nullptr;
             if (objects.label_hcho_unit_1) {
                 unit = lv_label_get_text(objects.label_hcho_unit_1);
-    } else {
+            } else {
                 unit = UiText::UnitPpb();
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
@@ -435,7 +435,7 @@ void UiController::restore_sensor_info_selection() {
             const char *unit = nullptr;
             if (objects.label_co2_unit_1) {
                 unit = lv_label_get_text(objects.label_co2_unit_1);
-    } else {
+            } else {
                 unit = "ppm";
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
