@@ -446,6 +446,7 @@ private:
     int mqtt_icon_state_main = -1;
     bool clock_ui_dirty = true;
     bool datetime_ui_dirty = true;
+    bool dac_auto_tab_selected_ = false;
     bool ntp_toggle_syncing = false;
     ConfirmAction confirm_action = CONFIRM_NONE;
     uint32_t last_clock_tick_ms = 0;

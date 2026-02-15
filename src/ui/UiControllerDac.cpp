@@ -74,10 +74,11 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     set_button_enabled(objects.btn_dac_settings, available);
 
     const bool manual_mode = (fanControl.mode() == FanControl::Mode::Manual);
-    set_checked_state(objects.btn_dac_manual_on, manual_mode);
-    set_checked_state(objects.btn_dac_auto_on, !manual_mode);
-    set_visible(objects.dac_manual_container, manual_mode);
-    set_visible(objects.dac_auto_container, !manual_mode);
+    const bool manual_tab_selected = !dac_auto_tab_selected_;
+    set_checked_state(objects.btn_dac_manual_on, manual_tab_selected);
+    set_checked_state(objects.btn_dac_auto_on, dac_auto_tab_selected_);
+    set_visible(objects.dac_manual_container, manual_tab_selected);
+    set_visible(objects.dac_auto_container, dac_auto_tab_selected_);
 
     const uint8_t manual_step = fanControl.manualStep();
     set_checked_state(objects.btn_dak_manual_toggle_1, manual_step == 1);
@@ -100,10 +101,12 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     set_checked_state(objects.btn_dak_manual_timer_toggle_1h, timer_s == 60 * 60);
 
     const bool running = fanControl.isRunning();
-    const bool auto_mode = !manual_mode;
-    const bool start_active = available && running;
+    const bool auto_mode_active = !manual_mode &&
+                                  !fanControl.isManualOverrideActive() &&
+                                  !fanControl.isAutoResumeBlocked();
+    const bool start_active = available && running && fanControl.isManualOverrideActive();
     const bool stop_active = available && !running;
-    const bool auto_active = available && auto_mode;
+    const bool auto_active = available && auto_mode_active;
     const lv_color_t neutral = color_card_border();
     set_button_accent(objects.btn_dak_manual_start,
                       start_active ? color_green() : neutral,
@@ -154,9 +157,15 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     if (objects.label_dac_timer_value) {
         char timer_buf[16] = "--:--";
         if (running) {
-            const uint32_t remaining_s = fanControl.remainingSeconds(now_ms);
-            if (remaining_s > 0) {
-                format_mmss(remaining_s, timer_buf, sizeof(timer_buf));
+            if (fanControl.selectedTimerSeconds() == 0) {
+                snprintf(timer_buf, sizeof(timer_buf), "%s", "\xE2\x88\x9E");
+            } else {
+                const uint32_t remaining_s = fanControl.remainingSeconds(now_ms);
+                if (remaining_s > 0) {
+                    format_mmss(remaining_s, timer_buf, sizeof(timer_buf));
+                } else {
+                    snprintf(timer_buf, sizeof(timer_buf), "%s", "00:00");
+                }
             }
         }
         safe_label_set_text(objects.label_dac_timer_value, timer_buf);
@@ -184,6 +193,7 @@ void UiController::on_dac_manual_on_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) {
         return;
     }
+    dac_auto_tab_selected_ = false;
     const bool was_auto = (fanControl.mode() == FanControl::Mode::Auto);
     fanControl.setMode(FanControl::Mode::Manual);
     if (was_auto || storage.config().dac_auto_mode) {
@@ -197,6 +207,7 @@ void UiController::on_dac_auto_on_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_VALUE_CHANGED) {
         return;
     }
+    dac_auto_tab_selected_ = true;
     const bool was_manual = (fanControl.mode() == FanControl::Mode::Manual);
     fanControl.setMode(FanControl::Mode::Auto);
     if (was_manual || !storage.config().dac_auto_mode) {
@@ -241,8 +252,9 @@ void UiController::on_dac_manual_start_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    dac_auto_tab_selected_ = false;
     if (fanControl.mode() != FanControl::Mode::Manual) {
-        return;
+        fanControl.setMode(FanControl::Mode::Manual);
     }
     fanControl.requestStart();
     update_dac_ui(millis());
