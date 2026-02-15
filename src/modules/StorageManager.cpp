@@ -186,6 +186,7 @@ void StorageManager::clearAll() {
     LittleFS.remove(kLastGoodPath);
     LittleFS.remove(kVocStatePath);
     LittleFS.remove(kPressurePath);
+    LittleFS.remove(kDacAutoPath);
 #else
     g_blob_store.clear();
 #endif
@@ -365,6 +366,55 @@ bool StorageManager::removeBlob(const char *path) {
         return false;
     }
     return g_blob_store.erase(path) > 0;
+#endif
+}
+
+bool StorageManager::loadText(const char *path, String &out) const {
+#ifndef UNIT_TEST
+    if (!path) {
+        return false;
+    }
+    File file = LittleFS.open(path, FILE_READ);
+    if (!file) {
+        return false;
+    }
+    out = file.readString();
+    file.close();
+    return true;
+#else
+    auto it = g_blob_store.find(path ? path : "");
+    if (it == g_blob_store.end()) {
+        return false;
+    }
+    out = String(reinterpret_cast<const char *>(it->second.data()), it->second.size());
+    return true;
+#endif
+}
+
+bool StorageManager::saveTextAtomic(const char *path, const String &text) {
+#ifndef UNIT_TEST
+    if (!path) {
+        return false;
+    }
+    String tmp = String(path) + ".tmp";
+    File file = LittleFS.open(tmp, FILE_WRITE);
+    if (!file) {
+        return false;
+    }
+    size_t written = file.print(text);
+    file.close();
+    if (written != text.length()) {
+        LittleFS.remove(tmp);
+        return false;
+    }
+    return replaceFileAtomic(tmp.c_str(), path);
+#else
+    if (!path) {
+        return false;
+    }
+    const char *chars = text.c_str();
+    g_blob_store[path] = std::vector<uint8_t>(chars, chars + text.length());
+    return true;
 #endif
 }
 

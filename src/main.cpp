@@ -148,7 +148,7 @@ void loop()
                            safe_boot_stage);
     TimeManager::PollResult time_poll = timeManager.poll(now);
     uiController.onTimePoll(time_poll);
-    fanControl.poll(now);
+    fanControl.poll(now, &currentData, sensorManager.isWarmupActive());
     mqttManager.poll(currentData, night_mode, alert_blink_enabled, backlightManager.isOn());
     storage.poll(now);
     memoryMonitor.poll(now);

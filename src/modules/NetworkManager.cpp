@@ -127,6 +127,14 @@ void AuraNetworkManager::attachThemeContext(ThemeManager &themeManager) {
     web_ctx_.theme_manager = &themeManager;
 }
 
+void AuraNetworkManager::attachDacContext(FanControl &fanControl,
+                                          SensorManager &sensorManager,
+                                          SensorData &sensorData) {
+    web_ctx_.fan_control = &fanControl;
+    web_ctx_.sensor_manager = &sensorManager;
+    web_ctx_.sensor_data = &sensorData;
+}
+
 void AuraNetworkManager::setStateChangeCallback(StateChangeCallback cb, void *ctx) {
     state_change_cb_ = cb;
     state_change_ctx_ = ctx;
@@ -281,6 +289,10 @@ void AuraNetworkManager::poll() {
             server_.on("/mqtt", HTTP_POST, mqtt_handle_save);
             server_.on("/theme", HTTP_GET, theme_handle_root);
             server_.on("/theme/apply", HTTP_POST, theme_handle_apply);
+            server_.on("/dac", HTTP_GET, dac_handle_root);
+            server_.on("/dac/state", HTTP_GET, dac_handle_state);
+            server_.on("/dac/action", HTTP_POST, dac_handle_action);
+            server_.on("/dac/auto", HTTP_POST, dac_handle_auto);
             server_.onNotFound(wifi_handle_not_found);
             server_.begin();
             Logger::log(Logger::Info, "WiFi",
@@ -413,6 +425,10 @@ void AuraNetworkManager::startAp() {
     server_.on("/save", HTTP_POST, wifi_handle_save);
     server_.on("/theme", HTTP_GET, theme_handle_root);
     server_.on("/theme/apply", HTTP_POST, theme_handle_apply);
+    server_.on("/dac", HTTP_GET, dac_handle_root);
+    server_.on("/dac/state", HTTP_GET, dac_handle_state);
+    server_.on("/dac/action", HTTP_POST, dac_handle_action);
+    server_.on("/dac/auto", HTTP_POST, dac_handle_auto);
     server_.onNotFound(wifi_handle_not_found);
     server_.begin();
     wifi_state_ = WIFI_STATE_AP_CONFIG;

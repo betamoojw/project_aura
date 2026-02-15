@@ -13,6 +13,10 @@
 #include <lvgl.h>
 #include "lvgl_v8_port.h"
 #include "config/AppConfig.h"
+#include "config/AppData.h"
+#include "modules/DacAutoConfig.h"
+#include "modules/FanControl.h"
+#include "modules/SensorManager.h"
 #include "modules/StorageManager.h"
 #include "web/WebTemplates.h"
 #include "ui/ThemeManager.h"
@@ -78,6 +82,60 @@ bool parse_hex_color(const String &value, lv_color_t &out) {
     uint32_t g = (rgb >> 8) & 0xFF;
     uint32_t b = rgb & 0xFF;
     out = lv_color_hex((r << 16) | (g << 8) | b);
+    return true;
+}
+
+const char *dac_status_text(const FanControl &fan) {
+    if (fan.isFaulted()) {
+        return "FAULT";
+    }
+    if (!fan.isAvailable()) {
+        return "OFFLINE";
+    }
+    return fan.isRunning() ? "RUNNING" : "STOPPED";
+}
+
+void write_auto_sensor_json(ArduinoJson::JsonObject obj, const DacAutoSensorConfig &sensor) {
+    obj["enabled"] = sensor.enabled;
+    obj["green"] = sensor.band.green_percent;
+    obj["yellow"] = sensor.band.yellow_percent;
+    obj["orange"] = sensor.band.orange_percent;
+    obj["red"] = sensor.band.red_percent;
+}
+
+void read_auto_sensor_json(ArduinoJson::JsonObjectConst obj, DacAutoSensorConfig &sensor) {
+    if (obj.isNull()) {
+        return;
+    }
+    sensor.enabled = obj["enabled"] | sensor.enabled;
+    sensor.band.green_percent = obj["green"] | sensor.band.green_percent;
+    sensor.band.yellow_percent = obj["yellow"] | sensor.band.yellow_percent;
+    sensor.band.orange_percent = obj["orange"] | sensor.band.orange_percent;
+    sensor.band.red_percent = obj["red"] | sensor.band.red_percent;
+}
+
+void write_dac_auto_json(ArduinoJson::JsonObject obj, const DacAutoConfig &config) {
+    obj["enabled"] = config.enabled;
+    write_auto_sensor_json(obj["co2"].to<ArduinoJson::JsonObject>(), config.co2);
+    write_auto_sensor_json(obj["co"].to<ArduinoJson::JsonObject>(), config.co);
+    write_auto_sensor_json(obj["pm25"].to<ArduinoJson::JsonObject>(), config.pm25);
+    write_auto_sensor_json(obj["voc"].to<ArduinoJson::JsonObject>(), config.voc);
+    write_auto_sensor_json(obj["nox"].to<ArduinoJson::JsonObject>(), config.nox);
+}
+
+bool read_dac_auto_json(ArduinoJson::JsonObjectConst obj, DacAutoConfig &config) {
+    if (obj.isNull()) {
+        return false;
+    }
+    DacAutoConfig parsed = config;
+    parsed.enabled = obj["enabled"] | parsed.enabled;
+    read_auto_sensor_json(obj["co2"].as<ArduinoJson::JsonObjectConst>(), parsed.co2);
+    read_auto_sensor_json(obj["co"].as<ArduinoJson::JsonObjectConst>(), parsed.co);
+    read_auto_sensor_json(obj["pm25"].as<ArduinoJson::JsonObjectConst>(), parsed.pm25);
+    read_auto_sensor_json(obj["voc"].as<ArduinoJson::JsonObjectConst>(), parsed.voc);
+    read_auto_sensor_json(obj["nox"].as<ArduinoJson::JsonObjectConst>(), parsed.nox);
+    DacAutoConfigJson::sanitize(parsed);
+    config = parsed;
     return true;
 }
 
@@ -497,4 +555,159 @@ void theme_handle_apply() {
     lvgl_port_unlock();
 
     server.send(200, "text/plain", "OK");
+}
+
+void dac_handle_root() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server || !context->fan_control) {
+        return;
+    }
+    String html = FPSTR(WebTemplates::kDacPageTemplate);
+    context->server->send(200, "text/html", html);
+}
+
+void dac_handle_state() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server || !context->fan_control || !context->sensor_data) {
+        return;
+    }
+
+    const FanControl &fan = *context->fan_control;
+    const SensorData &data = *context->sensor_data;
+    const bool gas_warmup = context->sensor_manager ? context->sensor_manager->isWarmupActive() : false;
+
+    ArduinoJson::JsonDocument doc;
+    doc["success"] = true;
+
+    ArduinoJson::JsonObject dac = doc["dac"].to<ArduinoJson::JsonObject>();
+    dac["available"] = fan.isAvailable();
+    dac["faulted"] = fan.isFaulted();
+    dac["running"] = fan.isRunning();
+    dac["manual_override"] = fan.isManualOverrideActive();
+    dac["auto_resume_blocked"] = fan.isAutoResumeBlocked();
+    dac["output_known"] = fan.isOutputKnown();
+    dac["mode"] = (fan.mode() == FanControl::Mode::Manual) ? "manual" : "auto";
+    dac["manual_step"] = fan.manualStep();
+    dac["selected_timer_s"] = fan.selectedTimerSeconds();
+    dac["remaining_s"] = fan.remainingSeconds(millis());
+    dac["output_mv"] = fan.outputMillivolts();
+    dac["output_percent"] = fan.outputPercent();
+    dac["status"] = dac_status_text(fan);
+
+    ArduinoJson::JsonObject auto_cfg = doc["auto"].to<ArduinoJson::JsonObject>();
+    write_dac_auto_json(auto_cfg, fan.autoConfig());
+
+    ArduinoJson::JsonObject sensors = doc["sensors"].to<ArduinoJson::JsonObject>();
+    sensors["gas_warmup"] = gas_warmup;
+    sensors["co2"] = data.co2;
+    sensors["co2_valid"] = data.co2_valid;
+    sensors["co_ppm"] = data.co_ppm;
+    sensors["co_valid"] = data.co_valid && data.co_sensor_present;
+    sensors["pm25"] = data.pm25;
+    sensors["pm25_valid"] = data.pm25_valid;
+    sensors["voc_index"] = data.voc_index;
+    sensors["voc_valid"] = data.voc_valid;
+    sensors["nox_index"] = data.nox_index;
+    sensors["nox_valid"] = data.nox_valid;
+
+    String json;
+    serializeJson(doc, json);
+    context->server->send(200, "application/json", json);
+}
+
+void dac_handle_action() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server || !context->fan_control || !context->storage) {
+        return;
+    }
+    WebServer &server = *context->server;
+    FanControl &fan = *context->fan_control;
+
+    String body = server.arg("plain");
+    if (body.isEmpty()) {
+        server.send(400, "text/plain", "Missing body");
+        return;
+    }
+
+    ArduinoJson::JsonDocument doc;
+    ArduinoJson::DeserializationError err = ArduinoJson::deserializeJson(doc, body);
+    if (err) {
+        server.send(400, "text/plain", "Invalid JSON");
+        return;
+    }
+
+    const String action = String(doc["action"] | "");
+    if (action == "set_mode") {
+        const String mode = String(doc["mode"] | "");
+        if (mode == "manual") {
+            fan.setMode(FanControl::Mode::Manual);
+            context->storage->config().dac_auto_mode = false;
+            context->storage->saveConfig(true);
+        } else if (mode == "auto") {
+            fan.setMode(FanControl::Mode::Auto);
+            context->storage->config().dac_auto_mode = true;
+            context->storage->saveConfig(true);
+        } else {
+            server.send(400, "text/plain", "Invalid mode");
+            return;
+        }
+    } else if (action == "set_manual_step") {
+        fan.setManualStep(doc["step"] | 1);
+    } else if (action == "set_timer") {
+        fan.setTimerSeconds(doc["seconds"] | 0);
+    } else if (action == "start") {
+        fan.requestStart();
+    } else if (action == "stop") {
+        fan.requestStop();
+    } else if (action == "start_auto") {
+        fan.requestAutoStart();
+        context->storage->config().dac_auto_mode = true;
+        context->storage->saveConfig(true);
+    } else {
+        server.send(400, "text/plain", "Unsupported action");
+        return;
+    }
+
+    server.send(200, "application/json", "{\"success\":true}");
+}
+
+void dac_handle_auto() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server || !context->fan_control || !context->storage) {
+        return;
+    }
+    WebServer &server = *context->server;
+    FanControl &fan = *context->fan_control;
+
+    String body = server.arg("plain");
+    if (body.isEmpty()) {
+        server.send(400, "text/plain", "Missing body");
+        return;
+    }
+
+    ArduinoJson::JsonDocument doc;
+    ArduinoJson::DeserializationError err = ArduinoJson::deserializeJson(doc, body);
+    if (err) {
+        server.send(400, "text/plain", "Invalid JSON");
+        return;
+    }
+
+    DacAutoConfig config = fan.autoConfig();
+    ArduinoJson::JsonObjectConst root = doc.as<ArduinoJson::JsonObjectConst>();
+    ArduinoJson::JsonObjectConst source = root;
+    if (root["auto"].is<ArduinoJson::JsonObjectConst>()) {
+        source = root["auto"].as<ArduinoJson::JsonObjectConst>();
+    }
+    if (!read_dac_auto_json(source, config)) {
+        server.send(400, "text/plain", "Invalid auto payload");
+        return;
+    }
+
+    fan.setAutoConfig(config);
+    String serialized = DacAutoConfigJson::serialize(config);
+    if (!context->storage->saveTextAtomic(StorageManager::kDacAutoPath, serialized)) {
+        server.send(500, "text/plain", "Failed to persist auto config");
+        return;
+    }
+    server.send(200, "application/json", "{\"success\":true}");
 }
