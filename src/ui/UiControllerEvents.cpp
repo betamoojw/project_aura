@@ -128,7 +128,6 @@ void UiController::on_boot_diag_errors_cb(lv_event_t *e) { if (instance_) instan
 void UiController::apply_toggle_style_cb(lv_obj_t *btn) { if (instance_) instance_->apply_toggle_style(btn); }
 void UiController::mqtt_sync_with_wifi_cb() { if (instance_) instance_->mqtt_sync_with_wifi(); }
 
-
 void UiController::on_settings_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
@@ -639,15 +638,11 @@ void UiController::on_card_temp_event(lv_event_t *e) {
     const char *value = UiText::ValueMissing();
     if (objects.label_temp_value_1) {
         value = lv_label_get_text(objects.label_temp_value_1);
-    } else if (objects.label_temp_value) {
-        value = lv_label_get_text(objects.label_temp_value);
     }
     safe_label_set_text(objects.label_sensor_value, value);
     const char *unit = nullptr;
     if (objects.label_temp_unit_1) {
         unit = lv_label_get_text(objects.label_temp_unit_1);
-    } else if (objects.label_temp_unit) {
-        unit = lv_label_get_text(objects.label_temp_unit);
     } else {
         unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
     }
@@ -669,8 +664,6 @@ void UiController::on_card_voc_event(lv_event_t *e) {
     const char *unit = nullptr;
     if (objects.label_voc_unit_1) {
         unit = lv_label_get_text(objects.label_voc_unit_1);
-    } else if (objects.label_voc_unit) {
-        unit = lv_label_get_text(objects.label_voc_unit);
     } else {
         unit = UiText::UnitIndex();
     }
@@ -692,8 +685,6 @@ void UiController::on_card_nox_event(lv_event_t *e) {
     const char *unit = nullptr;
     if (objects.label_nox_unit_1) {
         unit = lv_label_get_text(objects.label_nox_unit_1);
-    } else if (objects.label_nox_unit) {
-        unit = lv_label_get_text(objects.label_nox_unit);
     } else {
         unit = UiText::UnitIndex();
     }
@@ -715,8 +706,6 @@ void UiController::on_card_hcho_event(lv_event_t *e) {
     const char *unit = nullptr;
     if (objects.label_hcho_unit_1) {
         unit = lv_label_get_text(objects.label_hcho_unit_1);
-    } else if (objects.label_hcho_unit) {
-        unit = lv_label_get_text(objects.label_hcho_unit);
     } else {
         unit = UiText::UnitPpb();
     }
@@ -738,8 +727,6 @@ void UiController::on_card_co2_event(lv_event_t *e) {
     const char *unit = nullptr;
     if (objects.label_co2_unit_1) {
         unit = lv_label_get_text(objects.label_co2_unit_1);
-    } else if (objects.label_co2_unit) {
-        unit = lv_label_get_text(objects.label_co2_unit);
     } else {
         unit = "ppm";
     }

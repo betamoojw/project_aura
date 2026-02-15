@@ -709,57 +709,6 @@ typedef struct _objects_t {
 
 extern objects_t objects;
 
-// Backward-compatibility aliases for legacy UI object names used in handwritten code.
-#define background background_1
-#define card_co2 card_co2_pro
-#define label_co2_value label_co2_value_1
-#define label_co2_unit label_co2_unit_1
-#define dot_co2 dot_co2_1
-#define co2_bar_wrap co2_bar_wrap_1
-#define co2_bar_track co2_bar_track_1
-#define co2_bar_mask co2_bar_mask_1
-#define co2_bar_fill co2_bar_fill_1
-#define co2_marker co2_marker_1
-#define wifi_status_icon wifi_status_icon_4
-#define mqtt_status_icon mqtt_status_icon_4
-#define label_temp_unit label_temp_unit_1
-#define label_temp_value label_temp_value_1
-#define dot_temp dot_temp_1
-#define label_hcho_unit label_hcho_unit_1
-#define label_hcho_value label_hcho_value_1
-#define label_hcho_title label_hcho_title_1
-#define dot_hcho dot_hcho_1
-#define label_nox_unit label_nox_unit_1
-#define label_nox_value label_nox_value_1
-#define dot_nox dot_nox_1
-#define label_nox_warmup label_nox_warmup_1
-#define label_voc_unit label_voc_unit_1
-#define label_voc_value label_voc_value_1
-#define dot_voc dot_voc_1
-#define label_voc_warmup label_voc_warmup_1
-#define label_ah_unit label_ah_unit_1
-#define label_ah_value label_ah_value_1
-#define label_hum_unit label_hum_unit_1
-#define label_hum_value label_hum_value_1
-#define dot_ah dot_ah_1
-#define dot_hum dot_hum_1
-#define label_dew_value label_dew_value_1
-#define label_dew_unit label_dew_unit_1
-#define dot_dp dot_dp_1
-#define label_pm25_unit label_pm25_unit_1
-#define label_pm25_value label_pm25_value_1
-#define dot_pm25 dot_pm25_1
-#define label_pm10_unit label_pm10_unit_pro
-#define label_pm10_value label_pm10_value_pro
-#define dot_pm10 dot_pm10_pro
-#define label_pressure_title label_pressure_title_1
-#define label_pressure_value label_pressure_value_1
-#define label_pressure_unit label_pressure_unit_1
-#define label_delta_3h_value label_delta_3h_value_1
-#define label_delta_24h_value label_delta_24h_value_1
-#define chip_delta_3h chip_delta_3h_1
-#define chip_delta_24h chip_delta_24h_1
-
 enum ScreensEnum {
     SCREEN_ID_PAGE_BOOT_LOGO = 1,
     SCREEN_ID_PAGE_BOOT_DIAG = 2,

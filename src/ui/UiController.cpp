@@ -478,9 +478,6 @@ lv_color_t UiController::color_card_border() {
     if (objects.card_co2_pro) {
         return lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
     }
-    if (objects.card_co2) {
-        return lv_obj_get_style_border_color(objects.card_co2, LV_PART_MAIN);
-    }
     return lv_color_hex(0xffe19756);
 }
 
@@ -1015,46 +1012,26 @@ void UiController::update_hum_offset_label() {
 
 void UiController::update_led_indicators() {
     const bool visible = led_indicators_enabled;
-    if (objects.dot_co2) visible ? lv_obj_clear_flag(objects.dot_co2, LV_OBJ_FLAG_HIDDEN)
-                                 : lv_obj_add_flag(objects.dot_co2, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_co2_1) visible ? lv_obj_clear_flag(objects.dot_co2_1, LV_OBJ_FLAG_HIDDEN)
                                    : lv_obj_add_flag(objects.dot_co2_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_temp) visible ? lv_obj_clear_flag(objects.dot_temp, LV_OBJ_FLAG_HIDDEN)
-                                  : lv_obj_add_flag(objects.dot_temp, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_temp_1) visible ? lv_obj_clear_flag(objects.dot_temp_1, LV_OBJ_FLAG_HIDDEN)
                                     : lv_obj_add_flag(objects.dot_temp_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_hum) visible ? lv_obj_clear_flag(objects.dot_hum, LV_OBJ_FLAG_HIDDEN)
-                                 : lv_obj_add_flag(objects.dot_hum, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_hum_1) visible ? lv_obj_clear_flag(objects.dot_hum_1, LV_OBJ_FLAG_HIDDEN)
                                    : lv_obj_add_flag(objects.dot_hum_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_dp) visible ? lv_obj_clear_flag(objects.dot_dp, LV_OBJ_FLAG_HIDDEN)
-                                : lv_obj_add_flag(objects.dot_dp, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_dp_1) visible ? lv_obj_clear_flag(objects.dot_dp_1, LV_OBJ_FLAG_HIDDEN)
                                   : lv_obj_add_flag(objects.dot_dp_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_ah) visible ? lv_obj_clear_flag(objects.dot_ah, LV_OBJ_FLAG_HIDDEN)
-                                : lv_obj_add_flag(objects.dot_ah, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_ah_1) visible ? lv_obj_clear_flag(objects.dot_ah_1, LV_OBJ_FLAG_HIDDEN)
                                   : lv_obj_add_flag(objects.dot_ah_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_pm25) visible ? lv_obj_clear_flag(objects.dot_pm25, LV_OBJ_FLAG_HIDDEN)
-                                  : lv_obj_add_flag(objects.dot_pm25, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm25_1) visible ? lv_obj_clear_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN)
                                     : lv_obj_add_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_pm10) visible ? lv_obj_clear_flag(objects.dot_pm10, LV_OBJ_FLAG_HIDDEN)
-                                  : lv_obj_add_flag(objects.dot_pm10, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm10_pro) visible ? lv_obj_clear_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN)
                                       : lv_obj_add_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm1) visible ? lv_obj_clear_flag(objects.dot_pm1, LV_OBJ_FLAG_HIDDEN)
                                  : lv_obj_add_flag(objects.dot_pm1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_voc) visible ? lv_obj_clear_flag(objects.dot_voc, LV_OBJ_FLAG_HIDDEN)
-                                 : lv_obj_add_flag(objects.dot_voc, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_voc_1) visible ? lv_obj_clear_flag(objects.dot_voc_1, LV_OBJ_FLAG_HIDDEN)
                                    : lv_obj_add_flag(objects.dot_voc_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_nox) visible ? lv_obj_clear_flag(objects.dot_nox, LV_OBJ_FLAG_HIDDEN)
-                                 : lv_obj_add_flag(objects.dot_nox, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_nox_1) visible ? lv_obj_clear_flag(objects.dot_nox_1, LV_OBJ_FLAG_HIDDEN)
                                    : lv_obj_add_flag(objects.dot_nox_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_hcho) visible ? lv_obj_clear_flag(objects.dot_hcho, LV_OBJ_FLAG_HIDDEN)
-                                  : lv_obj_add_flag(objects.dot_hcho, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_hcho_1) visible ? lv_obj_clear_flag(objects.dot_hcho_1, LV_OBJ_FLAG_HIDDEN)
                                     : lv_obj_add_flag(objects.dot_hcho_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_co) visible ? lv_obj_clear_flag(objects.dot_co, LV_OBJ_FLAG_HIDDEN)
@@ -1075,40 +1052,40 @@ void UiController::set_chip_color(lv_obj_t *obj, lv_color_t color) {
 }
 
 void UiController::update_co2_bar(int co2, bool valid) {
-    if (!objects.co2_bar_fill || !objects.co2_marker) {
+    if (!objects.co2_bar_fill_1 || !objects.co2_marker_1) {
         return;
     }
     if (!valid) {
-        if (objects.co2_bar_mask) {
-            lv_obj_set_width(objects.co2_bar_mask, 0);
+        if (objects.co2_bar_mask_1) {
+            lv_obj_set_width(objects.co2_bar_mask_1, 0);
         } else {
-            lv_obj_set_width(objects.co2_bar_fill, 0);
+            lv_obj_set_width(objects.co2_bar_fill_1, 0);
         }
-        lv_obj_set_x(objects.co2_marker, 2);
+        lv_obj_set_x(objects.co2_marker_1, 2);
         return;
     }
 
     int bar_max = 330;
-    int fill_w = lv_obj_get_width(objects.co2_bar_fill);
+    int fill_w = lv_obj_get_width(objects.co2_bar_fill_1);
     if (fill_w > 0) {
         bar_max = fill_w;
     }
     int clamped = constrain(co2, 400, 2000);
     int w = map(clamped, 400, 2000, 0, bar_max);
     w = constrain(w, 0, bar_max);
-    if (objects.co2_bar_mask) {
-        lv_obj_set_width(objects.co2_bar_mask, w);
+    if (objects.co2_bar_mask_1) {
+        lv_obj_set_width(objects.co2_bar_mask_1, w);
     } else {
-        lv_obj_set_width(objects.co2_bar_fill, w);
+        lv_obj_set_width(objects.co2_bar_fill_1, w);
     }
 
     const int marker_w = 14;
     int center = 4 + w;
     int x = center - (marker_w / 2);
-    int track_w = objects.co2_bar_track ? lv_obj_get_width(objects.co2_bar_track) : 0;
+    int track_w = objects.co2_bar_track_1 ? lv_obj_get_width(objects.co2_bar_track_1) : 0;
     int max_x = (track_w > 0) ? (track_w - marker_w - 2) : (340 - marker_w - 2);
     x = constrain(x, 2, max_x);
-    lv_obj_set_x(objects.co2_marker, x);
+    lv_obj_set_x(objects.co2_marker_1, x);
 }
 
 void UiController::update_ui() {
@@ -1245,10 +1222,6 @@ void UiController::update_status_message(uint32_t now_ms, bool gas_warmup) {
 }
 
 void UiController::init_ui_defaults() {
-    if (objects.co2_bar_mask) {
-        lv_obj_clear_flag(objects.co2_bar_mask, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
-        lv_obj_clear_flag(objects.co2_bar_mask, LV_OBJ_FLAG_SCROLLABLE);
-    }
     if (objects.co2_bar_mask_1) {
         lv_obj_clear_flag(objects.co2_bar_mask_1, LV_OBJ_FLAG_OVERFLOW_VISIBLE);
         lv_obj_clear_flag(objects.co2_bar_mask_1, LV_OBJ_FLAG_SCROLLABLE);
@@ -1256,12 +1229,10 @@ void UiController::init_ui_defaults() {
 
     set_visible(objects.container_about, false);
 
-    if (objects.wifi_status_icon) lv_obj_add_flag(objects.wifi_status_icon, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_1) lv_obj_add_flag(objects.wifi_status_icon_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_2) lv_obj_add_flag(objects.wifi_status_icon_2, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_3) lv_obj_add_flag(objects.wifi_status_icon_3, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_4) lv_obj_add_flag(objects.wifi_status_icon_4, LV_OBJ_FLAG_HIDDEN);
-    if (objects.mqtt_status_icon) lv_obj_add_flag(objects.mqtt_status_icon, LV_OBJ_FLAG_HIDDEN);
     if (objects.mqtt_status_icon_1) lv_obj_add_flag(objects.mqtt_status_icon_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.mqtt_status_icon_2) lv_obj_add_flag(objects.mqtt_status_icon_2, LV_OBJ_FLAG_HIDDEN);
     if (objects.mqtt_status_icon_3) lv_obj_add_flag(objects.mqtt_status_icon_3, LV_OBJ_FLAG_HIDDEN);
@@ -1313,5 +1284,4 @@ void UiController::init_ui_defaults() {
     update_ui();
     confirm_hide();
 }
-
 

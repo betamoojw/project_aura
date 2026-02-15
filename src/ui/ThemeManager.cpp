@@ -270,9 +270,9 @@ bool ThemeManager::readFromSwatch(const ThemeSwatch &swatch, ThemeColors &out) c
 }
 
 bool ThemeManager::readFromUi(ThemeColors &out) const {
-    lv_obj_t *screen = objects.background_pro ? objects.background_pro : objects.background;
-    lv_obj_t *card = objects.card_co2_pro ? objects.card_co2_pro : objects.card_co2;
-    lv_obj_t *label = objects.label_co2_value_1 ? objects.label_co2_value_1 : objects.label_co2_value;
+    lv_obj_t *screen = objects.background_pro ? objects.background_pro : objects.background_1;
+    lv_obj_t *card = objects.card_co2_pro;
+    lv_obj_t *label = objects.label_co2_value_1;
 
     if (!screen || !card || !label) {
         return false;
