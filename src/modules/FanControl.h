@@ -54,5 +54,5 @@ private:
     uint32_t stop_at_ms_ = 0;
     uint32_t last_recover_attempt_ms_ = 0;
     uint32_t last_health_check_ms_ = 0;
+    bool boot_missing_lockout_ = false;
 };
-

@@ -27,6 +27,7 @@ void FanControl::begin(bool auto_mode_preference) {
     applyStopState();
     last_recover_attempt_ms_ = 0;
     last_health_check_ms_ = 0;
+    boot_missing_lockout_ = false;
 
     if (!Config::DAC_FEATURE_ENABLED) {
         LOGI("FanControl", "DAC feature disabled");
@@ -37,9 +38,8 @@ void FanControl::begin(bool auto_mode_preference) {
     if (tryInitialize(now_ms)) {
         LOGI("FanControl", "DAC ready at 0x%02X", Config::DAC_I2C_ADDR_DEFAULT);
     } else {
-        LOGW("FanControl", "DAC not detected at boot, retry every %lu ms",
-             static_cast<unsigned long>(Config::DAC_RECOVER_COOLDOWN_MS));
-        last_recover_attempt_ms_ = now_ms;
+        LOGW("FanControl", "DAC not detected at boot, retry only after reboot");
+        boot_missing_lockout_ = true;
     }
 }
 
@@ -51,7 +51,8 @@ void FanControl::poll(uint32_t now_ms) {
     }
 
     if (!available_) {
-        if (now_ms - last_recover_attempt_ms_ >= Config::DAC_RECOVER_COOLDOWN_MS) {
+        if (!boot_missing_lockout_ &&
+            now_ms - last_recover_attempt_ms_ >= Config::DAC_RECOVER_COOLDOWN_MS) {
             last_recover_attempt_ms_ = now_ms;
             if (tryInitialize(now_ms)) {
                 LOGI("FanControl", "DAC recovered");
@@ -202,4 +203,3 @@ uint16_t FanControl::stepToMillivolts(uint8_t step) const {
     }
     return millivolts;
 }
-
