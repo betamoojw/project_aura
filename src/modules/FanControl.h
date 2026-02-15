@@ -56,6 +56,8 @@ private:
     bool output_known_ = true;
     uint16_t output_mv_ = 0;
     uint32_t stop_at_ms_ = 0;
+    bool manual_step_update_pending_ = false;
+    bool timer_update_pending_ = false;
     uint32_t last_recover_attempt_ms_ = 0;
     uint32_t last_health_check_ms_ = 0;
     uint8_t health_probe_fail_count_ = 0;

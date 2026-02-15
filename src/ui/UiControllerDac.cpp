@@ -100,8 +100,8 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     set_checked_state(objects.btn_dak_manual_timer_toggle_1h, timer_s == 60 * 60);
 
     const bool running = fanControl.isRunning();
-    const bool start_active = available && manual_mode && !running;
-    const bool stop_active = available && running;
+    const bool start_active = available && running;
+    const bool stop_active = available && !running;
     const lv_color_t neutral = color_card_border();
     set_button_accent(objects.btn_dak_manual_start,
                       start_active ? color_green() : neutral,

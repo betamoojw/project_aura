@@ -26,6 +26,8 @@ void FanControl::begin(bool auto_mode_preference) {
     available_ = false;
     faulted_ = false;
     applyStopState(true);
+    manual_step_update_pending_ = false;
+    timer_update_pending_ = false;
     last_recover_attempt_ms_ = 0;
     last_health_check_ms_ = 0;
     health_probe_fail_count_ = 0;
@@ -105,10 +107,35 @@ void FanControl::poll(uint32_t now_ms) {
 
         running_ = true;
         output_mv_ = target_mv;
+        manual_step_update_pending_ = false;
         if (selected_timer_s_ > 0) {
             stop_at_ms_ = now_ms + selected_timer_s_ * 1000UL;
         } else {
             stop_at_ms_ = 0;
+        }
+        timer_update_pending_ = false;
+    }
+
+    if (manual_step_update_pending_) {
+        manual_step_update_pending_ = false;
+        if (running_ && mode_ == Mode::Manual && available_) {
+            const uint16_t target_mv = stepToMillivolts(manual_step_);
+            if (!applyOutputMillivolts(target_mv)) {
+                handleDacFault("manual level update failed");
+                return;
+            }
+            output_mv_ = target_mv;
+        }
+    }
+
+    if (timer_update_pending_) {
+        timer_update_pending_ = false;
+        if (running_ && mode_ == Mode::Manual) {
+            if (selected_timer_s_ > 0) {
+                stop_at_ms_ = now_ms + selected_timer_s_ * 1000UL;
+            } else {
+                stop_at_ms_ = 0;
+            }
         }
     }
 
@@ -134,11 +161,17 @@ void FanControl::setManualStep(uint8_t step) {
     } else if (step > 10) {
         step = 10;
     }
-    manual_step_ = step;
+    if (manual_step_ != step) {
+        manual_step_ = step;
+        manual_step_update_pending_ = true;
+    }
 }
 
 void FanControl::setTimerSeconds(uint32_t seconds) {
-    selected_timer_s_ = seconds;
+    if (selected_timer_s_ != seconds) {
+        selected_timer_s_ = seconds;
+        timer_update_pending_ = true;
+    }
 }
 
 void FanControl::requestStart() {
@@ -190,6 +223,8 @@ bool FanControl::tryInitialize(uint32_t now_ms) {
     output_known_ = true;
     output_mv_ = Config::DAC_SAFE_DEFAULT_MV;
     stop_at_ms_ = 0;
+    manual_step_update_pending_ = false;
+    timer_update_pending_ = false;
     last_health_check_ms_ = now_ms;
     health_probe_fail_count_ = 0;
     return true;
@@ -215,6 +250,8 @@ void FanControl::applyStopState(bool output_known) {
         output_mv_ = Config::DAC_SAFE_ERROR_MV;
     }
     stop_at_ms_ = 0;
+    manual_step_update_pending_ = false;
+    timer_update_pending_ = false;
 }
 
 uint16_t FanControl::stepToMillivolts(uint8_t step) const {
