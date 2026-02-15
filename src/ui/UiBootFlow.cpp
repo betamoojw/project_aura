@@ -11,6 +11,7 @@
 
 #include "core/BootState.h"
 #include "core/Logger.h"
+#include "modules/FanControl.h"
 #include "modules/StorageManager.h"
 #include "ui/UiController.h"
 #include "ui/UiText.h"
@@ -113,6 +114,8 @@ void UiBootFlow::clearBootObjectRefs(UiController &owner) {
     objects.lbl_diag_rtc = nullptr;
     objects.lbl_diag_co_label = nullptr;
     objects.lbl_diag_co = nullptr;
+    objects.lbl_diag_dac_label = nullptr;
+    objects.lbl_diag_dac = nullptr;
     objects.lbl_diag_error = nullptr;
     objects.btn_diag_errors = nullptr;
     objects.label_btn_diag_errors = nullptr;
@@ -311,6 +314,18 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
         !owner.sensorManager.isCoWarmupActive() &&
         !owner.sensorManager.isCoValid()) {
         append_error_line(error_lines, sizeof(error_lines), error_len, "SEN0466 detected but read failed");
+    }
+    if (objects.lbl_diag_dac) {
+        const char *status = UiText::BootDiagNotFound();
+        if (owner.fanControl.isAvailable()) {
+            status = UiText::StatusOk();
+        } else if (owner.fanControl.isFaulted()) {
+            status = UiText::StatusErr();
+        }
+        owner.safe_label_set_text(objects.lbl_diag_dac, status);
+    }
+    if (owner.fanControl.isFaulted()) {
+        append_error_line(error_lines, sizeof(error_lines), error_len, "DFR0971 detected but probe/write failed");
     }
     if (objects.lbl_diag_rtc) {
         const char *status = UiText::BootDiagNotFound();

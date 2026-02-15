@@ -55,6 +55,8 @@ typedef struct _objects_t {
     lv_obj_t *lbl_diag_co;
     lv_obj_t *btn_diag_errors;
     lv_obj_t *label_btn_diag_errors;
+    lv_obj_t *lbl_diag_dac_label;
+    lv_obj_t *lbl_diag_dac;
     lv_obj_t *container_diag_errors;
     lv_obj_t *label_diag_errors_text;
     lv_obj_t *background_pro;
@@ -686,6 +688,9 @@ typedef struct _objects_t {
     lv_obj_t *container_dac_timer;
     lv_obj_t *label_dac_timer_value;
     lv_obj_t *label_dac_timer;
+    lv_obj_t *label_dac_manual_speed;
+    lv_obj_t *label_dac_manual_timer;
+    lv_obj_t *label_dac_manual_fan;
     lv_obj_t *btn_dac_auto_on;
     lv_obj_t *label_btn_dac_auto_on;
     lv_obj_t *btn_dac_manual_on;

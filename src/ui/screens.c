@@ -447,6 +447,28 @@ void create_screen_page_boot_diag() {
                         }
                     }
                 }
+                {
+                    // lbl_diag_dac_label
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    objects.lbl_diag_dac_label = obj;
+                    lv_obj_set_pos(obj, 531, 331);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
+                    add_style_style_text_primary(obj);
+                    lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "DFR0971:");
+                }
+                {
+                    // lbl_diag_dac
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    objects.lbl_diag_dac = obj;
+                    lv_obj_set_pos(obj, 624, 331);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
+                    add_style_style_text_primary(obj);
+                    lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "OK");
+                }
             }
         }
         {
@@ -9330,7 +9352,6 @@ void create_screen_page_dac_settings() {
                     lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-                    lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
                     add_style_style_card_base(obj);
                     lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_bg_opa(obj, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9341,7 +9362,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_1
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_1 = obj;
-                            lv_obj_set_pos(obj, 9, 10);
+                            lv_obj_set_pos(obj, 9, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9373,7 +9394,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_2
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_2 = obj;
-                            lv_obj_set_pos(obj, 84, 10);
+                            lv_obj_set_pos(obj, 84, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9405,7 +9426,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_3
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_3 = obj;
-                            lv_obj_set_pos(obj, 158, 10);
+                            lv_obj_set_pos(obj, 158, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9437,7 +9458,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_4
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_4 = obj;
-                            lv_obj_set_pos(obj, 233, 10);
+                            lv_obj_set_pos(obj, 233, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9469,7 +9490,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_5
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_5 = obj;
-                            lv_obj_set_pos(obj, 308, 10);
+                            lv_obj_set_pos(obj, 308, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9501,7 +9522,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_6
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_6 = obj;
-                            lv_obj_set_pos(obj, 382, 10);
+                            lv_obj_set_pos(obj, 382, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9533,7 +9554,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_7
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_7 = obj;
-                            lv_obj_set_pos(obj, 457, 10);
+                            lv_obj_set_pos(obj, 457, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9565,7 +9586,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_8
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_8 = obj;
-                            lv_obj_set_pos(obj, 532, 10);
+                            lv_obj_set_pos(obj, 532, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9597,7 +9618,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_9
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_9 = obj;
-                            lv_obj_set_pos(obj, 606, 10);
+                            lv_obj_set_pos(obj, 606, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9629,7 +9650,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_toggle_10
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_toggle_10 = obj;
-                            lv_obj_set_pos(obj, 681, 10);
+                            lv_obj_set_pos(obj, 681, 40);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9661,7 +9682,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_start
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_start = obj;
-                            lv_obj_set_pos(obj, 457, 99);
+                            lv_obj_set_pos(obj, 457, 153);
                             lv_obj_set_size(obj, 141, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9693,7 +9714,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_timer_toggle_30sec
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_timer_toggle_30sec = obj;
-                            lv_obj_set_pos(obj, 9, 99);
+                            lv_obj_set_pos(obj, 9, 153);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9725,7 +9746,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_timer_toggle_1min
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_timer_toggle_1min = obj;
-                            lv_obj_set_pos(obj, 84, 99);
+                            lv_obj_set_pos(obj, 84, 153);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9757,7 +9778,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_timer_toggle_5min
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_timer_toggle_5min = obj;
-                            lv_obj_set_pos(obj, 158, 99);
+                            lv_obj_set_pos(obj, 158, 153);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9789,7 +9810,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_timer_toggle_15min
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_timer_toggle_15min = obj;
-                            lv_obj_set_pos(obj, 233, 99);
+                            lv_obj_set_pos(obj, 233, 153);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9821,7 +9842,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_timer_toggle_30min
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_timer_toggle_30min = obj;
-                            lv_obj_set_pos(obj, 308, 99);
+                            lv_obj_set_pos(obj, 308, 153);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9853,7 +9874,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_timer_toggle_1h
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_timer_toggle_1h = obj;
-                            lv_obj_set_pos(obj, 382, 99);
+                            lv_obj_set_pos(obj, 382, 153);
                             lv_obj_set_size(obj, 66, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9885,7 +9906,7 @@ void create_screen_page_dac_settings() {
                             // btn_dak_manual_stop
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.btn_dak_manual_stop = obj;
-                            lv_obj_set_pos(obj, 606, 99);
+                            lv_obj_set_pos(obj, 606, 153);
                             lv_obj_set_size(obj, 141, 73);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9955,6 +9976,42 @@ void create_screen_page_dac_settings() {
                                     lv_label_set_text(obj, "TIMER:");
                                 }
                             }
+                        }
+                        {
+                            // label_dac_manual_speed
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            objects.label_dac_manual_speed = obj;
+                            lv_obj_set_pos(obj, 321, 9);
+                            lv_obj_set_size(obj, 115, LV_SIZE_CONTENT);
+                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
+                            add_style_style_text_primary(obj);
+                            lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "SPEED:");
+                        }
+                        {
+                            // label_dac_manual_timer
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            objects.label_dac_manual_timer = obj;
+                            lv_obj_set_pos(obj, 170, 123);
+                            lv_obj_set_size(obj, 115, LV_SIZE_CONTENT);
+                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
+                            add_style_style_text_primary(obj);
+                            lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "TIMER:");
+                        }
+                        {
+                            // label_dac_manual_fan
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            objects.label_dac_manual_fan = obj;
+                            lv_obj_set_pos(obj, 545, 123);
+                            lv_obj_set_size(obj, 115, LV_SIZE_CONTENT);
+                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
+                            add_style_style_text_primary(obj);
+                            lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "FAN:");
                         }
                     }
                 }
