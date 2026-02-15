@@ -95,50 +95,6 @@ const char *dac_status_text(const FanControl &fan) {
     return fan.isRunning() ? "RUNNING" : "STOPPED";
 }
 
-void write_auto_sensor_json(ArduinoJson::JsonObject obj, const DacAutoSensorConfig &sensor) {
-    obj["enabled"] = sensor.enabled;
-    obj["green"] = sensor.band.green_percent;
-    obj["yellow"] = sensor.band.yellow_percent;
-    obj["orange"] = sensor.band.orange_percent;
-    obj["red"] = sensor.band.red_percent;
-}
-
-void read_auto_sensor_json(ArduinoJson::JsonObjectConst obj, DacAutoSensorConfig &sensor) {
-    if (obj.isNull()) {
-        return;
-    }
-    sensor.enabled = obj["enabled"] | sensor.enabled;
-    sensor.band.green_percent = obj["green"] | sensor.band.green_percent;
-    sensor.band.yellow_percent = obj["yellow"] | sensor.band.yellow_percent;
-    sensor.band.orange_percent = obj["orange"] | sensor.band.orange_percent;
-    sensor.band.red_percent = obj["red"] | sensor.band.red_percent;
-}
-
-void write_dac_auto_json(ArduinoJson::JsonObject obj, const DacAutoConfig &config) {
-    obj["enabled"] = config.enabled;
-    write_auto_sensor_json(obj["co2"].to<ArduinoJson::JsonObject>(), config.co2);
-    write_auto_sensor_json(obj["co"].to<ArduinoJson::JsonObject>(), config.co);
-    write_auto_sensor_json(obj["pm25"].to<ArduinoJson::JsonObject>(), config.pm25);
-    write_auto_sensor_json(obj["voc"].to<ArduinoJson::JsonObject>(), config.voc);
-    write_auto_sensor_json(obj["nox"].to<ArduinoJson::JsonObject>(), config.nox);
-}
-
-bool read_dac_auto_json(ArduinoJson::JsonObjectConst obj, DacAutoConfig &config) {
-    if (obj.isNull()) {
-        return false;
-    }
-    DacAutoConfig parsed = config;
-    parsed.enabled = obj["enabled"] | parsed.enabled;
-    read_auto_sensor_json(obj["co2"].as<ArduinoJson::JsonObjectConst>(), parsed.co2);
-    read_auto_sensor_json(obj["co"].as<ArduinoJson::JsonObjectConst>(), parsed.co);
-    read_auto_sensor_json(obj["pm25"].as<ArduinoJson::JsonObjectConst>(), parsed.pm25);
-    read_auto_sensor_json(obj["voc"].as<ArduinoJson::JsonObjectConst>(), parsed.voc);
-    read_auto_sensor_json(obj["nox"].as<ArduinoJson::JsonObjectConst>(), parsed.nox);
-    DacAutoConfigJson::sanitize(parsed);
-    config = parsed;
-    return true;
-}
-
 } // namespace
 
 void WebHandlersInit(WebHandlerContext *context) {
@@ -595,7 +551,7 @@ void dac_handle_state() {
     dac["status"] = dac_status_text(fan);
 
     ArduinoJson::JsonObject auto_cfg = doc["auto"].to<ArduinoJson::JsonObject>();
-    write_dac_auto_json(auto_cfg, fan.autoConfig());
+    DacAutoConfigJson::writeJson(auto_cfg, fan.autoConfig());
 
     ArduinoJson::JsonObject sensors = doc["sensors"].to<ArduinoJson::JsonObject>();
     sensors["gas_warmup"] = gas_warmup;
@@ -698,7 +654,7 @@ void dac_handle_auto() {
     if (root["auto"].is<ArduinoJson::JsonObjectConst>()) {
         source = root["auto"].as<ArduinoJson::JsonObjectConst>();
     }
-    if (!read_dac_auto_json(source, config)) {
+    if (!DacAutoConfigJson::readJson(source, config)) {
         server.send(400, "text/plain", "Invalid auto payload");
         return;
     }

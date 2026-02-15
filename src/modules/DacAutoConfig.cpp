@@ -62,18 +62,39 @@ void sanitize(DacAutoConfig &cfg) {
     sanitize_sensor(cfg.nox);
 }
 
-String serialize(const DacAutoConfig &cfg) {
+void writeJson(ArduinoJson::JsonObject root, const DacAutoConfig &cfg) {
     DacAutoConfig sanitized = cfg;
     sanitize(sanitized);
 
-    ArduinoJson::JsonDocument doc;
-    ArduinoJson::JsonObject root = doc.to<ArduinoJson::JsonObject>();
     root["enabled"] = sanitized.enabled;
     write_sensor(root["co2"].to<ArduinoJson::JsonObject>(), sanitized.co2);
     write_sensor(root["co"].to<ArduinoJson::JsonObject>(), sanitized.co);
     write_sensor(root["pm25"].to<ArduinoJson::JsonObject>(), sanitized.pm25);
     write_sensor(root["voc"].to<ArduinoJson::JsonObject>(), sanitized.voc);
     write_sensor(root["nox"].to<ArduinoJson::JsonObject>(), sanitized.nox);
+}
+
+bool readJson(ArduinoJson::JsonObjectConst source, DacAutoConfig &cfg) {
+    if (source.isNull()) {
+        return false;
+    }
+
+    DacAutoConfig parsed = cfg;
+    parsed.enabled = source["enabled"] | parsed.enabled;
+    read_sensor(source["co2"].as<ArduinoJson::JsonObjectConst>(), parsed.co2);
+    read_sensor(source["co"].as<ArduinoJson::JsonObjectConst>(), parsed.co);
+    read_sensor(source["pm25"].as<ArduinoJson::JsonObjectConst>(), parsed.pm25);
+    read_sensor(source["voc"].as<ArduinoJson::JsonObjectConst>(), parsed.voc);
+    read_sensor(source["nox"].as<ArduinoJson::JsonObjectConst>(), parsed.nox);
+
+    sanitize(parsed);
+    cfg = parsed;
+    return true;
+}
+
+String serialize(const DacAutoConfig &cfg) {
+    ArduinoJson::JsonDocument doc;
+    writeJson(doc.to<ArduinoJson::JsonObject>(), cfg);
 
     String out;
     serializeJson(doc, out);
@@ -94,17 +115,11 @@ bool deserialize(const String &json, DacAutoConfig &cfg) {
         source = root["auto"].as<ArduinoJson::JsonObjectConst>();
     }
 
-    parsed.enabled = source["enabled"] | parsed.enabled;
-    read_sensor(source["co2"].as<ArduinoJson::JsonObjectConst>(), parsed.co2);
-    read_sensor(source["co"].as<ArduinoJson::JsonObjectConst>(), parsed.co);
-    read_sensor(source["pm25"].as<ArduinoJson::JsonObjectConst>(), parsed.pm25);
-    read_sensor(source["voc"].as<ArduinoJson::JsonObjectConst>(), parsed.voc);
-    read_sensor(source["nox"].as<ArduinoJson::JsonObjectConst>(), parsed.nox);
-
-    sanitize(parsed);
+    if (!readJson(source, parsed)) {
+        return false;
+    }
     cfg = parsed;
     return true;
 }
 
 } // namespace DacAutoConfigJson
-

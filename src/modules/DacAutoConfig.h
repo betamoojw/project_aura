@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 struct DacAutoBandConfig {
     uint8_t green_percent = 20;
@@ -33,8 +34,9 @@ struct DacAutoConfig {
 namespace DacAutoConfigJson {
 
 void sanitize(DacAutoConfig &cfg);
+void writeJson(ArduinoJson::JsonObject obj, const DacAutoConfig &cfg);
+bool readJson(ArduinoJson::JsonObjectConst obj, DacAutoConfig &cfg);
 String serialize(const DacAutoConfig &cfg);
 bool deserialize(const String &json, DacAutoConfig &cfg);
 
 } // namespace DacAutoConfigJson
-
