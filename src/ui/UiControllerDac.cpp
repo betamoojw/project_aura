@@ -25,6 +25,15 @@ void set_checked_state(lv_obj_t *obj, bool checked) {
     }
 }
 
+void set_button_accent(lv_obj_t *obj, lv_color_t color, lv_opa_t shadow_opa) {
+    if (!obj) {
+        return;
+    }
+    lv_obj_set_style_border_color(obj, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_color(obj, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_opa(obj, shadow_opa, LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
 uint8_t manual_level_from_target(lv_obj_t *target) {
     if (target == objects.btn_dak_manual_toggle_1) return 1;
     if (target == objects.btn_dak_manual_toggle_2) return 2;
@@ -61,6 +70,7 @@ void format_mmss(uint32_t total_seconds, char *out, size_t out_len) {
 
 void UiController::update_dac_ui(uint32_t now_ms) {
     const bool available = fanControl.isAvailable();
+    const bool faulted = fanControl.isFaulted();
     set_button_enabled(objects.btn_dac_settings, available);
 
     const bool manual_mode = (fanControl.mode() == FanControl::Mode::Manual);
@@ -90,12 +100,30 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     set_checked_state(objects.btn_dak_manual_timer_toggle_1h, timer_s == 60 * 60);
 
     const bool running = fanControl.isRunning();
+    const bool start_active = available && manual_mode && !running;
+    const bool stop_active = available && running;
+    const lv_color_t neutral = color_card_border();
+    set_button_accent(objects.btn_dak_manual_start,
+                      start_active ? color_green() : neutral,
+                      start_active ? LV_OPA_COVER : LV_OPA_TRANSP);
+    set_button_accent(objects.btn_dak_manual_stop,
+                      stop_active ? color_red() : neutral,
+                      stop_active ? LV_OPA_COVER : LV_OPA_TRANSP);
+
     if (objects.label_dac_status) {
-        safe_label_set_text(objects.label_dac_status, running ? "RUNNING" : "STOPPED");
+        const char *status_text = "OFFLINE";
+        if (faulted) {
+            status_text = "FAULT";
+        } else if (available) {
+            status_text = running ? "RUNNING" : "STOPPED";
+        }
+        safe_label_set_text(objects.label_dac_status, status_text);
     }
     if (objects.chip_dac_status) {
-        if (!available) {
+        if (faulted) {
             set_chip_color(objects.chip_dac_status, color_red());
+        } else if (!available) {
+            set_chip_color(objects.chip_dac_status, color_inactive());
         } else if (running) {
             set_chip_color(objects.chip_dac_status, color_green());
         } else {
@@ -104,14 +132,18 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     }
 
     if (objects.label_dac_output_value) {
-        const uint16_t output_mv = fanControl.outputMillivolts();
-        const uint8_t output_pct = fanControl.outputPercent();
-        char output_buf[24];
-        snprintf(output_buf, sizeof(output_buf), "%u.%uV (%u%%)",
-                 static_cast<unsigned>(output_mv / 1000),
-                 static_cast<unsigned>((output_mv % 1000) / 100),
-                 static_cast<unsigned>(output_pct));
-        safe_label_set_text(objects.label_dac_output_value, output_buf);
+        if (!fanControl.isOutputKnown()) {
+            safe_label_set_text(objects.label_dac_output_value, "UNKNOWN");
+        } else {
+            const uint16_t output_mv = fanControl.outputMillivolts();
+            const uint8_t output_pct = fanControl.outputPercent();
+            char output_buf[24];
+            snprintf(output_buf, sizeof(output_buf), "%u.%uV (%u%%)",
+                     static_cast<unsigned>(output_mv / 1000),
+                     static_cast<unsigned>((output_mv % 1000) / 100),
+                     static_cast<unsigned>(output_pct));
+            safe_label_set_text(objects.label_dac_output_value, output_buf);
+        }
     }
 
     if (objects.label_dac_timer_value) {
@@ -227,4 +259,3 @@ void UiController::on_dac_manual_level_event_cb(lv_event_t *e) { if (instance_) 
 void UiController::on_dac_manual_timer_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_timer_event(e); }
 void UiController::on_dac_manual_start_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_start_event(e); }
 void UiController::on_dac_manual_stop_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_stop_event(e); }
-

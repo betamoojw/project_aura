@@ -28,6 +28,8 @@ public:
 
     bool isAvailable() const { return available_; }
     bool isRunning() const { return running_; }
+    bool isFaulted() const { return faulted_; }
+    bool isOutputKnown() const { return output_known_; }
     Mode mode() const { return mode_; }
     uint8_t manualStep() const { return manual_step_; }
     uint32_t selectedTimerSeconds() const { return selected_timer_s_; }
@@ -39,7 +41,7 @@ private:
     bool tryInitialize(uint32_t now_ms);
     bool applyOutputMillivolts(uint16_t millivolts);
     void handleDacFault(const char *reason);
-    void applyStopState();
+    void applyStopState(bool output_known);
     uint16_t stepToMillivolts(uint8_t step) const;
 
     Gp8403 dac_;
@@ -50,9 +52,12 @@ private:
     bool stop_requested_ = false;
     bool available_ = false;
     bool running_ = false;
+    bool faulted_ = false;
+    bool output_known_ = true;
     uint16_t output_mv_ = 0;
     uint32_t stop_at_ms_ = 0;
     uint32_t last_recover_attempt_ms_ = 0;
     uint32_t last_health_check_ms_ = 0;
+    uint8_t health_probe_fail_count_ = 0;
     bool boot_missing_lockout_ = false;
 };

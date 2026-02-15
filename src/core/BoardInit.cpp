@@ -6,13 +6,13 @@
 
 #include "core/BoardInit.h"
 
-#include <assert.h>
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #include <esp_display_panel.hpp>
 
+#include "config/AppConfig.h"
+#include "core/BootHelpers.h"
 #include "lvgl_v8_port.h"
 #include "core/Logger.h"
 
@@ -24,6 +24,9 @@ namespace {
 Board *g_board_ptr = nullptr;
 volatile bool g_board_begin_done = false;
 volatile bool g_board_begin_success = false;
+constexpr uint8_t BOARD_BEGIN_MAX_ATTEMPTS = 3;
+constexpr uint32_t BOARD_BEGIN_RETRY_DELAY_MS = 300;
+constexpr uint32_t BOARD_BEGIN_WAIT_TIMEOUT_MS = 10000;
 
 void board_begin_task(void *) {
     LOGI("Main", "[Core %d] Starting board->begin()...", xPortGetCoreID());
@@ -33,6 +36,38 @@ void board_begin_task(void *) {
     }
     g_board_begin_done = true;
     vTaskDelete(nullptr);
+}
+
+bool run_board_begin_once(Board *board) {
+    g_board_ptr = board;
+    g_board_begin_done = false;
+    g_board_begin_success = false;
+
+    BaseType_t created = xTaskCreatePinnedToCore(
+        board_begin_task,
+        "board_init",
+        8192,
+        nullptr,
+        1,
+        nullptr,
+        0  // Core 0
+    );
+    if (created != pdPASS) {
+        LOGE("Main", "Failed to create board_init task");
+        return false;
+    }
+
+    const TickType_t timeout_ticks = pdMS_TO_TICKS(BOARD_BEGIN_WAIT_TIMEOUT_MS);
+    const TickType_t start_ticks = xTaskGetTickCount();
+    while (!g_board_begin_done) {
+        if ((xTaskGetTickCount() - start_ticks) >= timeout_ticks) {
+            LOGE("Main", "board->begin() timeout");
+            return false;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    return g_board_begin_success;
 }
 
 } // namespace
@@ -61,21 +96,22 @@ esp_panel::board::Board *BoardInit::initBoard() {
 
     // Run board->begin() on Core 0 to avoid IPC stack overflow.
     LOGI("Main", "Running on core: %d", xPortGetCoreID());
-    g_board_ptr = board;
-    g_board_begin_done = false;
-    g_board_begin_success = false;
-    xTaskCreatePinnedToCore(
-        board_begin_task,
-        "board_init",
-        8192,
-        nullptr,
-        1,
-        nullptr,
-        0  // Core 0
-    );
-    while (!g_board_begin_done) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+    for (uint8_t attempt = 1; attempt <= BOARD_BEGIN_MAX_ATTEMPTS; ++attempt) {
+        if (run_board_begin_once(board)) {
+            return board;
+        }
+
+        LOGW("Main", "board->begin attempt %u/%u failed",
+             static_cast<unsigned>(attempt),
+             static_cast<unsigned>(BOARD_BEGIN_MAX_ATTEMPTS));
+        if (attempt < BOARD_BEGIN_MAX_ATTEMPTS) {
+            BootHelpers::recoverI2CBus(static_cast<gpio_num_t>(Config::I2C_SDA_PIN),
+                                       static_cast<gpio_num_t>(Config::I2C_SCL_PIN));
+            vTaskDelay(pdMS_TO_TICKS(BOARD_BEGIN_RETRY_DELAY_MS));
+        }
     }
-    assert(g_board_begin_success);
-    return board;
+
+    LOGE("Main", "Board init failed after retries");
+    delete board;
+    return nullptr;
 }

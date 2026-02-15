@@ -249,6 +249,7 @@ namespace Config {
     constexpr uint32_t BMP580_RECOVER_COOLDOWN_MS = 60UL * 1000UL;
     constexpr float BMP580_PRESSURE_ALPHA = 0.12f;
     constexpr uint32_t DAC_HEALTH_CHECK_MS = 5000;
+    constexpr uint8_t DAC_HEALTH_FAIL_THRESHOLD = 3;
     constexpr uint32_t DAC_RECOVER_COOLDOWN_MS = 30UL * 1000UL;
     constexpr uint32_t PRESSURE_HISTORY_STEP_MS = 5UL * 60UL * 1000UL;
     constexpr int PRESSURE_HISTORY_24H_SAMPLES = 288;

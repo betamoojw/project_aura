@@ -24,9 +24,11 @@ void FanControl::begin(bool auto_mode_preference) {
     start_requested_ = false;
     stop_requested_ = false;
     available_ = false;
-    applyStopState();
+    faulted_ = false;
+    applyStopState(true);
     last_recover_attempt_ms_ = 0;
     last_health_check_ms_ = 0;
+    health_probe_fail_count_ = 0;
     boot_missing_lockout_ = false;
 
     if (!Config::DAC_FEATURE_ENABLED) {
@@ -40,13 +42,15 @@ void FanControl::begin(bool auto_mode_preference) {
     } else {
         LOGW("FanControl", "DAC not detected at boot, retry only after reboot");
         boot_missing_lockout_ = true;
+        output_known_ = false;
     }
 }
 
 void FanControl::poll(uint32_t now_ms) {
     if (!Config::DAC_FEATURE_ENABLED) {
         available_ = false;
-        applyStopState();
+        faulted_ = false;
+        applyStopState(true);
         return;
     }
 
@@ -58,10 +62,23 @@ void FanControl::poll(uint32_t now_ms) {
                 LOGI("FanControl", "DAC recovered");
             }
         }
-    } else if (now_ms - last_health_check_ms_ >= Config::DAC_HEALTH_CHECK_MS) {
+    } else if (!running_ &&
+               now_ms - last_health_check_ms_ >= Config::DAC_HEALTH_CHECK_MS) {
         last_health_check_ms_ = now_ms;
         if (!dac_.probe()) {
-            handleDacFault("probe failed");
+            if (health_probe_fail_count_ < 0xFFu) {
+                ++health_probe_fail_count_;
+            }
+            if (health_probe_fail_count_ >= Config::DAC_HEALTH_FAIL_THRESHOLD) {
+                handleDacFault("probe failed");
+            } else {
+                LOGW("FanControl",
+                     "DAC probe failed (%u/%u)",
+                     static_cast<unsigned>(health_probe_fail_count_),
+                     static_cast<unsigned>(Config::DAC_HEALTH_FAIL_THRESHOLD));
+            }
+        } else {
+            health_probe_fail_count_ = 0;
         }
     }
 
@@ -69,8 +86,9 @@ void FanControl::poll(uint32_t now_ms) {
         stop_requested_ = false;
         if (available_ && !applyOutputMillivolts(Config::DAC_SAFE_ERROR_MV)) {
             handleDacFault("safe stop write failed");
+            return;
         }
-        applyStopState();
+        applyStopState(available_);
     }
 
     if (start_requested_) {
@@ -99,7 +117,7 @@ void FanControl::poll(uint32_t now_ms) {
             handleDacFault("timer stop write failed");
             return;
         }
-        applyStopState();
+        applyStopState(available_);
     }
 }
 
@@ -167,10 +185,13 @@ bool FanControl::tryInitialize(uint32_t now_ms) {
     }
 
     available_ = true;
+    faulted_ = false;
     running_ = false;
+    output_known_ = true;
     output_mv_ = Config::DAC_SAFE_DEFAULT_MV;
     stop_at_ms_ = 0;
     last_health_check_ms_ = now_ms;
+    health_probe_fail_count_ = 0;
     return true;
 }
 
@@ -181,13 +202,18 @@ bool FanControl::applyOutputMillivolts(uint16_t millivolts) {
 void FanControl::handleDacFault(const char *reason) {
     LOGW("FanControl", "DAC error: %s", reason ? reason : "unknown");
     available_ = false;
-    applyStopState();
+    faulted_ = true;
+    applyStopState(false);
+    health_probe_fail_count_ = 0;
     last_recover_attempt_ms_ = millis();
 }
 
-void FanControl::applyStopState() {
+void FanControl::applyStopState(bool output_known) {
     running_ = false;
-    output_mv_ = Config::DAC_SAFE_ERROR_MV;
+    output_known_ = output_known;
+    if (output_known_) {
+        output_mv_ = Config::DAC_SAFE_ERROR_MV;
+    }
     stop_at_ms_ = 0;
 }
 

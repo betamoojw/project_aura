@@ -37,6 +37,7 @@ static uint32_t lvgl_touch_last_recover_ms = 0;
 static uint32_t lvgl_touch_recover_attempts = 0;
 static uint32_t lvgl_touch_recover_successes = 0;
 static uint8_t lvgl_touch_recover_fail_streak = 0;
+static bool lvgl_touch_offline = false;
 static volatile uint32_t lvgl_diag_timer_handler_count = 0;
 static volatile uint32_t lvgl_diag_timer_handler_last_ms = 0;
 static volatile uint32_t lvgl_diag_flush_count = 0;
@@ -141,6 +142,7 @@ static bool lvgl_touch_try_soft_recover(Touch *tp, uint32_t now_ms)
         ok = tp->mirrorY(transformation.mirror_y);
     }
     if (!ok) {
+        lvgl_touch_offline = true;
         if (lvgl_touch_recover_fail_streak < 0xFF) {
             ++lvgl_touch_recover_fail_streak;
         }
@@ -155,6 +157,7 @@ static bool lvgl_touch_try_soft_recover(Touch *tp, uint32_t now_ms)
     tp->resetPoints();
     ++lvgl_touch_recover_successes;
     lvgl_touch_recover_fail_streak = 0;
+    lvgl_touch_offline = false;
     lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
     lvgl_touch_wait_release_after_block = true;
     lvgl_touch_read_block_until_ms = now_ms + LVGL_TOUCH_RECOVER_BLOCK_MS;
@@ -871,6 +874,21 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
         return;
     }
 
+    if (lvgl_touch_offline) {
+        const bool cooldown_active =
+            (lvgl_touch_last_recover_ms != 0) &&
+            is_before_deadline(now_ms, lvgl_touch_last_recover_ms + lvgl_touch_recover_cooldown_ms());
+        if (!cooldown_active) {
+            ESP_LOGW("LVGL", "touch offline, retrying soft recovery");
+            if (lvgl_touch_try_soft_recover(tp, now_ms)) {
+                lvgl_touch_error_streak = 0;
+            }
+        }
+        lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+        data->state = lvgl_touch_cached_state;
+        return;
+    }
+
     if (lvgl_touch_wake_probe_enabled) {
         int wake_probe = tp->readPoints(&point, 1, 0);
         if (wake_probe > 0) {
@@ -1035,6 +1053,7 @@ bool lvgl_port_init(LCD *lcd, Touch *tp)
     lvgl_touch_recover_attempts = 0;
     lvgl_touch_recover_successes = 0;
     lvgl_touch_recover_fail_streak = 0;
+    lvgl_touch_offline = false;
 
     auto bus_type = lcd->getBus()->getBasicAttributes().type;
 #if LVGL_PORT_AVOID_TEAR

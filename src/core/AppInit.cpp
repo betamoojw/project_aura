@@ -156,6 +156,10 @@ void AppInit::initManagersAndConfig(Context &ctx, StorageManager::BootAction boo
 
 esp_panel::board::Board *AppInit::initBoardAndPeripherals(Context &ctx) {
     esp_panel::board::Board *board = BoardInit::initBoard();
+    if (board == nullptr) {
+        LOGE("Main", "Board unavailable, skip display/backlight/touch init");
+        return nullptr;
+    }
     ctx.backlightManager.attachBacklight(board->getBacklight());
     ctx.timeManager.initRtc();
     ctx.pressureHistory.load(ctx.storage, ctx.currentData);
@@ -169,6 +173,11 @@ esp_panel::board::Board *AppInit::initBoardAndPeripherals(Context &ctx) {
 }
 
 bool AppInit::initLvglAndUi(Context &ctx, esp_panel::board::Board *board) {
+    if (board == nullptr) {
+        LOGE("Main", "Skipping LVGL/UI: board init failed");
+        ctx.uiController.setLvglReady(false);
+        return false;
+    }
     LOGI("Main", "Initializing LVGL");
     bool lvgl_ready = lvgl_port_init(board->getLCD(), board->getTouch());
     if (!lvgl_ready) {
