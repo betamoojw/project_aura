@@ -28,6 +28,7 @@
 #include "modules/NetworkManager.h"
 #include "modules/MqttManager.h"
 #include "modules/SensorManager.h"
+#include "modules/FanControl.h"
 #include "modules/TimeManager.h"
 #include "ui/ThemeManager.h"
 #include "ui/BacklightManager.h"
@@ -129,6 +130,7 @@ UiController::UiController(const UiContext &context)
       themeManager(context.themeManager),
       backlightManager(context.backlightManager),
       nightModeManager(context.nightModeManager),
+      fanControl(context.fanControl),
       currentData(context.currentData),
       night_mode(context.night_mode),
       temp_units_c(context.temp_units_c),
@@ -223,6 +225,7 @@ void UiController::begin() {
     mqtt_icon_state = -1;
     wifi_icon_state_main = -1;
     mqtt_icon_state_main = -1;
+    last_dac_ui_update_ms = 0;
     if (objects.page_boot_logo) {
         loadScreen(SCREEN_ID_PAGE_BOOT_LOGO);
         bind_screen_events_once(SCREEN_ID_PAGE_BOOT_LOGO);
@@ -1272,6 +1275,14 @@ void UiController::init_ui_defaults() {
     if (objects.label_btn_mqtt) {
         lv_obj_set_style_text_color(objects.label_btn_mqtt, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
     }
+    if (objects.btn_dac_settings) {
+        lv_obj_set_style_bg_color(objects.btn_dac_settings, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_border_color(objects.btn_dac_settings, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_shadow_color(objects.btn_dac_settings, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+    }
+    if (objects.label_dac_settings) {
+        lv_obj_set_style_text_color(objects.label_dac_settings, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+    }
     if (objects.btn_night_mode) {
         lv_obj_set_style_bg_color(objects.btn_night_mode, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
         lv_obj_set_style_border_color(objects.btn_night_mode, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
@@ -1298,6 +1309,7 @@ void UiController::init_ui_defaults() {
     update_hum_offset_label();
     update_wifi_ui();
     update_mqtt_ui();
+    update_dac_ui(millis());
     update_ui();
     confirm_hide();
 }

@@ -20,6 +20,7 @@ class MqttManager;
 class ThemeManager;
 class BacklightManager;
 class NightModeManager;
+class FanControl;
 class UiEventBinder;
 class UiBootFlow;
 class UiLocalization;
@@ -35,6 +36,7 @@ struct UiContext {
     ThemeManager &themeManager;
     BacklightManager &backlightManager;
     NightModeManager &nightModeManager;
+    FanControl &fanControl;
     SensorData &currentData;
     bool &night_mode;
     bool &temp_units_c;
@@ -120,6 +122,7 @@ private:
     void update_backlight_texts();
     void update_co2_calib_texts();
     void update_boot_diag_texts();
+    void update_dac_ui(uint32_t now_ms);
     void update_led_indicators();
     void update_co2_bar(int co2, bool valid);
     void init_ui_defaults();
@@ -286,6 +289,14 @@ private:
     void on_hum_offset_plus(lv_event_t *e);
     void on_boot_diag_continue(lv_event_t *e);
     void on_boot_diag_errors(lv_event_t *e);
+    void on_dac_settings_event(lv_event_t *e);
+    void on_dac_settings_back_event(lv_event_t *e);
+    void on_dac_manual_on_event(lv_event_t *e);
+    void on_dac_auto_on_event(lv_event_t *e);
+    void on_dac_manual_level_event(lv_event_t *e);
+    void on_dac_manual_timer_event(lv_event_t *e);
+    void on_dac_manual_start_event(lv_event_t *e);
+    void on_dac_manual_stop_event(lv_event_t *e);
 
     static void on_settings_event_cb(lv_event_t *e);
     static void on_back_event_cb(lv_event_t *e);
@@ -387,6 +398,14 @@ private:
     static void on_hum_offset_plus_cb(lv_event_t *e);
     static void on_boot_diag_continue_cb(lv_event_t *e);
     static void on_boot_diag_errors_cb(lv_event_t *e);
+    static void on_dac_settings_event_cb(lv_event_t *e);
+    static void on_dac_settings_back_event_cb(lv_event_t *e);
+    static void on_dac_manual_on_event_cb(lv_event_t *e);
+    static void on_dac_auto_on_event_cb(lv_event_t *e);
+    static void on_dac_manual_level_event_cb(lv_event_t *e);
+    static void on_dac_manual_timer_event_cb(lv_event_t *e);
+    static void on_dac_manual_start_event_cb(lv_event_t *e);
+    static void on_dac_manual_stop_event_cb(lv_event_t *e);
     static void apply_toggle_style_cb(lv_obj_t *btn);
     static void mqtt_sync_with_wifi_cb();
 
@@ -400,6 +419,7 @@ private:
     ThemeManager &themeManager;
     BacklightManager &backlightManager;
     NightModeManager &nightModeManager;
+    FanControl &fanControl;
     SensorData &currentData;
 
     bool &night_mode;
@@ -449,6 +469,7 @@ private:
     bool blink_state = true;
     uint32_t last_blink_ms = 0;
     uint32_t last_ui_update_ms = 0;
+    uint32_t last_dac_ui_update_ms = 0;
     uint32_t last_ui_tick_ms = 0;
     uint32_t status_msg_last_ms = 0;
     uint32_t status_msg_signature = 0;

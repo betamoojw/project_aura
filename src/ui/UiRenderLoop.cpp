@@ -74,6 +74,13 @@ void UiRenderLoop::process(UiController &owner, uint32_t now_ms) {
         owner.nightModeManager.updateUi();
         did_update = true;
     }
+    if ((owner.current_screen_id == SCREEN_ID_PAGE_SETTINGS ||
+         owner.current_screen_id == SCREEN_ID_PAGE_DAC_SETTINGS) &&
+        (now_ms - owner.last_dac_ui_update_ms) >= 200) {
+        owner.update_dac_ui(now_ms);
+        owner.last_dac_ui_update_ms = now_ms;
+        did_update = true;
+    }
     if (owner.data_dirty) {
         if (owner.current_screen_id == SCREEN_ID_PAGE_MAIN_PRO) {
             owner.update_ui();

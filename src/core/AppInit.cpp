@@ -163,6 +163,7 @@ esp_panel::board::Board *AppInit::initBoardAndPeripherals(Context &ctx) {
 
     BootHelpers::logGt911Address();
     ctx.sensorManager.begin(ctx.storage, ctx.temp_offset, ctx.hum_offset);
+    ctx.fanControl.begin(ctx.storage.config().dac_auto_mode);
 
     return board;
 }

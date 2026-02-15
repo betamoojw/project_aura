@@ -462,6 +462,11 @@ bool StorageManager::loadConfig() {
         readValue(time, "tz_idx", loaded.tz_index);
     }
 
+    ArduinoJson::JsonObject dac = root["dac"].as<ArduinoJson::JsonObject>();
+    if (!dac.isNull()) {
+        readValue(dac, "auto_mode", loaded.dac_auto_mode);
+    }
+
     ArduinoJson::JsonObject theme = root["theme"].as<ArduinoJson::JsonObject>();
     if (!theme.isNull()) {
         readValue(theme, "valid", loaded.theme.valid);
@@ -544,6 +549,9 @@ bool StorageManager::saveConfigInternal() {
     ArduinoJson::JsonObject time = root["time"].to<ArduinoJson::JsonObject>();
     time["ntp_enabled"] = config_.ntp_enabled;
     time["tz_idx"] = config_.tz_index;
+
+    ArduinoJson::JsonObject dac = root["dac"].to<ArduinoJson::JsonObject>();
+    dac["auto_mode"] = config_.dac_auto_mode;
 
     ArduinoJson::JsonObject theme = root["theme"].to<ArduinoJson::JsonObject>();
     theme["valid"] = config_.theme.valid;
