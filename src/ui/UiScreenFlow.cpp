@@ -69,6 +69,7 @@ void UiScreenFlow::processPendingScreen(UiController &owner, uint32_t now_ms) {
             } else if (owner.current_screen_id == SCREEN_ID_PAGE_AUTO_NIGHT_MODE) {
                 owner.nightModeManager.markUiDirty();
             } else if (owner.current_screen_id == SCREEN_ID_PAGE_DAC_SETTINGS) {
+                owner.dac_auto_tab_selected_ = false;
                 owner.last_dac_ui_update_ms = 0;
             }
 

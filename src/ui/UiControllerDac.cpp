@@ -385,6 +385,7 @@ void UiController::on_dac_settings_event(lv_event_t *e) {
     if (!fanControl.isAvailable()) {
         return;
     }
+    dac_auto_tab_selected_ = false;
     pending_screen_id = SCREEN_ID_PAGE_DAC_SETTINGS;
 }
 
@@ -400,12 +401,6 @@ void UiController::on_dac_manual_on_event(lv_event_t *e) {
         return;
     }
     dac_auto_tab_selected_ = false;
-    const bool was_auto = (fanControl.mode() == FanControl::Mode::Auto);
-    fanControl.setMode(FanControl::Mode::Manual);
-    if (was_auto || storage.config().dac_auto_mode) {
-        storage.config().dac_auto_mode = false;
-        storage.saveConfig(true);
-    }
     update_dac_ui(millis());
 }
 
@@ -414,12 +409,6 @@ void UiController::on_dac_auto_on_event(lv_event_t *e) {
         return;
     }
     dac_auto_tab_selected_ = true;
-    const bool was_manual = (fanControl.mode() == FanControl::Mode::Manual);
-    fanControl.setMode(FanControl::Mode::Auto);
-    if (was_manual || !storage.config().dac_auto_mode) {
-        storage.config().dac_auto_mode = true;
-        storage.saveConfig(true);
-    }
     update_dac_ui(millis());
 }
 
