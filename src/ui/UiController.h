@@ -298,6 +298,8 @@ private:
     void on_dac_manual_start_event(lv_event_t *e);
     void on_dac_manual_stop_event(lv_event_t *e);
     void on_dac_manual_auto_event(lv_event_t *e);
+    void on_dac_auto_start_event(lv_event_t *e);
+    void on_dac_auto_stop_event(lv_event_t *e);
 
     static void on_settings_event_cb(lv_event_t *e);
     static void on_back_event_cb(lv_event_t *e);
@@ -408,6 +410,8 @@ private:
     static void on_dac_manual_start_event_cb(lv_event_t *e);
     static void on_dac_manual_stop_event_cb(lv_event_t *e);
     static void on_dac_manual_auto_event_cb(lv_event_t *e);
+    static void on_dac_auto_start_event_cb(lv_event_t *e);
+    static void on_dac_auto_stop_event_cb(lv_event_t *e);
     static void apply_toggle_style_cb(lv_obj_t *btn);
     static void mqtt_sync_with_wifi_cb();
 

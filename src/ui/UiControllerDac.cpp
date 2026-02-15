@@ -6,9 +6,11 @@
 
 #include "ui/UiController.h"
 
+#include <math.h>
 #include <stdio.h>
 
 #include "modules/FanControl.h"
+#include "modules/NetworkManager.h"
 #include "modules/StorageManager.h"
 #include "ui/ui.h"
 
@@ -66,6 +68,87 @@ void format_mmss(uint32_t total_seconds, char *out, size_t out_len) {
              static_cast<unsigned long>(seconds));
 }
 
+uint8_t co2_auto_percent(const DacAutoSensorConfig &cfg, int co2) {
+    if (co2 < 800) {
+        return cfg.band.green_percent;
+    }
+    if (co2 < 1000) {
+        return cfg.band.yellow_percent;
+    }
+    if (co2 < 1500) {
+        return cfg.band.orange_percent;
+    }
+    return cfg.band.red_percent;
+}
+
+uint8_t co_auto_percent(const DacAutoSensorConfig &cfg, float co_ppm) {
+    if (co_ppm < 9.0f) {
+        return cfg.band.green_percent;
+    }
+    if (co_ppm <= 35.0f) {
+        return cfg.band.yellow_percent;
+    }
+    if (co_ppm <= 100.0f) {
+        return cfg.band.orange_percent;
+    }
+    return cfg.band.red_percent;
+}
+
+uint8_t pm25_auto_percent(const DacAutoSensorConfig &cfg, float pm25) {
+    if (pm25 <= 12.0f) {
+        return cfg.band.green_percent;
+    }
+    if (pm25 <= 35.0f) {
+        return cfg.band.yellow_percent;
+    }
+    if (pm25 <= 55.0f) {
+        return cfg.band.orange_percent;
+    }
+    return cfg.band.red_percent;
+}
+
+uint8_t voc_auto_percent(const DacAutoSensorConfig &cfg, int voc_index) {
+    if (voc_index <= 150) {
+        return cfg.band.green_percent;
+    }
+    if (voc_index <= 250) {
+        return cfg.band.yellow_percent;
+    }
+    if (voc_index <= 350) {
+        return cfg.band.orange_percent;
+    }
+    return cfg.band.red_percent;
+}
+
+uint8_t nox_auto_percent(const DacAutoSensorConfig &cfg, int nox_index) {
+    if (nox_index <= 50) {
+        return cfg.band.green_percent;
+    }
+    if (nox_index <= 100) {
+        return cfg.band.yellow_percent;
+    }
+    if (nox_index <= 200) {
+        return cfg.band.orange_percent;
+    }
+    return cfg.band.red_percent;
+}
+
+void update_reason_candidate(uint8_t percent,
+                             const char *sensor,
+                             const char *value,
+                             uint8_t &best_percent,
+                             char *best_sensor,
+                             size_t sensor_len,
+                             char *best_value,
+                             size_t value_len) {
+    if (percent <= best_percent) {
+        return;
+    }
+    best_percent = percent;
+    snprintf(best_sensor, sensor_len, "%s", sensor);
+    snprintf(best_value, value_len, "%s", value);
+}
+
 } // namespace
 
 void UiController::update_dac_ui(uint32_t now_ms) {
@@ -117,6 +200,15 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     set_button_accent(objects.btn_dak_manual_auto,
                       auto_active ? color_green() : neutral,
                       auto_active ? LV_OPA_COVER : LV_OPA_TRANSP);
+    set_button_accent(objects.btn_dak_auto_on_toggle,
+                      auto_active ? color_green() : neutral,
+                      auto_active ? LV_OPA_COVER : LV_OPA_TRANSP);
+    set_button_accent(objects.btn_dak_manual_stop_1,
+                      stop_active ? color_red() : neutral,
+                      stop_active ? LV_OPA_COVER : LV_OPA_TRANSP);
+    set_checked_state(objects.btn_dak_auto_on_toggle, auto_active);
+    set_button_enabled(objects.btn_dak_auto_on_toggle, available);
+    set_button_enabled(objects.btn_dak_manual_stop_1, available);
 
     if (objects.label_dac_status) {
         const char *status_text = "OFFLINE";
@@ -156,7 +248,10 @@ void UiController::update_dac_ui(uint32_t now_ms) {
 
     if (objects.label_dac_timer_value) {
         char timer_buf[16] = "--:--";
-        if (running) {
+        const bool auto_mode_display = auto_active;
+        if (auto_mode_display) {
+            snprintf(timer_buf, sizeof(timer_buf), "%s", "AUTO");
+        } else if (running) {
             if (fanControl.selectedTimerSeconds() == 0) {
                 snprintf(timer_buf, sizeof(timer_buf), "%s", "\xE2\x88\x9E");
             } else {
@@ -169,6 +264,117 @@ void UiController::update_dac_ui(uint32_t now_ms) {
             }
         }
         safe_label_set_text(objects.label_dac_timer_value, timer_buf);
+    }
+
+    if (objects.label_dac_rl_sensor || objects.label_dac_rl_value) {
+        char reason_sensor[16] = "--";
+        char reason_value[32] = "--";
+        uint8_t best_percent = 0;
+        const DacAutoConfig &cfg = fanControl.autoConfig();
+        const bool gas_warmup = sensorManager.isWarmupActive();
+
+        if (cfg.enabled) {
+            if (cfg.co2.enabled && currentData.co2_valid && currentData.co2 > 0) {
+                char value_buf[32];
+                snprintf(value_buf, sizeof(value_buf), "%d ppm", currentData.co2);
+                update_reason_candidate(co2_auto_percent(cfg.co2, currentData.co2),
+                                        "CO2:",
+                                        value_buf,
+                                        best_percent,
+                                        reason_sensor, sizeof(reason_sensor),
+                                        reason_value, sizeof(reason_value));
+            }
+
+            if (cfg.co.enabled &&
+                currentData.co_sensor_present &&
+                currentData.co_valid &&
+                isfinite(currentData.co_ppm) &&
+                currentData.co_ppm >= 0.0f) {
+                char value_buf[32];
+                snprintf(value_buf, sizeof(value_buf), "%.1f ppm", currentData.co_ppm);
+                update_reason_candidate(co_auto_percent(cfg.co, currentData.co_ppm),
+                                        "CO:",
+                                        value_buf,
+                                        best_percent,
+                                        reason_sensor, sizeof(reason_sensor),
+                                        reason_value, sizeof(reason_value));
+            }
+
+            if (cfg.pm25.enabled &&
+                currentData.pm25_valid &&
+                isfinite(currentData.pm25) &&
+                currentData.pm25 >= 0.0f) {
+                char value_buf[32];
+                snprintf(value_buf, sizeof(value_buf), "%.1f ug/m3", currentData.pm25);
+                update_reason_candidate(pm25_auto_percent(cfg.pm25, currentData.pm25),
+                                        "PM2.5:",
+                                        value_buf,
+                                        best_percent,
+                                        reason_sensor, sizeof(reason_sensor),
+                                        reason_value, sizeof(reason_value));
+            }
+
+            if (cfg.voc.enabled &&
+                !gas_warmup &&
+                currentData.voc_valid &&
+                currentData.voc_index >= 0) {
+                char value_buf[32];
+                snprintf(value_buf, sizeof(value_buf), "%d idx", currentData.voc_index);
+                update_reason_candidate(voc_auto_percent(cfg.voc, currentData.voc_index),
+                                        "VOC:",
+                                        value_buf,
+                                        best_percent,
+                                        reason_sensor, sizeof(reason_sensor),
+                                        reason_value, sizeof(reason_value));
+            }
+
+            if (cfg.nox.enabled &&
+                !gas_warmup &&
+                currentData.nox_valid &&
+                currentData.nox_index >= 0) {
+                char value_buf[32];
+                snprintf(value_buf, sizeof(value_buf), "%d idx", currentData.nox_index);
+                update_reason_candidate(nox_auto_percent(cfg.nox, currentData.nox_index),
+                                        "NOx:",
+                                        value_buf,
+                                        best_percent,
+                                        reason_sensor, sizeof(reason_sensor),
+                                        reason_value, sizeof(reason_value));
+            }
+        }
+
+        if (objects.label_dac_rl_sensor) {
+            safe_label_set_text(objects.label_dac_rl_sensor, reason_sensor);
+        }
+        if (objects.label_dac_rl_value) {
+            safe_label_set_text(objects.label_dac_rl_value, reason_value);
+        }
+    }
+
+    const bool wifi_enabled = networkManager.isEnabled();
+    const AuraNetworkManager::WifiState wifi_state = networkManager.state();
+    const bool ap_mode = wifi_enabled && (wifi_state == AuraNetworkManager::WIFI_STATE_AP_CONFIG);
+    const bool wifi_connected = wifi_enabled && (wifi_state == AuraNetworkManager::WIFI_STATE_STA_CONNECTED);
+    String dac_url;
+    if (ap_mode) {
+        dac_url = "http://192.168.4.1/dac";
+    } else if (wifi_connected) {
+        dac_url = "http://aura.local/dac";
+    }
+    if (objects.label_dac_qr_link) {
+        if (!dac_url.isEmpty()) {
+            safe_label_set_text(objects.label_dac_qr_link, dac_url.c_str());
+        } else {
+            safe_label_set_text(objects.label_dac_qr_link, "Enable AP or connect to Wi-Fi");
+        }
+    }
+    if (objects.qrcode_dac_portal) {
+        if (!dac_url.isEmpty()) {
+            lv_obj_clear_flag(objects.qrcode_dac_portal, LV_OBJ_FLAG_HIDDEN);
+            lv_qrcode_update(objects.qrcode_dac_portal, dac_url.c_str(), dac_url.length());
+        } else {
+            lv_obj_add_flag(objects.qrcode_dac_portal, LV_OBJ_FLAG_HIDDEN);
+        }
     }
 }
 
@@ -280,6 +486,26 @@ void UiController::on_dac_manual_auto_event(lv_event_t *e) {
     update_dac_ui(millis());
 }
 
+void UiController::on_dac_auto_start_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    fanControl.requestAutoStart();
+    if (!storage.config().dac_auto_mode) {
+        storage.config().dac_auto_mode = true;
+        storage.saveConfig(true);
+    }
+    update_dac_ui(millis());
+}
+
+void UiController::on_dac_auto_stop_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    fanControl.requestStop();
+    update_dac_ui(millis());
+}
+
 void UiController::on_dac_settings_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_settings_event(e); }
 void UiController::on_dac_settings_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_settings_back_event(e); }
 void UiController::on_dac_manual_on_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_on_event(e); }
@@ -289,3 +515,5 @@ void UiController::on_dac_manual_timer_event_cb(lv_event_t *e) { if (instance_) 
 void UiController::on_dac_manual_start_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_start_event(e); }
 void UiController::on_dac_manual_stop_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_stop_event(e); }
 void UiController::on_dac_manual_auto_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_auto_event(e); }
+void UiController::on_dac_auto_start_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_auto_start_event(e); }
+void UiController::on_dac_auto_stop_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_auto_stop_event(e); }
