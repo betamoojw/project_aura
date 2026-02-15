@@ -28,6 +28,15 @@ static uint32_t lvgl_touch_read_block_until_ms = 0;
 static bool lvgl_touch_wait_release_after_block = false;
 static bool lvgl_touch_wake_probe_enabled = false;
 static bool lvgl_touch_wake_pending = false;
+static uint32_t lvgl_touch_last_sample_ms = 0;
+static lv_indev_state_t lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+static TouchPoint lvgl_touch_cached_point = {};
+static uint8_t lvgl_touch_error_streak = 0;
+static uint32_t lvgl_touch_last_error_ms = 0;
+static uint32_t lvgl_touch_last_recover_ms = 0;
+static uint32_t lvgl_touch_recover_attempts = 0;
+static uint32_t lvgl_touch_recover_successes = 0;
+static uint8_t lvgl_touch_recover_fail_streak = 0;
 static volatile uint32_t lvgl_diag_timer_handler_count = 0;
 static volatile uint32_t lvgl_diag_timer_handler_last_ms = 0;
 static volatile uint32_t lvgl_diag_flush_count = 0;
@@ -36,6 +45,14 @@ static volatile uint32_t lvgl_diag_vsync_count = 0;
 static volatile uint32_t lvgl_diag_vsync_last_ms = 0;
 static volatile uint32_t lvgl_diag_lock_fail_count = 0;
 static volatile uint32_t lvgl_diag_touch_read_error_count = 0;
+static constexpr uint32_t LVGL_TOUCH_POLL_INTERVAL_MS = 8;
+static constexpr uint32_t LVGL_TOUCH_ERROR_STREAK_WINDOW_MS = 1200;
+static constexpr uint32_t LVGL_TOUCH_ERROR_BLOCK_MS = 150;
+static constexpr uint8_t LVGL_TOUCH_RECOVER_ERROR_STREAK = 3;
+static constexpr uint32_t LVGL_TOUCH_RECOVER_COOLDOWN_MS = 30000;
+static constexpr uint32_t LVGL_TOUCH_RECOVER_BLOCK_MS = 300;
+static constexpr uint8_t LVGL_TOUCH_RECOVER_MAX_BACKOFF_SHIFT = 4;
+static constexpr uint32_t LVGL_TOUCH_RECOVER_MAX_COOLDOWN_MS = 8UL * 60UL * 1000UL;
 
 static inline uint32_t get_rtos_ms()
 {
@@ -72,6 +89,109 @@ static inline uint32_t get_monotonic_ms()
 static inline bool is_before_deadline(uint32_t now_ms, uint32_t deadline_ms)
 {
     return static_cast<int32_t>(deadline_ms - now_ms) > 0;
+}
+
+static inline void lvgl_touch_fill_from_cache(lv_indev_data_t *data)
+{
+    if (lvgl_touch_cached_state == LV_INDEV_STATE_PRESSED) {
+        data->point.x = lvgl_touch_cached_point.x;
+        data->point.y = lvgl_touch_cached_point.y;
+    }
+    data->state = lvgl_touch_cached_state;
+}
+
+static inline void lvgl_touch_note_success()
+{
+    lvgl_touch_error_streak = 0;
+}
+
+static inline uint32_t lvgl_touch_recover_cooldown_ms()
+{
+    const uint8_t shift = (lvgl_touch_recover_fail_streak > LVGL_TOUCH_RECOVER_MAX_BACKOFF_SHIFT)
+                          ? LVGL_TOUCH_RECOVER_MAX_BACKOFF_SHIFT
+                          : lvgl_touch_recover_fail_streak;
+    uint32_t cooldown_ms = LVGL_TOUCH_RECOVER_COOLDOWN_MS << shift;
+    if (cooldown_ms > LVGL_TOUCH_RECOVER_MAX_COOLDOWN_MS) {
+        cooldown_ms = LVGL_TOUCH_RECOVER_MAX_COOLDOWN_MS;
+    }
+    return cooldown_ms;
+}
+
+static bool lvgl_touch_try_soft_recover(Touch *tp, uint32_t now_ms)
+{
+    if (tp == nullptr) {
+        return false;
+    }
+
+    const auto transformation = tp->getTransformation();
+    lvgl_touch_last_recover_ms = now_ms;
+    ++lvgl_touch_recover_attempts;
+
+    bool ok = tp->del();
+    if (ok) {
+        ok = tp->begin();
+    }
+    if (ok) {
+        ok = tp->swapXY(transformation.swap_xy);
+    }
+    if (ok) {
+        ok = tp->mirrorX(transformation.mirror_x);
+    }
+    if (ok) {
+        ok = tp->mirrorY(transformation.mirror_y);
+    }
+    if (!ok) {
+        if (lvgl_touch_recover_fail_streak < 0xFF) {
+            ++lvgl_touch_recover_fail_streak;
+        }
+        ESP_LOGW("LVGL",
+                 "touch soft recovery failed (attempt=%lu, fail_streak=%u, next_retry_in=%lu ms)",
+                 static_cast<unsigned long>(lvgl_touch_recover_attempts),
+                 static_cast<unsigned>(lvgl_touch_recover_fail_streak),
+                 static_cast<unsigned long>(lvgl_touch_recover_cooldown_ms()));
+        return false;
+    }
+
+    tp->resetPoints();
+    ++lvgl_touch_recover_successes;
+    lvgl_touch_recover_fail_streak = 0;
+    lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+    lvgl_touch_wait_release_after_block = true;
+    lvgl_touch_read_block_until_ms = now_ms + LVGL_TOUCH_RECOVER_BLOCK_MS;
+    ESP_LOGI("LVGL",
+             "touch soft recovery ok (attempt=%lu, success=%lu)",
+             static_cast<unsigned long>(lvgl_touch_recover_attempts),
+             static_cast<unsigned long>(lvgl_touch_recover_successes));
+    return true;
+}
+
+static inline void lvgl_touch_note_error(Touch *tp, uint32_t now_ms, const char *stage)
+{
+    ++lvgl_diag_touch_read_error_count;
+    lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+    lvgl_touch_read_block_until_ms = now_ms + LVGL_TOUCH_ERROR_BLOCK_MS;
+    lvgl_touch_wait_release_after_block = false;
+
+    if ((lvgl_touch_last_error_ms == 0) ||
+        !is_before_deadline(now_ms, lvgl_touch_last_error_ms + LVGL_TOUCH_ERROR_STREAK_WINDOW_MS)) {
+        lvgl_touch_error_streak = 1;
+    } else if (lvgl_touch_error_streak < 0xFF) {
+        ++lvgl_touch_error_streak;
+    }
+    lvgl_touch_last_error_ms = now_ms;
+
+    const bool cooldown_active =
+        (lvgl_touch_last_recover_ms != 0) &&
+        is_before_deadline(now_ms, lvgl_touch_last_recover_ms + lvgl_touch_recover_cooldown_ms());
+    if ((lvgl_touch_error_streak >= LVGL_TOUCH_RECOVER_ERROR_STREAK) && !cooldown_active) {
+        ESP_LOGW("LVGL",
+                 "touch read errors streak=%u at %s, trying soft recovery",
+                 static_cast<unsigned>(lvgl_touch_error_streak),
+                 stage ? stage : "?");
+        if (lvgl_touch_try_soft_recover(tp, now_ms)) {
+            lvgl_touch_error_streak = 0;
+        }
+    }
 }
 
 #if LV_USE_LOG
@@ -744,22 +864,32 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
     Touch *tp = (Touch *)indev_drv->user_data;
     TouchPoint point;
+    const uint32_t now_ms = get_monotonic_ms();
+    if (tp == nullptr) {
+        lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+        data->state = lvgl_touch_cached_state;
+        return;
+    }
 
     if (lvgl_touch_wake_probe_enabled) {
         int wake_probe = tp->readPoints(&point, 1, 0);
         if (wake_probe > 0) {
             lvgl_touch_wake_pending = true;
+            lvgl_touch_note_success();
         } else if (wake_probe < 0) {
-            ++lvgl_diag_touch_read_error_count;
+            lvgl_touch_note_error(tp, now_ms, "wake_probe");
+        } else {
+            lvgl_touch_note_success();
         }
-        data->state = LV_INDEV_STATE_RELEASED;
+        lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+        data->state = lvgl_touch_cached_state;
         return;
     }
 
-    const uint32_t now_ms = get_monotonic_ms();
     if (lvgl_touch_read_block_until_ms != 0) {
         if (is_before_deadline(now_ms, lvgl_touch_read_block_until_ms)) {
-            data->state = LV_INDEV_STATE_RELEASED;
+            lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+            data->state = lvgl_touch_cached_state;
             return;
         }
         lvgl_touch_read_block_until_ms = 0;
@@ -772,25 +902,38 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
         if (release_probe <= 0) {
             lvgl_touch_wait_release_after_block = false;
             if (release_probe < 0) {
-                ++lvgl_diag_touch_read_error_count;
+                lvgl_touch_note_error(tp, now_ms, "release_probe");
+            } else {
+                lvgl_touch_note_success();
             }
         }
-        data->state = LV_INDEV_STATE_RELEASED;
+        lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+        data->state = lvgl_touch_cached_state;
+        return;
+    }
+
+    if ((lvgl_touch_last_sample_ms != 0) &&
+        is_before_deadline(now_ms, lvgl_touch_last_sample_ms + LVGL_TOUCH_POLL_INTERVAL_MS)) {
+        lvgl_touch_fill_from_cache(data);
         return;
     }
 
     /* Read data from touch controller */
+    lvgl_touch_last_sample_ms = now_ms;
     int read_touch_result = tp->readPoints(&point, 1, 0);
     if (read_touch_result > 0) {
-        data->point.x = point.x;
-        data->point.y = point.y;
-        data->state = LV_INDEV_STATE_PRESSED;
+        lvgl_touch_note_success();
+        lvgl_touch_cached_point = point;
+        lvgl_touch_cached_state = LV_INDEV_STATE_PRESSED;
     } else {
         if (read_touch_result < 0) {
-            ++lvgl_diag_touch_read_error_count;
+            lvgl_touch_note_error(tp, now_ms, "read");
+        } else {
+            lvgl_touch_note_success();
         }
-        data->state = LV_INDEV_STATE_RELEASED;
+        lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
     }
+    lvgl_touch_fill_from_cache(data);
 }
 
 static lv_indev_t *indev_init(Touch *tp)
@@ -878,6 +1021,20 @@ IRAM_ATTR bool onDrawBitmapFinishCallback(void *user_data)
 bool lvgl_port_init(LCD *lcd, Touch *tp)
 {
     ESP_UTILS_CHECK_FALSE_RETURN(lcd != nullptr, false, "Invalid LCD device");
+
+    lvgl_touch_read_block_until_ms = 0;
+    lvgl_touch_wait_release_after_block = false;
+    lvgl_touch_wake_probe_enabled = false;
+    lvgl_touch_wake_pending = false;
+    lvgl_touch_last_sample_ms = 0;
+    lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
+    lvgl_touch_cached_point = {};
+    lvgl_touch_error_streak = 0;
+    lvgl_touch_last_error_ms = 0;
+    lvgl_touch_last_recover_ms = 0;
+    lvgl_touch_recover_attempts = 0;
+    lvgl_touch_recover_successes = 0;
+    lvgl_touch_recover_fail_streak = 0;
 
     auto bus_type = lcd->getBus()->getBasicAttributes().type;
 #if LVGL_PORT_AVOID_TEAR
