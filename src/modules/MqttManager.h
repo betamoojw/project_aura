@@ -73,6 +73,8 @@ private:
     void loadPrefs();
     void initDeviceId();
     void setupClient();
+    bool prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_resolved_ip,
+                               bool &is_mdns_host);
     bool connectClient(const SensorData &data, bool night_mode, bool alert_blink, bool backlight_on);
     void publishDiscovery();
     void publishDiscoverySensor(const char *object_id, const char *name,
@@ -118,6 +120,11 @@ private:
     uint8_t mqtt_connect_fail_count_ = 0;
     uint32_t mqtt_connect_attempts_ = 0;
     bool mqtt_retry_exhausted_ = false;
+    String mqtt_mdns_cache_host_;
+    IPAddress mqtt_mdns_cache_ip_;
+    uint32_t mqtt_mdns_cache_ts_ms_ = 0;
+    bool mqtt_mdns_cache_success_ = false;
+    bool mqtt_mdns_cache_valid_ = false;
     bool auto_night_enabled_ = false;
     PendingCommands pending_;
 };

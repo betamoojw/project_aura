@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <string.h>
+#include <ESPmDNS.h>
 #include <WiFi.h>
 #include "core/Logger.h"
 #include "core/MathUtils.h"
@@ -23,6 +24,8 @@ constexpr uint8_t kMqttRetryStages = 3;
 constexpr uint8_t kMqttRetryStageAttempts = Config::MQTT_CONNECT_MAX_FAILS;
 constexpr uint8_t kMqttRetryMaxAttempts = kMqttRetryStages * kMqttRetryStageAttempts;
 constexpr size_t kTopicBufferSize = 256;
+constexpr uint32_t kMqttMdnsSuccessCacheMs = 5UL * 60UL * 1000UL;
+constexpr uint32_t kMqttMdnsFailureCacheMs = 60UL * 1000UL;
 
 uint8_t retry_stage_for_attempts(uint32_t attempts) {
     return static_cast<uint8_t>(attempts / kMqttRetryStageAttempts);
@@ -150,6 +153,68 @@ void MqttManager::setupClient() {
     client_.setKeepAlive(30);
     client_.setSocketTimeout(1);
     client_.setCallback(MqttManager::staticCallback);
+}
+
+bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_resolved_ip,
+                                        bool &is_mdns_host) {
+    using_resolved_ip = false;
+    is_mdns_host = false;
+    resolved_ip = IPAddress();
+
+    String broker_host = mqtt_host_;
+    broker_host.trim();
+    if (broker_host.isEmpty()) {
+        return false;
+    }
+
+    String host_lc = broker_host;
+    host_lc.toLowerCase();
+    is_mdns_host = host_lc.endsWith(".local");
+    if (!is_mdns_host) {
+        client_.setServer(broker_host.c_str(), mqtt_port_);
+        return true;
+    }
+
+    const uint32_t now = millis();
+    if (mqtt_mdns_cache_valid_ && broker_host.equalsIgnoreCase(mqtt_mdns_cache_host_)) {
+        const uint32_t cache_age_ms = now - mqtt_mdns_cache_ts_ms_;
+        const uint32_t cache_ttl_ms =
+            mqtt_mdns_cache_success_ ? kMqttMdnsSuccessCacheMs : kMqttMdnsFailureCacheMs;
+        if (cache_age_ms < cache_ttl_ms) {
+            if (mqtt_mdns_cache_success_) {
+                client_.setServer(mqtt_mdns_cache_ip_, mqtt_port_);
+                resolved_ip = mqtt_mdns_cache_ip_;
+                using_resolved_ip = true;
+            } else {
+                client_.setServer(broker_host.c_str(), mqtt_port_);
+            }
+            return true;
+        }
+    }
+
+    String mdns_name = broker_host.substring(0, broker_host.length() - 6);
+    mdns_name.trim();
+    if (mdns_name.isEmpty()) {
+        client_.setServer(broker_host.c_str(), mqtt_port_);
+        return true;
+    }
+
+    IPAddress mdns_ip = MDNS.queryHost(mdns_name.c_str());
+    mqtt_mdns_cache_host_ = broker_host;
+    mqtt_mdns_cache_ts_ms_ = now;
+    mqtt_mdns_cache_valid_ = true;
+    if (static_cast<uint32_t>(mdns_ip) != 0U) {
+        mqtt_mdns_cache_success_ = true;
+        mqtt_mdns_cache_ip_ = mdns_ip;
+        client_.setServer(mdns_ip, mqtt_port_);
+        resolved_ip = mdns_ip;
+        using_resolved_ip = true;
+    } else {
+        mqtt_mdns_cache_success_ = false;
+        mqtt_mdns_cache_ip_ = IPAddress();
+        client_.setServer(broker_host.c_str(), mqtt_port_);
+    }
+    return true;
 }
 
 void MqttManager::publishDiscoverySensor(const char *object_id, const char *name,
@@ -481,6 +546,12 @@ bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool al
     if (mqtt_retry_exhausted_) {
         return false;
     }
+    IPAddress resolved_broker_ip;
+    bool using_resolved_ip = false;
+    bool is_mdns_host = false;
+    if (!prepareBrokerEndpoint(resolved_broker_ip, using_resolved_ip, is_mdns_host)) {
+        return false;
+    }
 
     auto note_connect_failure = [&](int rc, bool log_details) {
         if (mqtt_connect_attempts_ < UINT32_MAX) {
@@ -515,13 +586,21 @@ bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool al
     // Diagnostics: check network state before MQTT connect.
     bool network_ready = network_ && network_->isEnabled() && network_->isConnected();
     wl_status_t wifi_status = WiFi.status();
-    bool wifi_connected = (wifi_status == WL_CONNECTED);
     IPAddress local_ip = WiFi.localIP();
     int32_t rssi = WiFi.RSSI();
+    String broker_endpoint = mqtt_host_;
+    if (using_resolved_ip) {
+        broker_endpoint = resolved_broker_ip.toString();
+        LOGI("MQTT", "resolved mDNS broker %s -> %s",
+             mqtt_host_.c_str(), broker_endpoint.c_str());
+    } else if (is_mdns_host) {
+        LOGW("MQTT", "mDNS resolve failed for %s, falling back to system DNS",
+             mqtt_host_.c_str());
+    }
 
     Logger::log(Logger::Info, "MQTT",
                 "connecting to %s:%u (NetworkMgr=%s, WiFi.status=%d, IP=%s, RSSI=%ld dBm)",
-                mqtt_host_.c_str(),
+                broker_endpoint.c_str(),
                 static_cast<unsigned>(mqtt_port_),
                 network_ready ? "ready" : "NOT READY",
                 static_cast<int>(wifi_status),
@@ -756,6 +835,7 @@ void MqttManager::requestReconnect() {
     mqtt_connect_attempts_ = 0;
     mqtt_retry_exhausted_ = false;
     mqtt_last_attempt_ms_ = 0;
+    mqtt_mdns_cache_valid_ = false;
     if (client_.connected()) {
         client_.disconnect();
     }
