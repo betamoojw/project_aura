@@ -159,6 +159,7 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_dac_settings_back, UiController::on_dac_settings_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_dak_manual_start, UiController::on_dac_manual_start_event_cb, LV_EVENT_CLICKED},
         {objects.btn_dak_manual_stop, UiController::on_dac_manual_stop_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dak_manual_auto, UiController::on_dac_manual_auto_event_cb, LV_EVENT_CLICKED},
     };
 
     const EventBinding value_bindings[] = {

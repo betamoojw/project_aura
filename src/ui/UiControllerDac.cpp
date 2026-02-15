@@ -100,8 +100,10 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     set_checked_state(objects.btn_dak_manual_timer_toggle_1h, timer_s == 60 * 60);
 
     const bool running = fanControl.isRunning();
+    const bool auto_mode = !manual_mode;
     const bool start_active = available && running;
     const bool stop_active = available && !running;
+    const bool auto_active = available && auto_mode;
     const lv_color_t neutral = color_card_border();
     set_button_accent(objects.btn_dak_manual_start,
                       start_active ? color_green() : neutral,
@@ -109,6 +111,9 @@ void UiController::update_dac_ui(uint32_t now_ms) {
     set_button_accent(objects.btn_dak_manual_stop,
                       stop_active ? color_red() : neutral,
                       stop_active ? LV_OPA_COVER : LV_OPA_TRANSP);
+    set_button_accent(objects.btn_dak_manual_auto,
+                      auto_active ? color_green() : neutral,
+                      auto_active ? LV_OPA_COVER : LV_OPA_TRANSP);
 
     if (objects.label_dac_status) {
         const char *status_text = "OFFLINE";
@@ -251,6 +256,18 @@ void UiController::on_dac_manual_stop_event(lv_event_t *e) {
     update_dac_ui(millis());
 }
 
+void UiController::on_dac_manual_auto_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    fanControl.requestAutoStart();
+    if (!storage.config().dac_auto_mode) {
+        storage.config().dac_auto_mode = true;
+        storage.saveConfig(true);
+    }
+    update_dac_ui(millis());
+}
+
 void UiController::on_dac_settings_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_settings_event(e); }
 void UiController::on_dac_settings_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_settings_back_event(e); }
 void UiController::on_dac_manual_on_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_on_event(e); }
@@ -259,3 +276,4 @@ void UiController::on_dac_manual_level_event_cb(lv_event_t *e) { if (instance_) 
 void UiController::on_dac_manual_timer_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_timer_event(e); }
 void UiController::on_dac_manual_start_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_start_event(e); }
 void UiController::on_dac_manual_stop_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_stop_event(e); }
+void UiController::on_dac_manual_auto_event_cb(lv_event_t *e) { if (instance_) instance_->on_dac_manual_auto_event(e); }

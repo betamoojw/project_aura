@@ -691,11 +691,15 @@ typedef struct _objects_t {
     lv_obj_t *label_dac_manual_speed;
     lv_obj_t *label_dac_manual_timer;
     lv_obj_t *label_dac_manual_fan;
+    lv_obj_t *btn_dak_manual_auto;
+    lv_obj_t *label_btn_dak_manual_auto;
     lv_obj_t *btn_dac_auto_on;
     lv_obj_t *label_btn_dac_auto_on;
     lv_obj_t *btn_dac_manual_on;
     lv_obj_t *label_btn_btn_dac_manual_on;
     lv_obj_t *dac_auto_container;
+    lv_obj_t *btn_dak_manual_toggle_11;
+    lv_obj_t *label_btn_dak_manual_toggle_11;
     lv_obj_t *container_dac_settings_header;
     lv_obj_t *label_dac_settings_title;
     lv_obj_t *btn_dac_settings_back;
