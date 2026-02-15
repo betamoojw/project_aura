@@ -24,24 +24,36 @@ namespace {
 Board *g_board_ptr = nullptr;
 volatile bool g_board_begin_done = false;
 volatile bool g_board_begin_success = false;
+TaskHandle_t g_board_begin_task = nullptr;
 constexpr uint8_t BOARD_BEGIN_MAX_ATTEMPTS = 3;
 constexpr uint32_t BOARD_BEGIN_RETRY_DELAY_MS = 300;
 constexpr uint32_t BOARD_BEGIN_WAIT_TIMEOUT_MS = 10000;
 
+enum class BoardBeginResult : uint8_t {
+    Success = 0,
+    Failed = 1,
+    Timeout = 2,
+};
+
 void board_begin_task(void *) {
+    TaskHandle_t self = xTaskGetCurrentTaskHandle();
     LOGI("Main", "[Core %d] Starting board->begin()...", xPortGetCoreID());
     g_board_begin_success = g_board_ptr->begin();
     if (!g_board_begin_success) {
         LOGE("Main", "Board begin failed!");
     }
     g_board_begin_done = true;
+    if (g_board_begin_task == self) {
+        g_board_begin_task = nullptr;
+    }
     vTaskDelete(nullptr);
 }
 
-bool run_board_begin_once(Board *board) {
+BoardBeginResult run_board_begin_once(Board *board) {
     g_board_ptr = board;
     g_board_begin_done = false;
     g_board_begin_success = false;
+    g_board_begin_task = nullptr;
 
     BaseType_t created = xTaskCreatePinnedToCore(
         board_begin_task,
@@ -49,12 +61,12 @@ bool run_board_begin_once(Board *board) {
         8192,
         nullptr,
         1,
-        nullptr,
+        &g_board_begin_task,
         0  // Core 0
     );
     if (created != pdPASS) {
         LOGE("Main", "Failed to create board_init task");
-        return false;
+        return BoardBeginResult::Failed;
     }
 
     const TickType_t timeout_ticks = pdMS_TO_TICKS(BOARD_BEGIN_WAIT_TIMEOUT_MS);
@@ -62,12 +74,18 @@ bool run_board_begin_once(Board *board) {
     while (!g_board_begin_done) {
         if ((xTaskGetTickCount() - start_ticks) >= timeout_ticks) {
             LOGE("Main", "board->begin() timeout");
-            return false;
+            if (g_board_begin_task != nullptr) {
+                vTaskDelete(g_board_begin_task);
+                g_board_begin_task = nullptr;
+            }
+            g_board_begin_done = true;
+            g_board_begin_success = false;
+            return BoardBeginResult::Timeout;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    return g_board_begin_success;
+    return g_board_begin_success ? BoardBeginResult::Success : BoardBeginResult::Failed;
 }
 
 } // namespace
@@ -96,9 +114,18 @@ esp_panel::board::Board *BoardInit::initBoard() {
 
     // Run board->begin() on Core 0 to avoid IPC stack overflow.
     LOGI("Main", "Running on core: %d", xPortGetCoreID());
+    bool timeout_seen = false;
     for (uint8_t attempt = 1; attempt <= BOARD_BEGIN_MAX_ATTEMPTS; ++attempt) {
-        if (run_board_begin_once(board)) {
+        const BoardBeginResult result = run_board_begin_once(board);
+        if (result == BoardBeginResult::Success) {
             return board;
+        }
+
+        if (result == BoardBeginResult::Timeout) {
+            timeout_seen = true;
+            LOGE("Main", "board->begin attempt %u timed out, abort retries",
+                 static_cast<unsigned>(attempt));
+            break;
         }
 
         LOGW("Main", "board->begin attempt %u/%u failed",
@@ -111,7 +138,16 @@ esp_panel::board::Board *BoardInit::initBoard() {
         }
     }
 
-    LOGE("Main", "Board init failed after retries");
+    if (g_board_begin_task != nullptr) {
+        vTaskDelete(g_board_begin_task);
+        g_board_begin_task = nullptr;
+    }
+
+    if (timeout_seen) {
+        LOGE("Main", "Board init failed (timeout)");
+    } else {
+        LOGE("Main", "Board init failed after retries");
+    }
     delete board;
     return nullptr;
 }
