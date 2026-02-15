@@ -15,6 +15,7 @@
 #include "modules/SensorManager.h"
 #include "modules/TimeManager.h"
 #include "modules/PressureHistory.h"
+#include "modules/FanControl.h"
 #include "ui/ThemeManager.h"
 #include "ui/BacklightManager.h"
 #include "ui/NightModeManager.h"
@@ -37,6 +38,7 @@ struct Context {
     ThemeManager &themeManager;
     BacklightManager &backlightManager;
     NightModeManager &nightModeManager;
+    FanControl &fanControl;
     PressureHistory &pressureHistory;
     UiController &uiController;
     SensorData &currentData;

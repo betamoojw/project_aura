@@ -129,6 +129,7 @@ void AppInit::initManagersAndConfig(Context &ctx, StorageManager::BootAction boo
         ctx.mqttManager.anonymousRef(),
         mqtt_sync_with_wifi_cb);
     ctx.networkManager.attachThemeContext(ctx.themeManager);
+    ctx.networkManager.attachDacContext(ctx.fanControl, ctx.sensorManager, ctx.currentData);
     g_wifi_state_ctx.network = &ctx.networkManager;
     g_wifi_state_ctx.time_manager = &ctx.timeManager;
     g_wifi_state_ctx.ui_controller = &ctx.uiController;
@@ -156,6 +157,10 @@ void AppInit::initManagersAndConfig(Context &ctx, StorageManager::BootAction boo
 
 esp_panel::board::Board *AppInit::initBoardAndPeripherals(Context &ctx) {
     esp_panel::board::Board *board = BoardInit::initBoard();
+    if (board == nullptr) {
+        LOGE("Main", "Board unavailable, skip display/backlight/touch init");
+        return nullptr;
+    }
     ctx.backlightManager.attachBacklight(board->getBacklight());
     ctx.timeManager.initRtc();
     ctx.pressureHistory.load(ctx.storage, ctx.currentData);
@@ -163,11 +168,27 @@ esp_panel::board::Board *AppInit::initBoardAndPeripherals(Context &ctx) {
 
     BootHelpers::logGt911Address();
     ctx.sensorManager.begin(ctx.storage, ctx.temp_offset, ctx.hum_offset);
+    ctx.fanControl.begin(ctx.storage.config().dac_auto_mode);
+    String dac_auto_json;
+    if (ctx.storage.loadText(StorageManager::kDacAutoPath, dac_auto_json)) {
+        DacAutoConfig dac_auto;
+        if (DacAutoConfigJson::deserialize(dac_auto_json, dac_auto)) {
+            ctx.fanControl.setAutoConfig(dac_auto);
+            LOGI("Main", "Loaded DAC auto config");
+        } else {
+            LOGW("Main", "DAC auto config parse failed, using defaults");
+        }
+    }
 
     return board;
 }
 
 bool AppInit::initLvglAndUi(Context &ctx, esp_panel::board::Board *board) {
+    if (board == nullptr) {
+        LOGE("Main", "Skipping LVGL/UI: board init failed");
+        ctx.uiController.setLvglReady(false);
+        return false;
+    }
     LOGI("Main", "Initializing LVGL");
     bool lvgl_ready = lvgl_port_init(board->getLCD(), board->getTouch());
     if (!lvgl_ready) {

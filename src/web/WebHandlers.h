@@ -12,6 +12,9 @@ class WebServer;
 class PubSubClient;
 class StorageManager;
 class ThemeManager;
+class FanControl;
+class SensorManager;
+struct SensorData;
 
 struct WebHandlerContext {
     WebServer *server = nullptr;
@@ -45,6 +48,10 @@ struct WebHandlerContext {
     void (*mqtt_sync_with_wifi)() = nullptr;
     bool *mqtt_ui_open = nullptr;
     bool *theme_ui_open = nullptr;
+
+    FanControl *fan_control = nullptr;
+    SensorManager *sensor_manager = nullptr;
+    SensorData *sensor_data = nullptr;
 };
 
 void WebHandlersInit(WebHandlerContext *context);
@@ -60,3 +67,7 @@ void mqtt_handle_root();
 void mqtt_handle_save();
 void theme_handle_root();
 void theme_handle_apply();
+void dac_handle_root();
+void dac_handle_state();
+void dac_handle_action();
+void dac_handle_auto();

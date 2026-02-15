@@ -259,7 +259,6 @@ void UiController::update_status_icons() {
     if (main_wifi_state != wifi_icon_state_main) {
         wifi_icon_state_main = main_wifi_state;
         lv_obj_t *main_wifi_icons[] = {
-            objects.wifi_status_icon,
             objects.wifi_status_icon_4
         };
         const size_t main_wifi_icon_count = sizeof(main_wifi_icons) / sizeof(main_wifi_icons[0]);
@@ -341,7 +340,6 @@ void UiController::update_status_icons() {
     if (main_mqtt_state != mqtt_icon_state_main) {
         mqtt_icon_state_main = main_mqtt_state;
         lv_obj_t *main_mqtt_icons[] = {
-            objects.mqtt_status_icon,
             objects.mqtt_status_icon_4
         };
         const size_t main_mqtt_icon_count = sizeof(main_mqtt_icons) / sizeof(main_mqtt_icons[0]);

@@ -128,6 +128,19 @@ namespace Config {
     constexpr uint8_t BMP580_OSR_4X = 0x02;
     constexpr uint8_t BMP580_IIR_BYPASS = 0x00;
     constexpr uint8_t BMP580_POWERMODE_CONTINUOUS = 0x03;
+    constexpr bool DAC_FEATURE_ENABLED = true;
+    constexpr uint8_t DAC_I2C_ADDR_DEFAULT = 0x58;
+    constexpr uint8_t DAC_REG_OUTPUT_RANGE = 0x01;
+    constexpr uint8_t DAC_REG_CHANNEL_0 = 0x02;
+    constexpr uint8_t DAC_REG_CHANNEL_1 = 0x04;
+    constexpr uint8_t DAC_RANGE_5V = 0x00;
+    constexpr uint8_t DAC_RANGE_10V = 0x11;
+    constexpr uint8_t DAC_CHANNEL_VOUT0 = 0;
+    constexpr uint8_t DAC_CHANNEL_VOUT1 = 1;
+    constexpr uint16_t DAC_VOUT_MIN_MV = 0;
+    constexpr uint16_t DAC_VOUT_FULL_SCALE_MV = 10000;
+    constexpr uint16_t DAC_SAFE_DEFAULT_MV = 0;
+    constexpr uint16_t DAC_SAFE_ERROR_MV = 0;
 
     constexpr uint32_t SEN66_START_DELAY_MS = 50;
     constexpr uint32_t SEN66_STOP_DELAY_MS = 1400;
@@ -154,8 +167,8 @@ namespace Config {
     constexpr uint32_t SFA3X_START_DELAY_MS = 1;
     constexpr uint32_t SFA3X_STOP_DELAY_MS = 50;
     constexpr uint32_t SFA3X_READ_DELAY_MS = 5;
-    constexpr uint32_t SFA3X_POLL_MS = 1000;
-    constexpr uint32_t SFA3X_STALE_MS = 3000;
+    constexpr uint32_t SFA3X_POLL_MS = 3000;
+    constexpr uint32_t SFA3X_STALE_MS = 10000;
     constexpr uint32_t SEN0466_CMD_DELAY_MS = 10;
     constexpr uint32_t SEN0466_POLL_MS = 3000;
     constexpr uint32_t SEN0466_STALE_MS = 18000;
@@ -225,16 +238,19 @@ namespace Config {
     constexpr uint8_t WIFI_CONNECT_MAX_RETRIES = 3;
     constexpr uint32_t WIFI_UI_UPDATE_MS = 500;
     constexpr char WIFI_AP_SSID[] = "ProjectAura-Setup";
-    constexpr uint32_t DPS310_POLL_MS = 1000;
-    constexpr uint32_t DPS310_STALE_MS = 5000;
+    constexpr uint32_t DPS310_POLL_MS = 10000;
+    constexpr uint32_t DPS310_STALE_MS = 30000;
     constexpr uint32_t DPS310_RECOVER_MS = 30UL * 1000UL;
     constexpr uint32_t DPS310_RECOVER_COOLDOWN_MS = 60UL * 1000UL;
     constexpr float DPS310_PRESSURE_ALPHA = 0.12f;
-    constexpr uint32_t BMP580_POLL_MS = 1000;
-    constexpr uint32_t BMP580_STALE_MS = 5000;
+    constexpr uint32_t BMP580_POLL_MS = 10000;
+    constexpr uint32_t BMP580_STALE_MS = 30000;
     constexpr uint32_t BMP580_RECOVER_MS = 30UL * 1000UL;
     constexpr uint32_t BMP580_RECOVER_COOLDOWN_MS = 60UL * 1000UL;
     constexpr float BMP580_PRESSURE_ALPHA = 0.12f;
+    constexpr uint32_t DAC_HEALTH_CHECK_MS = 5000;
+    constexpr uint8_t DAC_HEALTH_FAIL_THRESHOLD = 3;
+    constexpr uint32_t DAC_RECOVER_COOLDOWN_MS = 30UL * 1000UL;
     constexpr uint32_t PRESSURE_HISTORY_STEP_MS = 5UL * 60UL * 1000UL;
     constexpr int PRESSURE_HISTORY_24H_SAMPLES = 288;
     constexpr int PRESSURE_HISTORY_3H_STEPS = 36;
@@ -310,6 +326,7 @@ namespace Config {
 
         bool ntp_enabled = true;
         int tz_index = -1;
+        bool dac_auto_mode = false;
 
         ThemeConfig theme{};
     };

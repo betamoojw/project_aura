@@ -21,6 +21,7 @@
 #include "modules/MqttManager.h"
 #include "modules/SensorManager.h"
 #include "modules/TimeManager.h"
+#include "modules/FanControl.h"
 
 #include "core/BootState.h"
 
@@ -43,6 +44,7 @@ TimeManager timeManager;
 ThemeManager themeManager;
 BacklightManager backlightManager;
 NightModeManager nightModeManager;
+FanControl fanControl;
 MemoryMonitor memoryMonitor;
 uint32_t boot_start_ms = 0;
 bool boot_stable = false;
@@ -65,6 +67,7 @@ UiContext ui_context{
     themeManager,
     backlightManager,
     nightModeManager,
+    fanControl,
     currentData,
     night_mode,
     temp_units_c,
@@ -109,6 +112,7 @@ void setup()
         themeManager,
         backlightManager,
         nightModeManager,
+        fanControl,
         pressureHistory,
         uiController,
         currentData,
@@ -144,6 +148,7 @@ void loop()
                            safe_boot_stage);
     TimeManager::PollResult time_poll = timeManager.poll(now);
     uiController.onTimePoll(time_poll);
+    fanControl.poll(now, &currentData, sensorManager.isWarmupActive());
     mqttManager.poll(currentData, night_mode, alert_blink_enabled, backlightManager.isOn());
     storage.poll(now);
     memoryMonitor.poll(now);

@@ -1508,5 +1508,492 @@ static const char kThemeLockedPage[] PROGMEM = R"HTML(
 </html>
 )HTML";
 
-} // namespace WebTemplates
+static const char kDacPageTemplate[] PROGMEM = R"HTML(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Project Aura | DAC Control</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(30, 41, 59, 0.7);
+      --panel-strong: rgba(30, 41, 59, 0.8);
+      --panel-locked: rgba(15, 23, 42, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-hover: #818cf8;
+      --primary-soft: rgba(99, 102, 241, 0.15);
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --success: #4ade80;
+      --success-bg: rgba(34, 197, 94, 0.2);
+      --error: #f87171;
+      --error-bg: rgba(239, 68, 68, 0.2);
+      --warning: #fbbf24;
+      --orange: #fb923c;
+      --warning-bg: rgba(251, 191, 36, 0.2);
+      --offline-bg: rgba(148, 163, 184, 0.2);
+      --neutral-btn: #334155;
+      --input-bg: rgba(15, 23, 42, 0.6);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body, html {
+      margin: 0; padding: 0;
+      min-height: 100%; width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    body { display: flex; justify-content: center; padding: 16px; }
+    .container { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    .title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .status {
+      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-running { background: var(--success-bg); color: var(--success); }
+    .status-stopped { background: var(--warning-bg); color: var(--warning); }
+    .status-fault { background: var(--error-bg); color: var(--error); }
+    .status-offline { background: var(--offline-bg); color: var(--text-dim); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .k { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .v { font-size: 20px; font-weight: 800; color: var(--primary); margin-top: 4px; }
+    .switch {
+      display: flex; background: var(--input-bg); border-radius: 12px; padding: 4px; margin-top: 10px;
+    }
+    .switch button {
+      flex: 1; border: none; padding: 10px; border-radius: 10px;
+      background: transparent; color: var(--text-dim); font-weight: 700; cursor: pointer;
+    }
+    .switch button.active { background: var(--primary); color: #fff; }
+    .hidden { display: none !important; }
+    .speed-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; }
+    .timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+    .chip-btn {
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px 0;
+      background: var(--input-bg); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .chip-btn.active { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+    .actions { display: flex; gap: 10px; margin-top: 12px; }
+    .actions-secondary { margin-top: 10px; }
+    .btn {
+      width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+      background: var(--neutral-btn); color: #fff; font-weight: 700; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn.start.active { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+    .btn.stop.active { border-color: var(--error); color: var(--error); background: var(--error-bg); }
+    .btn.auto.active { border-color: var(--warning); color: var(--warning); background: var(--warning-bg); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    .sensor-card {
+      position: relative;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .sensor-card:last-child { border-bottom: none; }
+    .sensor-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px; font-weight: 600;
+    }
+    .threshold-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .th-col { display: flex; flex-direction: column; gap: 4px; }
+    .th-color-bar { height: 4px; border-radius: 2px; width: 100%; }
+    .th-label { font-size: 10px; color: var(--text-dim); text-align: center; }
+
+    .th-select {
+      width: 100%; background: var(--input-bg); color: var(--text);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 4px; font-size: 11px; text-align: center;
+      outline: none; cursor: pointer;
+    }
+
+    .ui-switch {
+      width: 36px; height: 20px; background: var(--neutral-btn);
+      border-radius: 20px; position: relative; cursor: pointer; transition: 0.3s;
+      border: none;
+    }
+    .ui-switch.on { background: var(--primary); }
+    .ui-switch::after {
+      content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%;
+      background: white; top: 3px; left: 3px; transition: 0.3s;
+    }
+    .ui-switch.on::after { left: 19px; }
+
+    #sensors_wrapper {
+      transition: opacity 0.3s ease;
+    }
+
+    .auto-note { color: var(--text-dim); font-size: 12px; line-height: 1.4; margin-top: 10px; }
+    .save-row { display: flex; gap: 10px; margin-top: 12px; }
+    .btn.save { background: var(--primary); border-color: #818cf8; }
+    .save.unsaved { background: var(--primary-hover); }
+    .btn.reset {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+    .btn.reset:hover {
+      border-color: var(--text-dim);
+      color: var(--text);
+    }
+
+    .disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    @media (max-width: 420px) {
+      .threshold-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .speed-grid { grid-template-columns: repeat(4, 1fr); }
+      .timer-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <h1 class="title">DAC Settings</h1>
+        <div id="status_chip" class="status status-offline">OFFLINE</div>
+      </div>
+
+      <div class="grid2">
+        <div class="card" style="margin:0;padding:10px;background:var(--panel-strong);">
+          <div class="k">DAC Output</div>
+          <div id="out_val" class="v">UNKNOWN</div>
+        </div>
+        <div class="card" style="margin:0;padding:10px;background:var(--panel-strong);">
+          <div class="k">Timer</div>
+          <div id="timer_val" class="v">--:--</div>
+        </div>
+      </div>
+
+      <div class="switch">
+        <button id="mode_manual" onclick="setMode('manual')">MANUAL</button>
+        <button id="mode_auto" onclick="setMode('auto')">AUTO</button>
+      </div>
+    </div>
+
+    <div id="manual_box" class="card">
+      <div class="k">Set Fan Speed</div>
+      <div class="speed-grid" id="speed_grid"></div>
+      <div class="k" style="margin-top:10px;">Operation Timer</div>
+      <div class="timer-grid" id="timer_grid"></div>
+      <div class="actions">
+        <button id="btn_start" class="btn start" onclick="sendAction({action:'start'})">START</button>
+        <button id="btn_stop" class="btn stop" onclick="sendAction({action:'stop'})">STOP</button>
+      </div>
+      <div class="actions-secondary">
+        <button id="btn_start_auto" class="btn auto" onclick="sendAction({action:'start_auto'})">START AUTO</button>
+      </div>
+    </div>
+
+    <div id="auto_box" class="card hidden">
+      <div class="sensor-header" style="border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px;">
+        <span style="font-size: 1rem;">Enable Auto Control</span>
+        <button type="button" id="btn_master_auto" class="ui-switch"></button>
+      </div>
+
+      <div id="sensors_wrapper"></div>
+
+      <div class="save-row">
+        <button type="button" class="btn reset" onclick="resetAutoDefaults()">RESET DEFAULTS</button>
+        <button type="button" class="btn save" onclick="saveAuto()">SAVE PARAMETERS</button>
+      </div>
+      <div class="auto-note">Manual has priority over Auto while manual run/timer is active.</div>
+    </div>
+  </div>
+
+  <script>
+    const SPEEDS = [10,20,30,40,50,60,70,80,90,100];
+    const TIMERS = [
+      {label:"30s", sec:30},
+      {label:"1m", sec:60},
+      {label:"5m", sec:300},
+      {label:"15m", sec:900},
+      {label:"30m", sec:1800},
+      {label:"1h", sec:3600},
+    ];
+    const AUTO_META = {
+      co2:  {name:"CO2",  unit:"ppm",           labels:["<800","800-1k","1k-1.5k",">=1.5k"], defaults:[30,50,70,100]},
+      co:   {name:"CO",   unit:"ppm",           labels:["<9","9-35","35-100",">100"],         defaults:[20,50,100,100]},
+      pm25: {name:"PM2.5",unit:"&micro;g/m&sup3;", labels:["<12","12-34","35-54",">=55"],      defaults:[20,40,70,100]},
+      voc:  {name:"VOC Index", unit:"",         labels:["<150","151-250","251-350",">350"],   defaults:[20,50,80,100]},
+      nox:  {name:"NOx Index", unit:"",         labels:["<50","50-99","100-199",">=200"],     defaults:[20,40,70,100]},
+    };
+    const AUTO_KEYS = Object.keys(AUTO_META);
+    let latest = null;
+    let autoDirty = false;
+    let updatingFromState = false;
+
+    function fmtTimer(sec) {
+      if (!sec || sec <= 0) return "--:--";
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function setStatus(status) {
+      const chip = document.getElementById("status_chip");
+      chip.textContent = status;
+      chip.className = "status";
+      chip.classList.add("status-" + status.toLowerCase());
+    }
+
+    function markAutoDirty() {
+      if (updatingFromState) return;
+      autoDirty = true;
+      document.querySelector(".save").classList.add("unsaved");
+    }
+
+    function clearAutoDirty() {
+      autoDirty = false;
+      document.querySelector(".save").classList.remove("unsaved");
+    }
+
+    function setMasterAutoVisual(enabled) {
+      const btn = document.getElementById("btn_master_auto");
+      btn.classList.toggle("on", !!enabled);
+      const wrap = document.getElementById("sensors_wrapper");
+      wrap.classList.toggle("disabled", !enabled);
+    }
+
+    function buildManualButtons() {
+      const speed = document.getElementById("speed_grid");
+      SPEEDS.forEach(p => {
+        const b = document.createElement("button");
+        b.className = "chip-btn speed";
+        b.dataset.step = String(Math.round(p / 10));
+        b.textContent = (p === 100) ? "MAX" : (p + "%");
+        b.onclick = () => sendAction({action:"set_manual_step", step: Number(b.dataset.step)});
+        speed.appendChild(b);
+      });
+      const timer = document.getElementById("timer_grid");
+      TIMERS.forEach(t => {
+        const b = document.createElement("button");
+        b.className = "chip-btn timer";
+        b.dataset.sec = String(t.sec);
+        b.textContent = t.label;
+        b.onclick = () => {
+          if (latest && latest.dac && latest.dac.selected_timer_s === t.sec) {
+            sendAction({action:"set_timer", seconds:0});
+          } else {
+            sendAction({action:"set_timer", seconds:t.sec});
+          }
+        };
+        timer.appendChild(b);
+      });
+    }
+
+    function buildAutoCards() {
+      const root = document.getElementById("sensors_wrapper");
+      root.innerHTML = "";
+      AUTO_KEYS.forEach(key => {
+        const meta = AUTO_META[key];
+        const card = document.createElement("div");
+        card.className = "sensor-card";
+        card.dataset.key = key;
+
+        const unit = meta.unit ? ` <small class="text-dim">(${meta.unit})</small>` : "";
+        card.innerHTML = `
+          <div class="sensor-header">
+            <span>${meta.name}${unit}</span>
+            <button type="button" class="ui-switch sensor-en"></button>
+          </div>
+          <div class="threshold-row">
+            <div class="th-col">
+              <div class="th-label">${meta.labels[0]}</div>
+              <div class="th-color-bar" style="background: var(--success);"></div>
+              <select class="th-select s-green"></select>
+            </div>
+            <div class="th-col">
+              <div class="th-label">${meta.labels[1]}</div>
+              <div class="th-color-bar" style="background: var(--warning);"></div>
+              <select class="th-select s-yellow"></select>
+            </div>
+            <div class="th-col">
+              <div class="th-label">${meta.labels[2]}</div>
+              <div class="th-color-bar" style="background: var(--orange);"></div>
+              <select class="th-select s-orange"></select>
+            </div>
+            <div class="th-col">
+              <div class="th-label">${meta.labels[3]}</div>
+              <div class="th-color-bar" style="background: var(--error);"></div>
+              <select class="th-select s-red"></select>
+            </div>
+          </div>
+        `;
+        root.appendChild(card);
+
+        card.querySelectorAll("select").forEach(sel => {
+          for (let p = 0; p <= 100; p += 10) {
+            const o = document.createElement("option");
+            o.value = String(p);
+            o.textContent = `${p}% (${(p / 10).toFixed(1)}V)`;
+            sel.appendChild(o);
+          }
+          sel.addEventListener("change", markAutoDirty);
+        });
+
+        const enBtn = card.querySelector(".sensor-en");
+        enBtn.addEventListener("click", () => {
+          enBtn.classList.toggle("on");
+          markAutoDirty();
+        });
+      });
+    }
+
+    function render(data) {
+      latest = data;
+      const dac = data.dac || {};
+      const autoCfg = data.auto || {};
+
+      setStatus(dac.status || "OFFLINE");
+      const mode = dac.mode || "manual";
+      document.getElementById("mode_manual").classList.toggle("active", mode === "manual");
+      document.getElementById("mode_auto").classList.toggle("active", mode === "auto");
+      document.getElementById("manual_box").classList.toggle("hidden", mode !== "manual");
+      document.getElementById("auto_box").classList.toggle("hidden", mode !== "auto");
+
+      document.getElementById("btn_start").classList.toggle("active", dac.available && dac.running);
+      document.getElementById("btn_stop").classList.toggle("active", dac.available && !dac.running);
+      document.getElementById("btn_start_auto").classList.toggle(
+        "active",
+        dac.available && (dac.mode === "auto") && !dac.manual_override && !dac.auto_resume_blocked
+      );
+
+      if (!dac.output_known) {
+        document.getElementById("out_val").textContent = "UNKNOWN";
+      } else {
+        const mv = dac.output_mv || 0;
+        const pct = dac.output_percent || 0;
+        document.getElementById("out_val").textContent = (mv / 1000).toFixed(1) + "V (" + pct + "%)";
+      }
+      document.getElementById("timer_val").textContent = fmtTimer(dac.remaining_s || 0);
+
+      document.querySelectorAll(".speed").forEach(btn => {
+        btn.classList.toggle("active", Number(btn.dataset.step) === dac.manual_step);
+      });
+      document.querySelectorAll(".timer").forEach(btn => {
+        btn.classList.toggle("active", Number(btn.dataset.sec) === dac.selected_timer_s);
+      });
+
+      if (!autoDirty) {
+        updatingFromState = true;
+        setMasterAutoVisual(!!autoCfg.enabled);
+        document.querySelectorAll("#sensors_wrapper .sensor-card").forEach(card => {
+          const key = card.dataset.key;
+          const meta = AUTO_META[key];
+          const s = autoCfg[key] || {};
+          card.querySelector(".sensor-en").classList.toggle("on", !!s.enabled);
+          card.querySelector(".s-green").value = String(s.green ?? meta.defaults[0]);
+          card.querySelector(".s-yellow").value = String(s.yellow ?? meta.defaults[1]);
+          card.querySelector(".s-orange").value = String(s.orange ?? meta.defaults[2]);
+          card.querySelector(".s-red").value = String(s.red ?? meta.defaults[3]);
+        });
+        updatingFromState = false;
+      }
+    }
+
+    async function fetchState() {
+      const r = await fetch("/dac/state", {cache:"no-store"});
+      if (!r.ok) return;
+      const json = await r.json();
+      if (json && json.success) render(json);
+    }
+
+    async function sendAction(payload) {
+      const r = await fetch("/dac/action", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      if (r.ok) {
+        setTimeout(fetchState, 80);
+      }
+    }
+
+    function setMode(mode) {
+      sendAction({action:"set_mode", mode});
+    }
+
+    function collectAutoPayload() {
+      const payload = { auto: { enabled: document.getElementById("btn_master_auto").classList.contains("on") } };
+      document.querySelectorAll("#sensors_wrapper .sensor-card").forEach(card => {
+        const key = card.dataset.key;
+        payload.auto[key] = {
+          enabled: card.querySelector(".sensor-en").classList.contains("on"),
+          green: Number(card.querySelector(".s-green").value),
+          yellow: Number(card.querySelector(".s-yellow").value),
+          orange: Number(card.querySelector(".s-orange").value),
+          red: Number(card.querySelector(".s-red").value),
+        };
+      });
+      return payload;
+    }
+
+    async function saveAuto() {
+      const payload = collectAutoPayload();
+      const r = await fetch("/dac/auto", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      if (r.ok) {
+        clearAutoDirty();
+        setTimeout(fetchState, 80);
+      }
+    }
+
+    function resetAutoDefaults() {
+      if (!confirm("Reset auto settings to factory defaults?")) {
+        return;
+      }
+      updatingFromState = true;
+      setMasterAutoVisual(false);
+      document.querySelectorAll("#sensors_wrapper .sensor-card").forEach(card => {
+        const key = card.dataset.key;
+        const meta = AUTO_META[key];
+        card.querySelector(".sensor-en").classList.add("on");
+        card.querySelector(".s-green").value = String(meta.defaults[0]);
+        card.querySelector(".s-yellow").value = String(meta.defaults[1]);
+        card.querySelector(".s-orange").value = String(meta.defaults[2]);
+        card.querySelector(".s-red").value = String(meta.defaults[3]);
+      });
+      updatingFromState = false;
+      markAutoDirty();
+    }
+
+    document.getElementById("btn_master_auto").addEventListener("click", () => {
+      const btn = document.getElementById("btn_master_auto");
+      btn.classList.toggle("on");
+      setMasterAutoVisual(btn.classList.contains("on"));
+      markAutoDirty();
+    });
+
+    buildManualButtons();
+    buildAutoCards();
+    fetchState();
+    setInterval(fetchState, 1000);
+  </script>
+</body>
+</html>
+)HTML";
+
+} // namespace WebTemplates

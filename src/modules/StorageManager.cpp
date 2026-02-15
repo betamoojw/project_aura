@@ -186,6 +186,7 @@ void StorageManager::clearAll() {
     LittleFS.remove(kLastGoodPath);
     LittleFS.remove(kVocStatePath);
     LittleFS.remove(kPressurePath);
+    LittleFS.remove(kDacAutoPath);
 #else
     g_blob_store.clear();
 #endif
@@ -368,6 +369,55 @@ bool StorageManager::removeBlob(const char *path) {
 #endif
 }
 
+bool StorageManager::loadText(const char *path, String &out) const {
+#ifndef UNIT_TEST
+    if (!path) {
+        return false;
+    }
+    File file = LittleFS.open(path, FILE_READ);
+    if (!file) {
+        return false;
+    }
+    out = file.readString();
+    file.close();
+    return true;
+#else
+    auto it = g_blob_store.find(path ? path : "");
+    if (it == g_blob_store.end()) {
+        return false;
+    }
+    out = String(reinterpret_cast<const char *>(it->second.data()), it->second.size());
+    return true;
+#endif
+}
+
+bool StorageManager::saveTextAtomic(const char *path, const String &text) {
+#ifndef UNIT_TEST
+    if (!path) {
+        return false;
+    }
+    String tmp = String(path) + ".tmp";
+    File file = LittleFS.open(tmp, FILE_WRITE);
+    if (!file) {
+        return false;
+    }
+    size_t written = file.print(text);
+    file.close();
+    if (written != text.length()) {
+        LittleFS.remove(tmp);
+        return false;
+    }
+    return replaceFileAtomic(tmp.c_str(), path);
+#else
+    if (!path) {
+        return false;
+    }
+    const char *chars = text.c_str();
+    g_blob_store[path] = std::vector<uint8_t>(chars, chars + text.length());
+    return true;
+#endif
+}
+
 bool StorageManager::loadConfig() {
 #ifndef UNIT_TEST
     if (!LittleFS.exists(kConfigPath)) {
@@ -462,6 +512,11 @@ bool StorageManager::loadConfig() {
         readValue(time, "tz_idx", loaded.tz_index);
     }
 
+    ArduinoJson::JsonObject dac = root["dac"].as<ArduinoJson::JsonObject>();
+    if (!dac.isNull()) {
+        readValue(dac, "auto_mode", loaded.dac_auto_mode);
+    }
+
     ArduinoJson::JsonObject theme = root["theme"].as<ArduinoJson::JsonObject>();
     if (!theme.isNull()) {
         readValue(theme, "valid", loaded.theme.valid);
@@ -544,6 +599,9 @@ bool StorageManager::saveConfigInternal() {
     ArduinoJson::JsonObject time = root["time"].to<ArduinoJson::JsonObject>();
     time["ntp_enabled"] = config_.ntp_enabled;
     time["tz_idx"] = config_.tz_index;
+
+    ArduinoJson::JsonObject dac = root["dac"].to<ArduinoJson::JsonObject>();
+    dac["auto_mode"] = config_.dac_auto_mode;
 
     ArduinoJson::JsonObject theme = root["theme"].to<ArduinoJson::JsonObject>();
     theme["valid"] = config_.theme.valid;

@@ -48,11 +48,14 @@ public:
     bool loadBlob(const char *path, void *out, size_t len) const;
     bool saveBlobAtomic(const char *path, const void *data, size_t len);
     bool removeBlob(const char *path);
+    bool loadText(const char *path, String &out) const;
+    bool saveTextAtomic(const char *path, const String &text);
 
     static constexpr const char *kConfigPath = "/config.json";
     static constexpr const char *kLastGoodPath = "/config.last_good.json";
     static constexpr const char *kVocStatePath = "/voc_state.bin";
     static constexpr const char *kPressurePath = "/pressure.bin";
+    static constexpr const char *kDacAutoPath = "/dac_auto.json";
 
 private:
     bool loadConfig();

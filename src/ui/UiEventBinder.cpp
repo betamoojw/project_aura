@@ -39,6 +39,8 @@ lv_obj_t *UiEventBinder::screenRootById(int screen_id) {
             return objects.page_mqtt;
         case SCREEN_ID_PAGE_SENSORS_INFO:
             return objects.page_sensors_info;
+        case SCREEN_ID_PAGE_DAC_SETTINGS:
+            return objects.page_dac_settings;
         default:
             return nullptr;
     }
@@ -153,6 +155,13 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_theme_back, UiController::on_theme_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_diag_continue, UiController::on_boot_diag_continue_cb, LV_EVENT_CLICKED},
         {objects.btn_diag_errors, UiController::on_boot_diag_errors_cb, LV_EVENT_CLICKED},
+        {objects.btn_dac_settings, UiController::on_dac_settings_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dac_settings_back, UiController::on_dac_settings_back_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dak_manual_start, UiController::on_dac_manual_start_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dak_manual_stop, UiController::on_dac_manual_stop_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dak_manual_auto, UiController::on_dac_manual_auto_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dak_auto_on_toggle, UiController::on_dac_auto_start_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_dak_manual_stop_1, UiController::on_dac_auto_stop_event_cb, LV_EVENT_CLICKED},
     };
 
     const EventBinding value_bindings[] = {
@@ -169,6 +178,24 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_alert_blink, UiController::on_alert_blink_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co2_calib_asc, UiController::on_co2_calib_asc_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_ntp_toggle, UiController::on_ntp_toggle_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dac_manual_on, UiController::on_dac_manual_on_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dac_auto_on, UiController::on_dac_auto_on_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_1, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_2, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_3, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_4, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_5, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_6, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_7, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_8, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_9, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_toggle_10, UiController::on_dac_manual_level_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_timer_toggle_30sec, UiController::on_dac_manual_timer_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_timer_toggle_1min, UiController::on_dac_manual_timer_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_timer_toggle_5min, UiController::on_dac_manual_timer_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_timer_toggle_15min, UiController::on_dac_manual_timer_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_timer_toggle_30min, UiController::on_dac_manual_timer_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_dak_manual_timer_toggle_1h, UiController::on_dac_manual_timer_event_cb, LV_EVENT_VALUE_CHANGED},
     };
 
     constexpr lv_coord_t kExtendedHitAreaPx = 16;
@@ -183,6 +210,7 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         objects.btn_theme_back,
         objects.btn_wifi_back,
         objects.btn_back,
+        objects.btn_dac_settings_back,
     };
 
     for (lv_obj_t *btn : extended_hit_buttons) {
@@ -243,6 +271,24 @@ void UiEventBinder::applyToggleStylesForAvailableObjects(UiController &owner, in
         objects.btn_dp_info,
         objects.btn_3h_pressure_info,
         objects.btn_24h_pressure_info,
+        objects.btn_dac_auto_on,
+        objects.btn_dac_manual_on,
+        objects.btn_dak_manual_toggle_1,
+        objects.btn_dak_manual_toggle_2,
+        objects.btn_dak_manual_toggle_3,
+        objects.btn_dak_manual_toggle_4,
+        objects.btn_dak_manual_toggle_5,
+        objects.btn_dak_manual_toggle_6,
+        objects.btn_dak_manual_toggle_7,
+        objects.btn_dak_manual_toggle_8,
+        objects.btn_dak_manual_toggle_9,
+        objects.btn_dak_manual_toggle_10,
+        objects.btn_dak_manual_timer_toggle_30sec,
+        objects.btn_dak_manual_timer_toggle_1min,
+        objects.btn_dak_manual_timer_toggle_5min,
+        objects.btn_dak_manual_timer_toggle_15min,
+        objects.btn_dak_manual_timer_toggle_30min,
+        objects.btn_dak_manual_timer_toggle_1h,
     };
 
     for (lv_obj_t *btn : toggle_buttons) {
