@@ -25,7 +25,7 @@ void ui_tick() {
 #include <stddef.h>
 #include <string.h>
 
-enum { UI_KNOWN_SCREEN_COUNT = 12 };
+enum { UI_KNOWN_SCREEN_COUNT = SCREEN_ID_PAGE_DAC_SETTINGS };
 enum { UI_PAGE_SLOT_COUNT = (int)(offsetof(objects_t, label_boot_ver) / sizeof(lv_obj_t *)) };
 enum { UI_OBJECT_SLOT_COUNT = (int)(sizeof(objects_t) / sizeof(lv_obj_t *)) };
 
@@ -37,11 +37,11 @@ enum { UI_OBJECT_SLOT_COUNT = (int)(sizeof(objects_t) / sizeof(lv_obj_t *)) };
 
 UI_STATIC_ASSERT(UI_PAGE_SLOT_COUNT == UI_KNOWN_SCREEN_COUNT,
                  "EEZ page layout changed: update ui_runtime screen tables.");
-UI_STATIC_ASSERT(SCREEN_ID_PAGE_MAIN_PRO == UI_KNOWN_SCREEN_COUNT,
-                 "Expected MAIN_PRO to be last screen id; update ui_runtime mapping.");
+UI_STATIC_ASSERT(SCREEN_ID_PAGE_DAC_SETTINGS == UI_KNOWN_SCREEN_COUNT,
+                 "Expected DAC settings to be last screen id; update ui_runtime mapping.");
 UI_STATIC_ASSERT(offsetof(objects_t, page_boot_logo) == 0,
                  "objects_t must start with page_boot_logo.");
-UI_STATIC_ASSERT((offsetof(objects_t, page_main_pro) + sizeof(lv_obj_t *)) ==
+UI_STATIC_ASSERT((offsetof(objects_t, page_dac_settings) + sizeof(lv_obj_t *)) ==
                      (UI_PAGE_SLOT_COUNT * sizeof(lv_obj_t *)),
                  "Page roots must stay contiguous; update ui_runtime mapping.");
 UI_STATIC_ASSERT((sizeof(objects_t) % sizeof(lv_obj_t *)) == 0,
@@ -80,6 +80,8 @@ static lv_obj_t *getLvglObjectFromScreenId(enum ScreensEnum screenId) {
             return objects.page_mqtt;
         case SCREEN_ID_PAGE_SENSORS_INFO:
             return objects.page_sensors_info;
+        case SCREEN_ID_PAGE_DAC_SETTINGS:
+            return objects.page_dac_settings;
         case SCREEN_ID_PAGE_MAIN_PRO:
             return objects.page_main_pro;
         default:
@@ -116,19 +118,19 @@ static void clearObjectRefsForScreen(lv_obj_t *screen) {
 typedef void (*create_screen_func_t)(void);
 
 static const create_screen_func_t screen_create_funcs[UI_MAX_SCREEN_ID + 1] = {
-    NULL,
-    create_screen_page_boot_logo,
-    create_screen_page_boot_diag,
-    create_screen_page_settings,
-    create_screen_page_wifi,
-    create_screen_page_theme,
-    create_screen_page_clock,
-    create_screen_page_co2_calib,
-    create_screen_page_auto_night_mode,
-    create_screen_page_backlight,
-    create_screen_page_mqtt,
-    create_screen_page_sensors_info,
-    create_screen_page_main_pro,
+    [SCREEN_ID_PAGE_BOOT_LOGO] = create_screen_page_boot_logo,
+    [SCREEN_ID_PAGE_BOOT_DIAG] = create_screen_page_boot_diag,
+    [SCREEN_ID_PAGE_MAIN_PRO] = create_screen_page_main_pro,
+    [SCREEN_ID_PAGE_SETTINGS] = create_screen_page_settings,
+    [SCREEN_ID_PAGE_WIFI] = create_screen_page_wifi,
+    [SCREEN_ID_PAGE_THEME] = create_screen_page_theme,
+    [SCREEN_ID_PAGE_CLOCK] = create_screen_page_clock,
+    [SCREEN_ID_PAGE_CO2_CALIB] = create_screen_page_co2_calib,
+    [SCREEN_ID_PAGE_AUTO_NIGHT_MODE] = create_screen_page_auto_night_mode,
+    [SCREEN_ID_PAGE_BACKLIGHT] = create_screen_page_backlight,
+    [SCREEN_ID_PAGE_MQTT] = create_screen_page_mqtt,
+    [SCREEN_ID_PAGE_SENSORS_INFO] = create_screen_page_sensors_info,
+    [SCREEN_ID_PAGE_DAC_SETTINGS] = create_screen_page_dac_settings,
 };
 
 static void createScreenById(enum ScreensEnum screenId) {
