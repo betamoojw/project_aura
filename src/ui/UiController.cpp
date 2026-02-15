@@ -348,8 +348,9 @@ void UiController::poll(uint32_t now) {
         const bool flush_stall = backlightManager.isOn() &&
                                  flush_age_known &&
                                  lvgl_diag.flush_age_ms >= UI_LVGL_DIAG_FLUSH_STALL_MS;
+        // Flush may stay idle on static screens; do not treat flush-only inactivity as a fatal stall.
         const bool stall_suspected = !lvgl_diag.paused &&
-                                     (handler_stall || vsync_stall || flush_stall);
+                                     (handler_stall || vsync_stall);
         if (stall_suspected) {
             if (!lvgl_diag_stall_active) {
                 lvgl_diag_stall_since_ms = now;
