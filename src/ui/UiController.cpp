@@ -84,21 +84,33 @@ int score_from_thresholds(float value, float min_val, float t_good, float t_mod,
 }
 
 int score_from_voc(float value) {
-    return score_from_thresholds(value, 0.0f, 150.0f, 250.0f, 350.0f);
+    return score_from_thresholds(value,
+                                 0.0f,
+                                 AQ_VOC_GREEN_MAX_INDEX,
+                                 AQ_VOC_YELLOW_MAX_INDEX,
+                                 AQ_VOC_ORANGE_MAX_INDEX);
 }
 
 int score_from_co(float co_ppm) {
     if (co_ppm <= 0.0f) {
         return 0;
     }
-    if (co_ppm < 9.0f) {
-        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 0.0f, 9.0f, 0.0f, 25.0f)));
+    if (co_ppm < AQ_CO_GREEN_MAX_PPM) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 0.0f, AQ_CO_GREEN_MAX_PPM, 0.0f, 25.0f)));
     }
-    if (co_ppm <= 35.0f) {
-        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 9.0f, 35.0f, 80.0f, 90.0f)));
+    if (co_ppm <= AQ_CO_YELLOW_MAX_PPM) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm,
+                                                          AQ_CO_GREEN_MAX_PPM,
+                                                          AQ_CO_YELLOW_MAX_PPM,
+                                                          80.0f,
+                                                          90.0f)));
     }
-    if (co_ppm <= 100.0f) {
-        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 35.0f, 100.0f, 90.0f, 100.0f)));
+    if (co_ppm <= AQ_CO_ORANGE_MAX_PPM) {
+        return static_cast<int>(lroundf(map_float_clamped(co_ppm,
+                                                          AQ_CO_YELLOW_MAX_PPM,
+                                                          AQ_CO_ORANGE_MAX_PPM,
+                                                          90.0f,
+                                                          100.0f)));
     }
     return 100;
 }
@@ -522,23 +534,23 @@ lv_color_t UiController::getDewPointColor(float dew_c) {
 }
 
 lv_color_t UiController::getCO2Color(int co2) {
-    if (co2 < 800) return color_green();
-    if (co2 <= 1000) return color_yellow();
-    if (co2 <= 1500) return color_orange();
+    if (co2 < AQ_CO2_GREEN_MAX_PPM) return color_green();
+    if (co2 <= AQ_CO2_YELLOW_MAX_PPM) return color_yellow();
+    if (co2 <= AQ_CO2_ORANGE_MAX_PPM) return color_orange();
     return color_red();
 }
 
 lv_color_t UiController::getCOColor(float co_ppm) {
-    if (co_ppm < 9.0f) return color_green();
-    if (co_ppm <= 35.0f) return color_yellow();
-    if (co_ppm <= 100.0f) return color_orange();
+    if (co_ppm < AQ_CO_GREEN_MAX_PPM) return color_green();
+    if (co_ppm <= AQ_CO_YELLOW_MAX_PPM) return color_yellow();
+    if (co_ppm <= AQ_CO_ORANGE_MAX_PPM) return color_orange();
     return color_red();
 }
 
 lv_color_t UiController::getPM25Color(float pm) {
-    if (pm <= 12.0f) return color_green();
-    if (pm <= 35.0f) return color_yellow();
-    if (pm <= 55.0f) return color_orange();
+    if (pm <= AQ_PM25_GREEN_MAX_UGM3) return color_green();
+    if (pm <= AQ_PM25_YELLOW_MAX_UGM3) return color_yellow();
+    if (pm <= AQ_PM25_ORANGE_MAX_UGM3) return color_orange();
     return color_red();
 }
 
@@ -579,16 +591,16 @@ lv_color_t UiController::getPressureDeltaColor(float delta, bool valid, bool is2
 }
 
 lv_color_t UiController::getVOCColor(int voc) {
-    if (voc <= 150) return color_green();
-    if (voc <= 250) return color_yellow();
-    if (voc <= 350) return color_orange();
+    if (voc <= AQ_VOC_GREEN_MAX_INDEX) return color_green();
+    if (voc <= AQ_VOC_YELLOW_MAX_INDEX) return color_yellow();
+    if (voc <= AQ_VOC_ORANGE_MAX_INDEX) return color_orange();
     return color_red();
 }
 
 lv_color_t UiController::getNOxColor(int nox) {
-    if (nox <= 50) return color_green();
-    if (nox <= 100) return color_yellow();
-    if (nox <= 200) return color_orange();
+    if (nox <= AQ_NOX_GREEN_MAX_INDEX) return color_green();
+    if (nox <= AQ_NOX_YELLOW_MAX_INDEX) return color_yellow();
+    if (nox <= AQ_NOX_ORANGE_MAX_INDEX) return color_orange();
     return color_red();
 }
 
@@ -616,13 +628,21 @@ AirQuality UiController::getAirQuality(const SensorData &data) {
     }
 
     if (data.co2_valid && data.co2 > 0) {
-        int score = score_from_thresholds(static_cast<float>(data.co2), 400.0f, 800.0f, 1000.0f, 1500.0f);
+        int score = score_from_thresholds(static_cast<float>(data.co2),
+                                          400.0f,
+                                          AQ_CO2_GREEN_MAX_PPM,
+                                          AQ_CO2_YELLOW_MAX_PPM,
+                                          AQ_CO2_ORANGE_MAX_PPM);
         max_score = max(max_score, score);
         has_valid = true;
     }
 
     if (data.pm25_valid && isfinite(data.pm25) && data.pm25 >= 0.0f) {
-        int score = score_from_thresholds(data.pm25, 0.0f, 12.0f, 35.0f, 55.0f);
+        int score = score_from_thresholds(data.pm25,
+                                          0.0f,
+                                          AQ_PM25_GREEN_MAX_UGM3,
+                                          AQ_PM25_YELLOW_MAX_UGM3,
+                                          AQ_PM25_ORANGE_MAX_UGM3);
         max_score = max(max_score, score);
         has_valid = true;
     }
@@ -634,7 +654,11 @@ AirQuality UiController::getAirQuality(const SensorData &data) {
     }
 
     if (!gas_warmup && data.nox_valid && data.nox_index >= 0) {
-        int score = score_from_thresholds(static_cast<float>(data.nox_index), 1.0f, 50.0f, 100.0f, 200.0f);
+        int score = score_from_thresholds(static_cast<float>(data.nox_index),
+                                          1.0f,
+                                          AQ_NOX_GREEN_MAX_INDEX,
+                                          AQ_NOX_YELLOW_MAX_INDEX,
+                                          AQ_NOX_ORANGE_MAX_INDEX);
         max_score = max(max_score, score);
         has_valid = true;
     }

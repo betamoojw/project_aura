@@ -664,7 +664,9 @@ uint8_t FanControl::evaluateAutoDemandPercent(const SensorData &data, bool gas_w
     demand = maxPercent(demand, pick_percent(auto_config_.co2,
                                              co2_valid,
                                              static_cast<float>(data.co2),
-                                             800.0f, 1000.0f, 1500.0f));
+                                             Config::AQ_CO2_GREEN_MAX_PPM,
+                                             Config::AQ_CO2_YELLOW_MAX_PPM,
+                                             Config::AQ_CO2_ORANGE_MAX_PPM));
 
     const bool co_valid = data.co_sensor_present &&
                           data.co_valid &&
@@ -673,11 +675,11 @@ uint8_t FanControl::evaluateAutoDemandPercent(const SensorData &data, bool gas_w
     if (co_valid) {
         float co = data.co_ppm;
         uint8_t co_percent = auto_config_.co.band.red_percent;
-        if (co < 9.0f) {
+        if (co < Config::AQ_CO_GREEN_MAX_PPM) {
             co_percent = auto_config_.co.band.green_percent;
-        } else if (co <= 35.0f) {
+        } else if (co <= Config::AQ_CO_YELLOW_MAX_PPM) {
             co_percent = auto_config_.co.band.yellow_percent;
-        } else if (co <= 100.0f) {
+        } else if (co <= Config::AQ_CO_ORANGE_MAX_PPM) {
             co_percent = auto_config_.co.band.orange_percent;
         }
         if (auto_config_.co.enabled) {
@@ -691,11 +693,11 @@ uint8_t FanControl::evaluateAutoDemandPercent(const SensorData &data, bool gas_w
     if (pm25_valid && auto_config_.pm25.enabled) {
         float pm = data.pm25;
         uint8_t pm_percent = auto_config_.pm25.band.red_percent;
-        if (pm <= 12.0f) {
+        if (pm <= Config::AQ_PM25_GREEN_MAX_UGM3) {
             pm_percent = auto_config_.pm25.band.green_percent;
-        } else if (pm <= 35.0f) {
+        } else if (pm <= Config::AQ_PM25_YELLOW_MAX_UGM3) {
             pm_percent = auto_config_.pm25.band.yellow_percent;
-        } else if (pm <= 55.0f) {
+        } else if (pm <= Config::AQ_PM25_ORANGE_MAX_UGM3) {
             pm_percent = auto_config_.pm25.band.orange_percent;
         }
         demand = maxPercent(demand, pm_percent);
@@ -707,11 +709,11 @@ uint8_t FanControl::evaluateAutoDemandPercent(const SensorData &data, bool gas_w
     if (voc_valid && auto_config_.voc.enabled) {
         int voc = data.voc_index;
         uint8_t voc_percent = auto_config_.voc.band.red_percent;
-        if (voc <= 150) {
+        if (voc <= Config::AQ_VOC_GREEN_MAX_INDEX) {
             voc_percent = auto_config_.voc.band.green_percent;
-        } else if (voc <= 250) {
+        } else if (voc <= Config::AQ_VOC_YELLOW_MAX_INDEX) {
             voc_percent = auto_config_.voc.band.yellow_percent;
-        } else if (voc <= 350) {
+        } else if (voc <= Config::AQ_VOC_ORANGE_MAX_INDEX) {
             voc_percent = auto_config_.voc.band.orange_percent;
         }
         demand = maxPercent(demand, voc_percent);
@@ -723,11 +725,11 @@ uint8_t FanControl::evaluateAutoDemandPercent(const SensorData &data, bool gas_w
     if (nox_valid && auto_config_.nox.enabled) {
         int nox = data.nox_index;
         uint8_t nox_percent = auto_config_.nox.band.red_percent;
-        if (nox <= 50) {
+        if (nox <= Config::AQ_NOX_GREEN_MAX_INDEX) {
             nox_percent = auto_config_.nox.band.green_percent;
-        } else if (nox <= 100) {
+        } else if (nox <= Config::AQ_NOX_YELLOW_MAX_INDEX) {
             nox_percent = auto_config_.nox.band.yellow_percent;
-        } else if (nox <= 200) {
+        } else if (nox <= Config::AQ_NOX_ORANGE_MAX_INDEX) {
             nox_percent = auto_config_.nox.band.orange_percent;
         }
         demand = maxPercent(demand, nox_percent);

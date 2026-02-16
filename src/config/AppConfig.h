@@ -203,6 +203,23 @@ namespace Config {
     constexpr float SEN0466_CO_MIN_PPM = 0.0f;
     constexpr float SEN0466_CO_MAX_PPM = 1000.0f;
 
+    // Shared air-quality thresholds used by auto-demand logic and UI diagnostics.
+    constexpr float AQ_CO2_GREEN_MAX_PPM = 800.0f;
+    constexpr float AQ_CO2_YELLOW_MAX_PPM = 1000.0f;
+    constexpr float AQ_CO2_ORANGE_MAX_PPM = 1500.0f;
+    constexpr float AQ_CO_GREEN_MAX_PPM = 9.0f;
+    constexpr float AQ_CO_YELLOW_MAX_PPM = 35.0f;
+    constexpr float AQ_CO_ORANGE_MAX_PPM = 100.0f;
+    constexpr float AQ_PM25_GREEN_MAX_UGM3 = 12.0f;
+    constexpr float AQ_PM25_YELLOW_MAX_UGM3 = 35.0f;
+    constexpr float AQ_PM25_ORANGE_MAX_UGM3 = 55.0f;
+    constexpr int AQ_VOC_GREEN_MAX_INDEX = 150;
+    constexpr int AQ_VOC_YELLOW_MAX_INDEX = 250;
+    constexpr int AQ_VOC_ORANGE_MAX_INDEX = 350;
+    constexpr int AQ_NOX_GREEN_MAX_INDEX = 50;
+    constexpr int AQ_NOX_YELLOW_MAX_INDEX = 100;
+    constexpr int AQ_NOX_ORANGE_MAX_INDEX = 200;
+
     constexpr uint32_t CLOCK_TICK_MS = 1000;
     constexpr uint32_t NTP_SYNC_INTERVAL_MS = 6UL * 60UL * 60UL * 1000UL;
     constexpr uint32_t NTP_FRESH_MS = 12UL * 60UL * 60UL * 1000UL;
