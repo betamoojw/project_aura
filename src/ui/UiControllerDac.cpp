@@ -69,65 +69,65 @@ void format_mmss(uint32_t total_seconds, char *out, size_t out_len) {
 }
 
 uint8_t co2_auto_percent(const DacAutoSensorConfig &cfg, int co2) {
-    if (co2 < 800) {
+    if (co2 < Config::AQ_CO2_GREEN_MAX_PPM) {
         return cfg.band.green_percent;
     }
-    if (co2 < 1000) {
+    if (co2 < Config::AQ_CO2_YELLOW_MAX_PPM) {
         return cfg.band.yellow_percent;
     }
-    if (co2 < 1500) {
+    if (co2 < Config::AQ_CO2_ORANGE_MAX_PPM) {
         return cfg.band.orange_percent;
     }
     return cfg.band.red_percent;
 }
 
 uint8_t co_auto_percent(const DacAutoSensorConfig &cfg, float co_ppm) {
-    if (co_ppm < 9.0f) {
+    if (co_ppm < Config::AQ_CO_GREEN_MAX_PPM) {
         return cfg.band.green_percent;
     }
-    if (co_ppm <= 35.0f) {
+    if (co_ppm <= Config::AQ_CO_YELLOW_MAX_PPM) {
         return cfg.band.yellow_percent;
     }
-    if (co_ppm <= 100.0f) {
+    if (co_ppm <= Config::AQ_CO_ORANGE_MAX_PPM) {
         return cfg.band.orange_percent;
     }
     return cfg.band.red_percent;
 }
 
 uint8_t pm25_auto_percent(const DacAutoSensorConfig &cfg, float pm25) {
-    if (pm25 <= 12.0f) {
+    if (pm25 <= Config::AQ_PM25_GREEN_MAX_UGM3) {
         return cfg.band.green_percent;
     }
-    if (pm25 <= 35.0f) {
+    if (pm25 <= Config::AQ_PM25_YELLOW_MAX_UGM3) {
         return cfg.band.yellow_percent;
     }
-    if (pm25 <= 55.0f) {
+    if (pm25 <= Config::AQ_PM25_ORANGE_MAX_UGM3) {
         return cfg.band.orange_percent;
     }
     return cfg.band.red_percent;
 }
 
 uint8_t voc_auto_percent(const DacAutoSensorConfig &cfg, int voc_index) {
-    if (voc_index <= 150) {
+    if (voc_index <= Config::AQ_VOC_GREEN_MAX_INDEX) {
         return cfg.band.green_percent;
     }
-    if (voc_index <= 250) {
+    if (voc_index <= Config::AQ_VOC_YELLOW_MAX_INDEX) {
         return cfg.band.yellow_percent;
     }
-    if (voc_index <= 350) {
+    if (voc_index <= Config::AQ_VOC_ORANGE_MAX_INDEX) {
         return cfg.band.orange_percent;
     }
     return cfg.band.red_percent;
 }
 
 uint8_t nox_auto_percent(const DacAutoSensorConfig &cfg, int nox_index) {
-    if (nox_index <= 50) {
+    if (nox_index <= Config::AQ_NOX_GREEN_MAX_INDEX) {
         return cfg.band.green_percent;
     }
-    if (nox_index <= 100) {
+    if (nox_index <= Config::AQ_NOX_YELLOW_MAX_INDEX) {
         return cfg.band.yellow_percent;
     }
-    if (nox_index <= 200) {
+    if (nox_index <= Config::AQ_NOX_ORANGE_MAX_INDEX) {
         return cfg.band.orange_percent;
     }
     return cfg.band.red_percent;
@@ -270,7 +270,7 @@ void UiController::update_dac_ui(uint32_t now_ms) {
         char reason_sensor[16] = "--";
         char reason_value[32] = "--";
         uint8_t best_percent = 0;
-        const DacAutoConfig &cfg = fanControl.autoConfig();
+        const DacAutoConfig cfg = fanControl.autoConfig();
         const bool gas_warmup = sensorManager.isWarmupActive();
 
         if (cfg.enabled) {

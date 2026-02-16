@@ -1679,6 +1679,10 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
         <button type="button" class="btn reset" onclick="resetAutoDefaults()">RESET DEFAULTS</button>
         <button type="button" class="btn save" onclick="saveAuto()">SAVE PARAMETERS</button>
       </div>
+      <div class="actions actions-secondary">
+        <button id="btn_auto_start" class="btn auto" onclick="sendAction({action:'start_auto'})">START AUTO</button>
+        <button id="btn_auto_stop" class="btn stop" onclick="sendAction({action:'stop'})">STOP</button>
+      </div>
       <div class="auto-note">Manual has priority over Auto while manual run/timer is active.</div>
     </div>
   </div>
@@ -1836,10 +1840,10 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
 
       document.getElementById("btn_start").classList.toggle("active", dac.available && dac.running);
       document.getElementById("btn_stop").classList.toggle("active", dac.available && !dac.running);
-      document.getElementById("btn_start_auto").classList.toggle(
-        "active",
-        dac.available && (dac.mode === "auto") && !dac.manual_override && !dac.auto_resume_blocked
-      );
+      const autoArmed = dac.available && (dac.mode === "auto") && !dac.manual_override && !dac.auto_resume_blocked;
+      document.getElementById("btn_start_auto").classList.toggle("active", autoArmed);
+      document.getElementById("btn_auto_start").classList.toggle("active", autoArmed);
+      document.getElementById("btn_auto_stop").classList.toggle("active", dac.available && !dac.running);
 
       if (!dac.output_known) {
         document.getElementById("out_val").textContent = "UNKNOWN";
@@ -1913,6 +1917,12 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
 
     async function saveAuto() {
       const payload = collectAutoPayload();
+      payload.rearm = !!(latest &&
+                         latest.dac &&
+                         latest.dac.mode === "auto" &&
+                         latest.dac.running &&
+                         !latest.dac.manual_override &&
+                         !latest.dac.auto_resume_blocked);
       const r = await fetch("/dac/auto", {
         method: "POST",
         headers: {"Content-Type":"application/json"},

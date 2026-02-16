@@ -651,11 +651,19 @@ void dac_handle_auto() {
         return;
     }
 
+    const bool rearm = root["rearm"] | false;
     fan.setAutoConfig(config);
     String serialized = DacAutoConfigJson::serialize(config);
     if (!context->storage->saveTextAtomic(StorageManager::kDacAutoPath, serialized)) {
         server.send(500, "text/plain", "Failed to persist auto config");
         return;
+    }
+    if (rearm) {
+        fan.requestAutoStart();
+        if (!context->storage->config().dac_auto_mode) {
+            context->storage->config().dac_auto_mode = true;
+            context->storage->saveConfig(true);
+        }
     }
     server.send(200, "application/json", "{\"success\":true}");
 }
