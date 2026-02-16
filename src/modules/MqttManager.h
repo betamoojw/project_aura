@@ -72,6 +72,7 @@ public:
 private:
     void loadPrefs();
     void initDeviceId();
+    void refreshHostBuffer();
     void setupClient();
     bool prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_resolved_ip,
                                bool &is_mdns_host);
@@ -100,7 +101,9 @@ private:
     PubSubClient client_;
     bool ui_dirty_ = false;
 
+    static constexpr size_t kMqttHostBufferSize = 256;
     String mqtt_host_;
+    char mqtt_host_buf_[kMqttHostBufferSize] = {0};
     uint16_t mqtt_port_ = Config::MQTT_DEFAULT_PORT;
     String mqtt_user_;
     String mqtt_pass_;

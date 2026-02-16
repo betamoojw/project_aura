@@ -137,6 +137,7 @@ void MqttManager::loadPrefs() {
     if (mqtt_port_ == 0) {
         mqtt_port_ = Config::MQTT_DEFAULT_PORT;
     }
+    refreshHostBuffer();
 }
 
 void MqttManager::initDeviceId() {
@@ -147,8 +148,29 @@ void MqttManager::initDeviceId() {
     mqtt_device_id_ = buf;
 }
 
+void MqttManager::refreshHostBuffer() {
+    String broker_host = mqtt_host_;
+    broker_host.trim();
+    if (broker_host != mqtt_host_) {
+        mqtt_host_ = broker_host;
+    }
+
+    if (mqtt_host_.length() >= kMqttHostBufferSize) {
+        mqtt_host_.remove(kMqttHostBufferSize - 1);
+        LOGW("MQTT", "broker host truncated to %u chars",
+             static_cast<unsigned>(kMqttHostBufferSize - 1));
+    }
+
+    const size_t len = mqtt_host_.length();
+    if (len > 0) {
+        memcpy(mqtt_host_buf_, mqtt_host_.c_str(), len);
+    }
+    mqtt_host_buf_[len] = '\0';
+}
+
 void MqttManager::setupClient() {
-    client_.setServer(mqtt_host_.c_str(), mqtt_port_);
+    refreshHostBuffer();
+    client_.setServer(mqtt_host_buf_, mqtt_port_);
     client_.setBufferSize(Config::MQTT_BUFFER_SIZE);
     client_.setKeepAlive(30);
     client_.setSocketTimeout(1);
@@ -161,20 +183,17 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
     is_mdns_host = false;
     resolved_ip = IPAddress();
 
+    refreshHostBuffer();
     String broker_host = mqtt_host_;
-    broker_host.trim();
     if (broker_host.isEmpty()) {
         return false;
-    }
-    if (broker_host != mqtt_host_) {
-        mqtt_host_ = broker_host;
     }
 
     String host_lc = broker_host;
     host_lc.toLowerCase();
     is_mdns_host = host_lc.endsWith(".local");
     if (!is_mdns_host) {
-        client_.setServer(mqtt_host_.c_str(), mqtt_port_);
+        client_.setServer(mqtt_host_buf_, mqtt_port_);
         return true;
     }
 
@@ -189,7 +208,7 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
                 resolved_ip = mqtt_mdns_cache_ip_;
                 using_resolved_ip = true;
             } else {
-                client_.setServer(mqtt_host_.c_str(), mqtt_port_);
+                client_.setServer(mqtt_host_buf_, mqtt_port_);
             }
             return true;
         }
@@ -198,7 +217,7 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
     String mdns_name = broker_host.substring(0, broker_host.length() - 6);
     mdns_name.trim();
     if (mdns_name.isEmpty()) {
-        client_.setServer(mqtt_host_.c_str(), mqtt_port_);
+        client_.setServer(mqtt_host_buf_, mqtt_port_);
         return true;
     }
 
@@ -215,7 +234,7 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
     } else {
         mqtt_mdns_cache_success_ = false;
         mqtt_mdns_cache_ip_ = IPAddress();
-        client_.setServer(mqtt_host_.c_str(), mqtt_port_);
+        client_.setServer(mqtt_host_buf_, mqtt_port_);
     }
     return true;
 }
@@ -543,7 +562,7 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
 }
 
 bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool alert_blink, bool backlight_on) {
-    if (!mqtt_enabled_ || mqtt_host_.isEmpty()) {
+    if (!mqtt_enabled_) {
         return false;
     }
     if (mqtt_retry_exhausted_) {
