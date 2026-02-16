@@ -48,12 +48,14 @@ static volatile uint32_t lvgl_diag_lock_fail_count = 0;
 static volatile uint32_t lvgl_diag_touch_read_error_count = 0;
 static constexpr uint32_t LVGL_TOUCH_POLL_INTERVAL_MS = 8;
 static constexpr uint32_t LVGL_TOUCH_ERROR_STREAK_WINDOW_MS = 1200;
-static constexpr uint32_t LVGL_TOUCH_ERROR_BLOCK_MS = 150;
+static constexpr uint32_t LVGL_TOUCH_ERROR_BLOCK_MS_BASE = 200;
+static constexpr uint32_t LVGL_TOUCH_ERROR_BLOCK_MS_STREAK = 800;
 static constexpr uint8_t LVGL_TOUCH_RECOVER_ERROR_STREAK = 3;
 static constexpr uint32_t LVGL_TOUCH_RECOVER_COOLDOWN_MS = 30000;
 static constexpr uint32_t LVGL_TOUCH_RECOVER_BLOCK_MS = 300;
 static constexpr uint8_t LVGL_TOUCH_RECOVER_MAX_BACKOFF_SHIFT = 4;
 static constexpr uint32_t LVGL_TOUCH_RECOVER_MAX_COOLDOWN_MS = 8UL * 60UL * 1000UL;
+static constexpr uint32_t LVGL_DIAG_MAX_REASONABLE_AGE_MS = 24UL * 60UL * 60UL * 1000UL;
 
 static inline uint32_t get_rtos_ms()
 {
@@ -79,7 +81,16 @@ static inline void lvgl_diag_mark_flush()
 
 static inline uint32_t lvgl_diag_age_ms(uint32_t now_ms, uint32_t stamp_ms)
 {
-    return (stamp_ms == 0) ? UINT32_MAX : (now_ms - stamp_ms);
+    if (stamp_ms == 0) {
+        return UINT32_MAX;
+    }
+    const uint32_t age_ms = now_ms - stamp_ms;
+    // If stamp is sampled ahead of now due concurrent update, unsigned underflow
+    // produces a near-UINT32_MAX age; treat it as unknown.
+    if (age_ms > LVGL_DIAG_MAX_REASONABLE_AGE_MS) {
+        return UINT32_MAX;
+    }
+    return age_ms;
 }
 
 static inline uint32_t get_monotonic_ms()
@@ -172,7 +183,6 @@ static inline void lvgl_touch_note_error(Touch *tp, uint32_t now_ms, const char 
 {
     ++lvgl_diag_touch_read_error_count;
     lvgl_touch_cached_state = LV_INDEV_STATE_RELEASED;
-    lvgl_touch_read_block_until_ms = now_ms + LVGL_TOUCH_ERROR_BLOCK_MS;
     lvgl_touch_wait_release_after_block = false;
 
     if ((lvgl_touch_last_error_ms == 0) ||
@@ -182,6 +192,10 @@ static inline void lvgl_touch_note_error(Touch *tp, uint32_t now_ms, const char 
         ++lvgl_touch_error_streak;
     }
     lvgl_touch_last_error_ms = now_ms;
+    const uint32_t block_ms =
+        (lvgl_touch_error_streak >= 2) ? LVGL_TOUCH_ERROR_BLOCK_MS_STREAK
+                                       : LVGL_TOUCH_ERROR_BLOCK_MS_BASE;
+    lvgl_touch_read_block_until_ms = now_ms + block_ms;
 
     const bool cooldown_active =
         (lvgl_touch_last_recover_ms != 0) &&
