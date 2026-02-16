@@ -56,6 +56,7 @@ constexpr uint32_t UI_LVGL_DIAG_RECOVER_MS = 3000;
 constexpr uint32_t UI_LVGL_DIAG_REBOOT_STALL_MS = 45000;
 constexpr uint32_t UI_LVGL_DIAG_REBOOT_FLUSH_LOG_MS = 80;
 constexpr uint32_t UI_LVGL_DIAG_AGE_UNKNOWN_MS = 0xFFFFFFFFu;
+constexpr uint32_t UI_LVGL_DIAG_TOUCH_WARN_DELTA = 3;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -320,7 +321,9 @@ void UiController::poll(uint32_t now) {
             lvgl_diag_prev_heartbeat_lock_fail_count = lvgl_diag.lock_fail_count;
             lvgl_diag_prev_heartbeat_touch_err_count = lvgl_diag.touch_read_error_count;
 
-            if (lvgl_diag.paused || lock_fail_delta > 0 || touch_err_delta > 0) {
+            if (lvgl_diag.paused ||
+                lock_fail_delta > 0 ||
+                touch_err_delta >= UI_LVGL_DIAG_TOUCH_WARN_DELTA) {
                 LOGW("UI",
                      "LVGL heartbeat: handler=%lu(age=%lu ms), flush=%lu(age=%lu ms), vsync=%lu(age=%lu ms), lock_fail=%lu(+%lu), touch_err=%lu(+%lu), paused=%s",
                      static_cast<unsigned long>(lvgl_diag.timer_handler_count),

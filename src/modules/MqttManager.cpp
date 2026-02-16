@@ -166,12 +166,15 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
     if (broker_host.isEmpty()) {
         return false;
     }
+    if (broker_host != mqtt_host_) {
+        mqtt_host_ = broker_host;
+    }
 
     String host_lc = broker_host;
     host_lc.toLowerCase();
     is_mdns_host = host_lc.endsWith(".local");
     if (!is_mdns_host) {
-        client_.setServer(broker_host.c_str(), mqtt_port_);
+        client_.setServer(mqtt_host_.c_str(), mqtt_port_);
         return true;
     }
 
@@ -186,7 +189,7 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
                 resolved_ip = mqtt_mdns_cache_ip_;
                 using_resolved_ip = true;
             } else {
-                client_.setServer(broker_host.c_str(), mqtt_port_);
+                client_.setServer(mqtt_host_.c_str(), mqtt_port_);
             }
             return true;
         }
@@ -195,7 +198,7 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
     String mdns_name = broker_host.substring(0, broker_host.length() - 6);
     mdns_name.trim();
     if (mdns_name.isEmpty()) {
-        client_.setServer(broker_host.c_str(), mqtt_port_);
+        client_.setServer(mqtt_host_.c_str(), mqtt_port_);
         return true;
     }
 
@@ -212,7 +215,7 @@ bool MqttManager::prepareBrokerEndpoint(IPAddress &resolved_ip, bool &using_reso
     } else {
         mqtt_mdns_cache_success_ = false;
         mqtt_mdns_cache_ip_ = IPAddress();
-        client_.setServer(broker_host.c_str(), mqtt_port_);
+        client_.setServer(mqtt_host_.c_str(), mqtt_port_);
     }
     return true;
 }
