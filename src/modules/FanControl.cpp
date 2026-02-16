@@ -20,7 +20,187 @@ bool timeReached(uint32_t now_ms, uint32_t deadline_ms) {
 
 } // namespace
 
+void FanControl::ensureSyncPrimitives() {
+    if (sync_mutex_ == nullptr) {
+        sync_mutex_ = xSemaphoreCreateMutex();
+    }
+}
+
+bool FanControl::lockSync() const {
+    if (sync_mutex_ == nullptr) {
+        return true;
+    }
+    return xSemaphoreTake(sync_mutex_, portMAX_DELAY) == pdTRUE;
+}
+
+void FanControl::unlockSync() const {
+    if (sync_mutex_ != nullptr) {
+        xSemaphoreGive(sync_mutex_);
+    }
+}
+
+void FanControl::drainPendingCommands(PendingCommands &out) {
+    out = PendingCommands{};
+    if (!lockSync()) {
+        return;
+    }
+    out = pending_commands_;
+    pending_commands_ = PendingCommands{};
+    unlockSync();
+}
+
+void FanControl::publishSnapshot() {
+    if (!lockSync()) {
+        return;
+    }
+    snapshot_.available = available_;
+    snapshot_.running = running_;
+    snapshot_.faulted = faulted_;
+    snapshot_.output_known = output_known_;
+    snapshot_.manual_override_active = manual_override_active_;
+    snapshot_.auto_resume_blocked = auto_resume_blocked_;
+    snapshot_.mode = mode_;
+    snapshot_.manual_step = manual_step_;
+    snapshot_.selected_timer_s = selected_timer_s_;
+    snapshot_.output_mv = output_mv_;
+    snapshot_.stop_at_ms = stop_at_ms_;
+    snapshot_.auto_config = auto_config_;
+    unlockSync();
+}
+
+bool FanControl::isAvailable() const {
+    bool value = snapshot_.available;
+    if (lockSync()) {
+        value = snapshot_.available;
+        unlockSync();
+    }
+    return value;
+}
+
+bool FanControl::isRunning() const {
+    bool value = snapshot_.running;
+    if (lockSync()) {
+        value = snapshot_.running;
+        unlockSync();
+    }
+    return value;
+}
+
+bool FanControl::isFaulted() const {
+    bool value = snapshot_.faulted;
+    if (lockSync()) {
+        value = snapshot_.faulted;
+        unlockSync();
+    }
+    return value;
+}
+
+bool FanControl::isOutputKnown() const {
+    bool value = snapshot_.output_known;
+    if (lockSync()) {
+        value = snapshot_.output_known;
+        unlockSync();
+    }
+    return value;
+}
+
+bool FanControl::isManualOverrideActive() const {
+    bool value = snapshot_.manual_override_active;
+    if (lockSync()) {
+        value = snapshot_.manual_override_active;
+        unlockSync();
+    }
+    return value;
+}
+
+bool FanControl::isAutoResumeBlocked() const {
+    bool value = snapshot_.auto_resume_blocked;
+    if (lockSync()) {
+        value = snapshot_.auto_resume_blocked;
+        unlockSync();
+    }
+    return value;
+}
+
+FanControl::Mode FanControl::mode() const {
+    Mode value = snapshot_.mode;
+    if (lockSync()) {
+        value = snapshot_.mode;
+        unlockSync();
+    }
+    return value;
+}
+
+uint8_t FanControl::manualStep() const {
+    uint8_t value = snapshot_.manual_step;
+    if (lockSync()) {
+        value = snapshot_.manual_step;
+        unlockSync();
+    }
+    return value;
+}
+
+uint32_t FanControl::selectedTimerSeconds() const {
+    uint32_t value = snapshot_.selected_timer_s;
+    if (lockSync()) {
+        value = snapshot_.selected_timer_s;
+        unlockSync();
+    }
+    return value;
+}
+
+uint16_t FanControl::outputMillivolts() const {
+    uint16_t value = snapshot_.output_mv;
+    if (lockSync()) {
+        value = snapshot_.output_mv;
+        unlockSync();
+    }
+    return value;
+}
+
+DacAutoConfig FanControl::autoConfig() const {
+    DacAutoConfig value = snapshot_.auto_config;
+    if (lockSync()) {
+        value = snapshot_.auto_config;
+        unlockSync();
+    }
+    return value;
+}
+
+uint8_t FanControl::outputPercent() const {
+    if (Config::DAC_VOUT_FULL_SCALE_MV == 0) {
+        return 0;
+    }
+    uint16_t output_mv = snapshot_.output_mv;
+    if (lockSync()) {
+        output_mv = snapshot_.output_mv;
+        unlockSync();
+    }
+    uint32_t percent = static_cast<uint32_t>(output_mv) * 100u;
+    percent = (percent + (Config::DAC_VOUT_FULL_SCALE_MV / 2u)) / Config::DAC_VOUT_FULL_SCALE_MV;
+    if (percent > 100u) {
+        percent = 100u;
+    }
+    return static_cast<uint8_t>(percent);
+}
+
+uint32_t FanControl::remainingSeconds(uint32_t now_ms) const {
+    bool running = snapshot_.running;
+    uint32_t stop_at_ms = snapshot_.stop_at_ms;
+    if (lockSync()) {
+        running = snapshot_.running;
+        stop_at_ms = snapshot_.stop_at_ms;
+        unlockSync();
+    }
+    if (!running || stop_at_ms == 0 || timeReached(now_ms, stop_at_ms)) {
+        return 0;
+    }
+    return (stop_at_ms - now_ms + 999UL) / 1000UL;
+}
+
 void FanControl::begin(bool auto_mode_preference) {
+    ensureSyncPrimitives();
+
     mode_ = auto_mode_preference ? Mode::Auto : Mode::Manual;
     manual_step_ = 1;
     selected_timer_s_ = 0;
@@ -36,9 +216,12 @@ void FanControl::begin(bool auto_mode_preference) {
     health_probe_fail_count_ = 0;
     boot_missing_lockout_ = false;
     auto_resume_blocked_ = false;
+    pending_commands_ = PendingCommands{};
+    snapshot_ = Snapshot{};
 
     if (!Config::DAC_FEATURE_ENABLED) {
         LOGI("FanControl", "DAC feature disabled");
+        publishSnapshot();
         return;
     }
 
@@ -50,13 +233,47 @@ void FanControl::begin(bool auto_mode_preference) {
         boot_missing_lockout_ = true;
         output_known_ = false;
     }
+    publishSnapshot();
 }
 
 void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_warmup) {
+    ensureSyncPrimitives();
+
+    PendingCommands pending;
+    drainPendingCommands(pending);
+
+    if (pending.has_auto_config) {
+        applyAutoConfig(pending.auto_config);
+    }
+    if (pending.has_mode) {
+        applyMode(pending.mode);
+    }
+    if (pending.has_manual_step) {
+        applyManualStep(pending.manual_step);
+    }
+    if (pending.has_timer_seconds) {
+        applyTimerSeconds(pending.timer_seconds);
+    }
+    switch (pending.start_stop_request) {
+        case PendingCommands::StartStopRequest::Start:
+            applyRequestStart();
+            break;
+        case PendingCommands::StartStopRequest::Stop:
+            applyRequestStop();
+            break;
+        case PendingCommands::StartStopRequest::AutoStart:
+            applyRequestAutoStart();
+            break;
+        case PendingCommands::StartStopRequest::None:
+        default:
+            break;
+    }
+
     if (!Config::DAC_FEATURE_ENABLED) {
         available_ = false;
         faulted_ = false;
         applyStopState(true);
+        publishSnapshot();
         return;
     }
 
@@ -92,6 +309,7 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
         stop_requested_ = false;
         if (available_ && !applyOutputMillivolts(Config::DAC_SAFE_ERROR_MV)) {
             handleDacFault("safe stop write failed");
+            publishSnapshot();
             return;
         }
         applyStopState(available_);
@@ -104,12 +322,14 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
     if (start_requested_) {
         start_requested_ = false;
         if (mode_ != Mode::Manual || !available_) {
+            publishSnapshot();
             return;
         }
 
         const uint16_t target_mv = stepToMillivolts(manual_step_);
         if (!applyOutputMillivolts(target_mv)) {
             handleDacFault("start write failed");
+            publishSnapshot();
             return;
         }
 
@@ -131,6 +351,7 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
             const uint16_t target_mv = stepToMillivolts(manual_step_);
             if (!applyOutputMillivolts(target_mv)) {
                 handleDacFault("manual level update failed");
+                publishSnapshot();
                 return;
             }
             output_mv_ = target_mv;
@@ -159,6 +380,7 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
             if (running_ || !output_known_ || output_mv_ != Config::DAC_SAFE_ERROR_MV) {
                 if (!applyOutputMillivolts(Config::DAC_SAFE_ERROR_MV)) {
                     handleDacFault("auto stop write failed");
+                    publishSnapshot();
                     return;
                 }
                 applyStopState(true);
@@ -170,6 +392,7 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
             if (!running_ || output_mv_ != target_mv) {
                 if (!applyOutputMillivolts(target_mv)) {
                     handleDacFault("auto level write failed");
+                    publishSnapshot();
                     return;
                 }
             }
@@ -183,6 +406,7 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
     if (running_ && stop_at_ms_ != 0 && timeReached(now_ms, stop_at_ms_)) {
         if (available_ && !applyOutputMillivolts(Config::DAC_SAFE_ERROR_MV)) {
             handleDacFault("timer stop write failed");
+            publishSnapshot();
             return;
         }
         const bool auto_resume_on_timer_end = available_ &&
@@ -193,9 +417,91 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
             mode_ = Mode::Auto;
         }
     }
+
+    publishSnapshot();
 }
 
 void FanControl::setMode(Mode mode) {
+    ensureSyncPrimitives();
+    if (!lockSync()) {
+        return;
+    }
+    pending_commands_.has_mode = true;
+    pending_commands_.mode = mode;
+    if (mode == Mode::Manual &&
+        pending_commands_.start_stop_request == PendingCommands::StartStopRequest::AutoStart) {
+        pending_commands_.start_stop_request = PendingCommands::StartStopRequest::None;
+    }
+    unlockSync();
+}
+
+void FanControl::setManualStep(uint8_t step) {
+    ensureSyncPrimitives();
+    if (step < 1) {
+        step = 1;
+    } else if (step > 10) {
+        step = 10;
+    }
+    if (!lockSync()) {
+        return;
+    }
+    pending_commands_.has_manual_step = true;
+    pending_commands_.manual_step = step;
+    unlockSync();
+}
+
+void FanControl::setTimerSeconds(uint32_t seconds) {
+    ensureSyncPrimitives();
+    if (!lockSync()) {
+        return;
+    }
+    pending_commands_.has_timer_seconds = true;
+    pending_commands_.timer_seconds = seconds;
+    unlockSync();
+}
+
+void FanControl::requestStart() {
+    ensureSyncPrimitives();
+    if (!lockSync()) {
+        return;
+    }
+    pending_commands_.start_stop_request = PendingCommands::StartStopRequest::Start;
+    unlockSync();
+}
+
+void FanControl::requestStop() {
+    ensureSyncPrimitives();
+    if (!lockSync()) {
+        return;
+    }
+    pending_commands_.start_stop_request = PendingCommands::StartStopRequest::Stop;
+    unlockSync();
+}
+
+void FanControl::requestAutoStart() {
+    ensureSyncPrimitives();
+    if (!lockSync()) {
+        return;
+    }
+    pending_commands_.start_stop_request = PendingCommands::StartStopRequest::AutoStart;
+    pending_commands_.has_mode = true;
+    pending_commands_.mode = Mode::Auto;
+    unlockSync();
+}
+
+void FanControl::setAutoConfig(const DacAutoConfig &config) {
+    ensureSyncPrimitives();
+    DacAutoConfig sanitized = config;
+    DacAutoConfigJson::sanitize(sanitized);
+    if (!lockSync()) {
+        return;
+    }
+    pending_commands_.has_auto_config = true;
+    pending_commands_.auto_config = sanitized;
+    unlockSync();
+}
+
+void FanControl::applyMode(Mode mode) {
     if (mode == Mode::Auto) {
         // Treat selecting auto as explicit re-arm, even if already in auto mode.
         auto_resume_blocked_ = false;
@@ -210,7 +516,7 @@ void FanControl::setMode(Mode mode) {
     }
 }
 
-void FanControl::setManualStep(uint8_t step) {
+void FanControl::applyManualStep(uint8_t step) {
     if (step < 1) {
         step = 1;
     } else if (step > 10) {
@@ -222,25 +528,25 @@ void FanControl::setManualStep(uint8_t step) {
     }
 }
 
-void FanControl::setTimerSeconds(uint32_t seconds) {
+void FanControl::applyTimerSeconds(uint32_t seconds) {
     if (selected_timer_s_ != seconds) {
         selected_timer_s_ = seconds;
         timer_update_pending_ = true;
     }
 }
 
-void FanControl::requestStart() {
+void FanControl::applyRequestStart() {
     stop_requested_ = false;
     start_requested_ = true;
 }
 
-void FanControl::requestStop() {
+void FanControl::applyRequestStop() {
     start_requested_ = false;
     stop_requested_ = true;
 }
 
-void FanControl::requestAutoStart() {
-    setMode(Mode::Auto);
+void FanControl::applyRequestAutoStart() {
+    applyMode(Mode::Auto);
     start_requested_ = false;
     stop_requested_ = false;
     manual_override_active_ = false;
@@ -250,28 +556,9 @@ void FanControl::requestAutoStart() {
     auto_resume_blocked_ = false;
 }
 
-void FanControl::setAutoConfig(const DacAutoConfig &config) {
+void FanControl::applyAutoConfig(const DacAutoConfig &config) {
     auto_config_ = config;
     DacAutoConfigJson::sanitize(auto_config_);
-}
-
-uint8_t FanControl::outputPercent() const {
-    if (Config::DAC_VOUT_FULL_SCALE_MV == 0) {
-        return 0;
-    }
-    uint32_t percent = static_cast<uint32_t>(output_mv_) * 100u;
-    percent = (percent + (Config::DAC_VOUT_FULL_SCALE_MV / 2u)) / Config::DAC_VOUT_FULL_SCALE_MV;
-    if (percent > 100u) {
-        percent = 100u;
-    }
-    return static_cast<uint8_t>(percent);
-}
-
-uint32_t FanControl::remainingSeconds(uint32_t now_ms) const {
-    if (!running_ || stop_at_ms_ == 0 || timeReached(now_ms, stop_at_ms_)) {
-        return 0;
-    }
-    return (stop_at_ms_ - now_ms + 999UL) / 1000UL;
 }
 
 bool FanControl::tryInitialize(uint32_t now_ms) {

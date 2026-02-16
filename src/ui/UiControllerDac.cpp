@@ -270,7 +270,7 @@ void UiController::update_dac_ui(uint32_t now_ms) {
         char reason_sensor[16] = "--";
         char reason_value[32] = "--";
         uint8_t best_percent = 0;
-        const DacAutoConfig &cfg = fanControl.autoConfig();
+        const DacAutoConfig cfg = fanControl.autoConfig();
         const bool gas_warmup = sensorManager.isWarmupActive();
 
         if (cfg.enabled) {

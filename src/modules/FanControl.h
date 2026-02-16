@@ -7,6 +7,8 @@
 #pragma once
 
 #include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 #include "modules/DacAutoConfig.h"
 #include "drivers/Gp8403.h"
@@ -30,22 +32,67 @@ public:
     void requestStop();
     void requestAutoStart();
     void setAutoConfig(const DacAutoConfig &config);
-    const DacAutoConfig &autoConfig() const { return auto_config_; }
+    DacAutoConfig autoConfig() const;
 
-    bool isAvailable() const { return available_; }
-    bool isRunning() const { return running_; }
-    bool isFaulted() const { return faulted_; }
-    bool isOutputKnown() const { return output_known_; }
-    bool isManualOverrideActive() const { return manual_override_active_; }
-    bool isAutoResumeBlocked() const { return auto_resume_blocked_; }
-    Mode mode() const { return mode_; }
-    uint8_t manualStep() const { return manual_step_; }
-    uint32_t selectedTimerSeconds() const { return selected_timer_s_; }
-    uint16_t outputMillivolts() const { return output_mv_; }
+    bool isAvailable() const;
+    bool isRunning() const;
+    bool isFaulted() const;
+    bool isOutputKnown() const;
+    bool isManualOverrideActive() const;
+    bool isAutoResumeBlocked() const;
+    Mode mode() const;
+    uint8_t manualStep() const;
+    uint32_t selectedTimerSeconds() const;
+    uint16_t outputMillivolts() const;
     uint8_t outputPercent() const;
     uint32_t remainingSeconds(uint32_t now_ms) const;
 
 private:
+    struct PendingCommands {
+        bool has_mode = false;
+        Mode mode = Mode::Manual;
+        bool has_manual_step = false;
+        uint8_t manual_step = 1;
+        bool has_timer_seconds = false;
+        uint32_t timer_seconds = 0;
+        enum class StartStopRequest : uint8_t {
+            None = 0,
+            Start,
+            Stop,
+            AutoStart,
+        };
+        StartStopRequest start_stop_request = StartStopRequest::None;
+        bool has_auto_config = false;
+        DacAutoConfig auto_config{};
+    };
+
+    struct Snapshot {
+        bool available = false;
+        bool running = false;
+        bool faulted = false;
+        bool output_known = true;
+        bool manual_override_active = false;
+        bool auto_resume_blocked = false;
+        Mode mode = Mode::Manual;
+        uint8_t manual_step = 1;
+        uint32_t selected_timer_s = 0;
+        uint16_t output_mv = 0;
+        uint32_t stop_at_ms = 0;
+        DacAutoConfig auto_config{};
+    };
+
+    void ensureSyncPrimitives();
+    bool lockSync() const;
+    void unlockSync() const;
+    void drainPendingCommands(PendingCommands &out);
+    void publishSnapshot();
+    void applyMode(Mode mode);
+    void applyManualStep(uint8_t step);
+    void applyTimerSeconds(uint32_t seconds);
+    void applyRequestStart();
+    void applyRequestStop();
+    void applyRequestAutoStart();
+    void applyAutoConfig(const DacAutoConfig &config);
     bool tryInitialize(uint32_t now_ms);
     bool applyOutputMillivolts(uint16_t millivolts);
     void handleDacFault(const char *reason);
@@ -76,4 +123,8 @@ private:
     uint8_t health_probe_fail_count_ = 0;
     bool boot_missing_lockout_ = false;
     bool auto_resume_blocked_ = false;
+
+    mutable SemaphoreHandle_t sync_mutex_ = nullptr;
+    PendingCommands pending_commands_{};
+    Snapshot snapshot_{};
 };
