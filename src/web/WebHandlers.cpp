@@ -318,16 +318,8 @@ void mqtt_handle_save() {
         return;
     }
     WebServer &server = *context->server;
-    PubSubClient &client = *context->mqtt_client;
     if (!context->mqtt_ui_open || !*context->mqtt_ui_open) {
         server.send(409, "text/plain", "Open MQTT screen to enable");
-        return;
-    }
-
-    if (server.hasArg("test")) {
-        bool success = client.connected();
-        String json = success ? "{\"success\":true}" : "{\"success\":false}";
-        server.send(200, "application/json", json);
         return;
     }
 

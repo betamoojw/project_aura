@@ -725,7 +725,6 @@ static const char kMqttPageTemplate[] PROGMEM = R"HTML(
                     </label>
                 </div>
 
-                <button type="button" onclick="testConnection()">Test Connection</button>
                 <button type="submit">Save Settings</button>
             </form>
         </div>
@@ -771,42 +770,6 @@ static const char kMqttPageTemplate[] PROGMEM = R"HTML(
                 return false;
             }
         });
-
-        function testConnection() {
-            var btn = event.currentTarget;
-            var originalText = btn.textContent;
-
-            btn.disabled = true;
-            btn.textContent = 'Testing...';
-
-            var form = document.getElementById('mqtt-form');
-            var formData = new FormData(form);
-            formData.append('test', '1');
-
-            fetch('/mqtt', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                btn.textContent = data.success ? 'Success! 🟢' : 'Failed! 🔴';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                }, 2000);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                btn.textContent = 'Error! ⚠️';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                }, 2000);
-            });
-        }
 
         document.addEventListener('DOMContentLoaded', function() {
             updateAuthFields();
