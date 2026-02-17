@@ -154,7 +154,16 @@ void UiController::update_datetime_ui() {
 void UiController::update_wifi_texts() {
     if (objects.label_wifi_title) safe_label_set_text(objects.label_wifi_title, UiText::LabelWifiSettingsTitle());
     if (objects.label_wifi_status) safe_label_set_text(objects.label_wifi_status, UiText::LabelWifiStatus());
-    if (objects.label_wifi_help) safe_label_set_text(objects.label_wifi_help, UiText::LabelWifiHelp());
+    if (objects.label_wifi_help) {
+        String help_text = UiText::LabelWifiHelp();
+        String ap_ssid = networkManager.apSsid();
+        if (ap_ssid.isEmpty()) {
+            ap_ssid = Config::WIFI_AP_SSID;
+        }
+        help_text.replace(Config::WIFI_AP_SSID, ap_ssid);
+        help_text.replace("ProjectAura-Setup", ap_ssid);
+        safe_label_set_text(objects.label_wifi_help, help_text.c_str());
+    }
     if (objects.label_wifi_ssid) safe_label_set_text(objects.label_wifi_ssid, UiText::LabelWifiSsid());
     if (objects.label_wifi_ip) safe_label_set_text(objects.label_wifi_ip, UiText::LabelWifiIp());
     if (objects.label_btn_wifi_toggle) safe_label_set_text(objects.label_btn_wifi_toggle, UiText::MqttToggleLabel());
@@ -192,12 +201,16 @@ void UiController::update_wifi_ui() {
 
     if (objects.label_wifi_ssid_value) {
         String safe_ssid;
+        String ap_ssid = networkManager.apSsid();
+        if (ap_ssid.isEmpty()) {
+            ap_ssid = Config::WIFI_AP_SSID;
+        }
         const char *ssid_text = UiText::ValueMissing();
         if (wifi_state == AuraNetworkManager::WIFI_STATE_STA_CONNECTED && !wifi_ssid.isEmpty()) {
             safe_ssid = wifi_label_safe(wifi_ssid);
             ssid_text = safe_ssid.c_str();
         } else if (wifi_state == AuraNetworkManager::WIFI_STATE_AP_CONFIG) {
-            ssid_text = WIFI_AP_SSID;
+            ssid_text = ap_ssid.c_str();
         } else if (wifi_enabled && !wifi_ssid.isEmpty()) {
             safe_ssid = wifi_label_safe(wifi_ssid);
             ssid_text = safe_ssid.c_str();

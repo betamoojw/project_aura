@@ -19,13 +19,20 @@ namespace {
 AuraNetworkManager *g_network = nullptr;
 const uint32_t kInitialWifiConnectDelayMs = 1000;
 
+uint32_t mac_suffix_24bit() {
+    return static_cast<uint32_t>(ESP.getEfuseMac() & 0xFFFFFFULL);
+}
+
 String build_wifi_hostname() {
-    const uint64_t mac = ESP.getEfuseMac();
     char hostname[16];
-    snprintf(hostname, sizeof(hostname), "aura-%06X", static_cast<unsigned>(mac & 0xFFFFFFULL));
-    String result = hostname;
-    result.toLowerCase();
-    return result;
+    snprintf(hostname, sizeof(hostname), "aura-%06x", static_cast<unsigned>(mac_suffix_24bit()));
+    return String(hostname);
+}
+
+String build_ap_ssid() {
+    char ssid[20];
+    snprintf(ssid, sizeof(ssid), "Aura-%06X-AP", static_cast<unsigned>(mac_suffix_24bit()));
+    return String(ssid);
 }
 
 void network_wifi_start_scan() {
@@ -58,7 +65,12 @@ void AuraNetworkManager::begin(StorageManager &storage) {
     if (hostname_.isEmpty()) {
         hostname_ = "aura";
     }
+    ap_ssid_ = build_ap_ssid();
+    if (ap_ssid_.isEmpty()) {
+        ap_ssid_ = Config::WIFI_AP_SSID;
+    }
     LOGI("WiFi", "hostname: %s", hostname_.c_str());
+    LOGI("WiFi", "AP SSID: %s", ap_ssid_.c_str());
 
     web_ctx_.server = &server_;
     web_ctx_.storage = storage_;
@@ -454,7 +466,10 @@ void AuraNetworkManager::startSta() {
 void AuraNetworkManager::startAp() {
     WiFi.persistent(false);
     WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(Config::WIFI_AP_SSID);
+    const char *ap_ssid = ap_ssid_.isEmpty() ? Config::WIFI_AP_SSID : ap_ssid_.c_str();
+    if (!WiFi.softAP(ap_ssid)) {
+        LOGW("WiFi", "failed to start AP: %s", ap_ssid);
+    }
     IPAddress ip = WiFi.softAPIP();
     startScan();
     server_.on("/", HTTP_GET, wifi_handle_root);
@@ -471,7 +486,7 @@ void AuraNetworkManager::startAp() {
     wifi_retry_at_ms_ = 0;
     wifi_retry_count_ = 0;
     wifi_ui_dirty_ = true;
-    Logger::log(Logger::Info, "WiFi", "AP started: %s", Config::WIFI_AP_SSID);
+    Logger::log(Logger::Info, "WiFi", "AP started: %s", ap_ssid);
     Logger::log(Logger::Info, "WiFi", "AP IP: %s", ip.toString().c_str());
 }
 
