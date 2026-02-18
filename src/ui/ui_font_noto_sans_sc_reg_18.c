@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 18 px
  * Bpp: 4
- * Opts: --bpp 4 --size 18 --no-compress --font ..\..\Downloads\JetBrains_Mono,Montserrat,Noto_Sans_SC\Noto_Sans_SC\static\NotoSansSC-Regular.ttf --symbols 了位典单印善型城射市得御改景活流留精绕：≥₂危告壁完护携撤毒浓独碳达³₂但免南含官尾径插格片由碎米草被见该起超这避采里且严以利前在域墙子孢害容引损浴滋等角请财防。°≈₂µ³≤©、；一的意，肺值有想大灰对约德倦稍现法果国影响舒效率睡阈标住宜范围助专注疲劳冷导致嗜力健康理想受显著反映挥发性物涂料具洁品妆基算线越露痛眼鼻刺激蓝内轻异味氮氧燃烧产辆交污染道哮喘做饭副甲醛造板地胶黏剂纺织装修是喉材释放安全敏群细颗粒深部血液与心管疾病相包括烹饪蜡烛滤些施土花粉路方判微剧烈趋势幅波则强皮肤佳抑制螨衡更绝促进决策比易腻散困难转晴暴过明简体文上下不丢个中为主义习二于亮人仅仍件休优会传低作使例供保偏停储先光入关净准减出击分切划初到功加动化区升即厂压参取变口可合同启吸周呼和唤器回堆增处备复外多夜天太失头好始存学定室家密将小少尘尽屏工差已带常幕干平年并应度庭建开式当很忘快态恢感慢或户房手打扫扬找报择持指按排探接控描摸操数整断新无日时暂暖最月期未机束条来极查校检模次止正此步每气水汽油测消清温湿源灯灶炉点烁烟热燥状生用电略监省眠短码示禁离秀秒移稳空窗立系结统继续维缓置考背能脑自至般良色菌虑行表要触警计认议记设诊试误读调败质车较输迅运返远连适选通速配醒重量钟错长闪闭问间闷降除险雾需霉静非预题颜风高鲜默 --range 32-126 --format lvgl
+ * Opts: --bpp 4 --size 18 --no-compress --font ..\..\Downloads\JetBrains_Mono,Montserrat,Noto_Sans_SC\Noto_Sans_SC\static\NotoSansSC-Regular.ttf --symbols （）了位典单印善型城射市得御改景活流留精绕：≥₂危告壁完护携撤毒浓独碳达³₂但免南含官尾径插格片由碎米草被见该起超这避采里且严以利前在域墙子孢害容引损浴滋等角请财防。°≈₂µ³≤©、；一的意，肺值有想大灰对约德倦稍现法果国影响舒效率睡阈标住宜范围助专注疲劳冷导致嗜力健康理想受显著反映挥发性物涂料具洁品妆基算线越露痛眼鼻刺激蓝内轻异味氮氧燃烧产辆交污染道哮喘做饭副甲醛造板地胶黏剂纺织装修是喉材释放安全敏群细颗粒深部血液与心管疾病相包括烹饪蜡烛滤些施土花粉路方判微剧烈趋势幅波则强皮肤佳抑制螨衡更绝促进决策比易腻散困难转晴暴过明简体文上下不丢个中为主义习二于亮人仅仍件休优会传低作使例供保偏停储先光入关净准减出击分切划初到功加动化区升即厂压参取变口可合同启吸周呼和唤器回堆增处备复外多夜天太失头好始存学定室家密将小少尘尽屏工差已带常幕干平年并应度庭建开式当很忘快态恢感慢或户房手打扫扬找报择持指按排探接控描摸操数整断新无日时暂暖最月期未机束条来极查校检模次止正此步每气水汽油测消清温湿源灯灶炉点烁烟热燥状生用电略监省眠短码示禁离秀秒移稳空窗立系结统继续维缓置考背能脑自至般良色菌虑行表要触警计认议记设诊试误读调败质车较输迅运返远连适选通速配醒重量钟错长闪闭问间闷降除险雾需霉静非预题颜风高鲜默 --range 32-126 --format lvgl
  ******************************************************************************/
 
 #ifdef __has_include
@@ -12295,6 +12295,24 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
     0xc, 0xd9, 0x40, 0x0, 0x0, 0xe, 0x60, 0x0,
     0x0,
 
+    /* U+FF08 "（" */
+    0x0, 0x0, 0x30, 0x0, 0xb, 0xc0, 0x0, 0x7e,
+    0x10, 0x1, 0xf6, 0x0, 0x8, 0xd0, 0x0, 0xe,
+    0x70, 0x0, 0x3f, 0x20, 0x0, 0x6f, 0x0, 0x0,
+    0x7d, 0x0, 0x0, 0x7d, 0x0, 0x0, 0x6e, 0x0,
+    0x0, 0x4f, 0x10, 0x0, 0xf, 0x50, 0x0, 0xa,
+    0xb0, 0x0, 0x3, 0xf3, 0x0, 0x0, 0xac, 0x0,
+    0x0, 0x1e, 0x90, 0x0, 0x2, 0x80,
+
+    /* U+FF09 "）" */
+    0x3, 0x0, 0x0, 0xc, 0xb0, 0x0, 0x1, 0xe7,
+    0x0, 0x0, 0x6f, 0x10, 0x0, 0xd, 0x80, 0x0,
+    0x7, 0xe0, 0x0, 0x2, 0xf3, 0x0, 0x0, 0xf5,
+    0x0, 0x0, 0xd7, 0x0, 0x0, 0xd7, 0x0, 0x0,
+    0xe6, 0x0, 0x1, 0xf4, 0x0, 0x5, 0xf0, 0x0,
+    0xb, 0xa0, 0x0, 0x3f, 0x30, 0x0, 0xca, 0x0,
+    0x9, 0xe1, 0x0, 0x8, 0x20, 0x0,
+
     /* U+FF0C "，" */
     0x0, 0x10, 0xb, 0xf8, 0xe, 0xfe, 0x2, 0xae,
     0x0, 0xaa, 0x8, 0xe1, 0x5b, 0x20, 0x0, 0x0,
@@ -12950,9 +12968,11 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 84481, .adv_w = 288, .box_w = 18, .box_h = 18, .ofs_x = 0, .ofs_y = -2},
     {.bitmap_index = 84643, .adv_w = 288, .box_w = 19, .box_h = 18, .ofs_x = 0, .ofs_y = -2},
     {.bitmap_index = 84814, .adv_w = 288, .box_w = 17, .box_h = 17, .ofs_x = 0, .ofs_y = -1},
-    {.bitmap_index = 84959, .adv_w = 288, .box_w = 4, .box_h = 8, .ofs_x = 2, .ofs_y = -3},
-    {.bitmap_index = 84975, .adv_w = 288, .box_w = 3, .box_h = 13, .ofs_x = 3, .ofs_y = -1},
-    {.bitmap_index = 84995, .adv_w = 288, .box_w = 5, .box_h = 15, .ofs_x = 2, .ofs_y = -3}
+    {.bitmap_index = 84959, .adv_w = 288, .box_w = 6, .box_h = 18, .ofs_x = 12, .ofs_y = -2},
+    {.bitmap_index = 85013, .adv_w = 288, .box_w = 6, .box_h = 18, .ofs_x = 0, .ofs_y = -2},
+    {.bitmap_index = 85067, .adv_w = 288, .box_w = 4, .box_h = 8, .ofs_x = 2, .ofs_y = -3},
+    {.bitmap_index = 85083, .adv_w = 288, .box_w = 3, .box_h = 13, .ofs_x = 3, .ofs_y = -1},
+    {.bitmap_index = 85103, .adv_w = 288, .box_w = 5, .box_h = 15, .ofs_x = 2, .ofs_y = -3}
 };
 
 /*---------------------
@@ -13027,7 +13047,7 @@ static const uint16_t unicode_list_1[] = {
     0x955f, 0x9589, 0x95a4, 0x95bb, 0x95c0, 0x9615, 0x9655, 0x9657,
     0x9660, 0x9689, 0x96b0, 0x96b5, 0x97db, 0x97ee, 0x97ef, 0x97f3,
     0x9825, 0x98c1, 0x98c4, 0x9a2f, 0x9bf3, 0x9e26, 0x9e2f, 0x9e92,
-    0xfe63, 0xfe71, 0xfe72
+    0xfe5f, 0xfe60, 0xfe63, 0xfe71, 0xfe72
 };
 
 /*Collect the unicode lists and glyph_id offsets*/
@@ -13039,7 +13059,7 @@ static const lv_font_fmt_txt_cmap_t cmaps[] =
     },
     {
         .range_start = 169, .range_length = 65139, .glyph_id_start = 96,
-        .unicode_list = unicode_list_1, .glyph_id_ofs_list = NULL, .list_length = 539, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
+        .unicode_list = unicode_list_1, .glyph_id_ofs_list = NULL, .list_length = 541, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
     }
 };
 
@@ -13130,7 +13150,7 @@ static const uint8_t kern_left_class_mapping[] =
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0
+    0, 0, 0, 0, 0
 };
 
 /*Map glyph_ids to kern right classes*/
@@ -13215,7 +13235,7 @@ static const uint8_t kern_right_class_mapping[] =
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0
+    0, 0, 0, 0, 0
 };
 
 /*Kern values between classes*/
