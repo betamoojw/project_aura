@@ -356,8 +356,6 @@ void UiController::update_sensor_info_ui() {
                 : getPressureDeltaColor(currentData.pressure_delta_24h, currentData.pressure_delta_24h_valid, true);
             set_chip_color(objects.chip_delta_3h_1, delta_3h_color);
             set_chip_color(objects.chip_delta_24h_1, delta_24h_color);
-            set_chip_color(objects.chip_delta_3h_1, delta_3h_color);
-            set_chip_color(objects.chip_delta_24h_1, delta_24h_color);
             set_dot_color(objects.dot_sensor_info, delta_3h_color);
             break;
         }
