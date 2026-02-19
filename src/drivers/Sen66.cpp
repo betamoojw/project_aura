@@ -277,6 +277,7 @@ bool Sen66::readValues(SensorData &out) {
 
     const uint16_t pm1_raw = words[0];
     const uint16_t pm25_raw = words[1];
+    const uint16_t pm4_raw = words[2];
     const uint16_t pm10_raw = words[3];
 
     const int16_t rh_raw = static_cast<int16_t>(words[4]);
@@ -300,6 +301,13 @@ bool Sen66::readValues(SensorData &out) {
         out.pm25 = 0.0f;
     }
 
+    out.pm4_valid = (pm4_raw != 0xFFFF);
+    if (out.pm4_valid) {
+        out.pm4 = pm4_raw / 10.0f;
+    } else {
+        out.pm4 = 0.0f;
+    }
+
     out.pm10_valid = (pm10_raw != 0xFFFF);
     if (out.pm10_valid) {
         out.pm10 = pm10_raw / 10.0f;
@@ -312,7 +320,7 @@ bool Sen66::readValues(SensorData &out) {
         out.pm05 = 0.0f;
     }
 
-    out.pm_valid = out.pm1_valid || out.pm25_valid || out.pm10_valid;
+    out.pm_valid = out.pm1_valid || out.pm25_valid || out.pm4_valid || out.pm10_valid;
 
     out.hum_valid = (rh_raw != 0x7FFF);
     if (out.hum_valid) {

@@ -418,10 +418,8 @@ void MqttManager::publishDiscovery() {
     if (!mqtt_discovery_ || mqtt_discovery_sent_ || !client_.connected()) {
         return;
     }
-    // Remove legacy PM4 discovery entities (retained) from older firmware versions.
+    // Remove legacy PM4 discovery entity variant (retained) from older firmware versions.
     char legacy_topic[kTopicBufferSize];
-    build_discovery_topic(legacy_topic, sizeof(legacy_topic), "sensor", mqtt_device_id_, "pm4");
-    client_.publish(legacy_topic, "", true);
     build_discovery_topic(legacy_topic, sizeof(legacy_topic), "sensor", mqtt_device_id_, "pm4_0");
     client_.publish(legacy_topic, "", true);
 
@@ -435,6 +433,8 @@ void MqttManager::publishDiscovery() {
                            "", "measurement", "{{ value_json.absolute_humidity }}", "mdi:water");
     publishDiscoverySensor("co2", "CO2", "ppm",
                            "carbon_dioxide", "measurement", "{{ value_json.co2 }}", "");
+    publishDiscoverySensor("co", "CO", "ppm",
+                           "carbon_monoxide", "measurement", "{{ value_json.co }}", "mdi:molecule-co");
     publishDiscoverySensor("voc_index", "VOC Index", "index",
                            "", "measurement", "{{ value_json.voc_index }}", "mdi:blur");
     publishDiscoverySensor("nox_index", "NOx Index", "index",
@@ -444,6 +444,8 @@ void MqttManager::publishDiscovery() {
                            "{{ value_json.hcho }}", "mdi:flask-outline");
     publishDiscoverySensor("pm1", "PM1.0", "\\u00b5g/m\\u00b3",
                            "", "measurement", "{{ value_json.pm1 }}", "mdi:molecule");
+    publishDiscoverySensor("pm4", "PM4.0", "\\u00b5g/m\\u00b3",
+                           "", "measurement", "{{ value_json.pm4 }}", "mdi:molecule-co2");
     publishDiscoverySensor("pm05", "PM0.5", "#/cm\\u00b3",
                            "", "measurement", "{{ value_json.pm05 }}", "mdi:dots-hexagon");
     publishDiscoverySensor("pm25", "PM2.5", "\\u00b5g/m\\u00b3",
@@ -479,7 +481,7 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
         return;
     }
     String payload;
-    payload.reserve(560); // State payload ~500 bytes for all fields.
+    payload.reserve(640); // State payload includes full telemetry set; keep headroom.
     payload += "{";
     bool first = true;
     auto add_int = [&](const char *key, bool valid, int value) {
@@ -533,11 +535,17 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
     add_float("dew_point", dew_valid, dew_c, 1);
     add_float("absolute_humidity", ah_valid, ah_gm3, 1);
     add_int("co2", data.co2_valid, data.co2);
+    const bool co_valid = data.co_sensor_present &&
+                          data.co_valid &&
+                          isfinite(data.co_ppm) &&
+                          data.co_ppm >= 0.0f;
+    add_float("co", co_valid, data.co_ppm, 1);
     add_int("voc_index", data.voc_valid, data.voc_index);
     add_int("nox_index", data.nox_valid, data.nox_index);
     add_float("hcho", data.hcho_valid, data.hcho, 1);
     add_float("pm05", data.pm05_valid, data.pm05, 1);
     add_float("pm1", data.pm1_valid, data.pm1, 1);
+    add_float("pm4", data.pm4_valid, data.pm4, 1);
     add_float("pm25", data.pm25_valid, data.pm25, 1);
     add_float("pm10", data.pm10_valid, data.pm10, 1);
     add_float("pressure", data.pressure_valid, data.pressure, 1);

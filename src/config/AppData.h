@@ -8,6 +8,7 @@ struct SensorData {
     float pm05 = 0.0f;
     float pm1 = 0.0f;
     float pm25 = 0.0f;
+    float pm4 = 0.0f;
     float pm10 = 0.0f;
     float pressure = 0.0f;
     float pressure_delta_3h = 0.0f;
@@ -23,6 +24,7 @@ struct SensorData {
     bool pm05_valid = false;
     bool pm1_valid = false;
     bool pm25_valid = false;
+    bool pm4_valid = false;
     bool pm10_valid = false;
     bool co2_valid = false;
     bool voc_valid = false;

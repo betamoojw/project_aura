@@ -88,6 +88,17 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
+            entity: sensor.project_aura_pm4_0
+            name: PM4.0
+            icon: mdi:molecule
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_co
+            name: CO
+            vertical: false
+            features_position: bottom
+          - type: tile
             entity: sensor.project_aura_pm0_5
             name: PM0.5
             vertical: false
