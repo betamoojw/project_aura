@@ -1005,7 +1005,7 @@ function AuraDashboard() {
     };
 
     loadState();
-    const intervalId = setInterval(loadState, 5000);
+    const intervalId = setInterval(loadState, 10000);
     return () => {
       active = false;
       clearInterval(intervalId);
