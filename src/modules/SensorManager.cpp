@@ -7,6 +7,7 @@
 #include "modules/SensorManager.h"
 
 #include <math.h>
+#include <stdio.h>
 #include "core/Logger.h"
 #include "config/AppConfig.h"
 #include "modules/PressureHistory.h"
@@ -210,25 +211,265 @@ bool apply_sanity_filters(SensorData &data) {
     return changed;
 }
 
-void log_soft_warnings(const SensorData &data) {
+enum class AlertBand : uint8_t {
+    Unknown = 0xFF,
+    Good = 0,
+    Moderate = 1,
+    Bad = 2,
+    Critical = 3
+};
+
+AlertBand classify_upper_band(float value,
+                              float good_max,
+                              float moderate_max,
+                              float bad_max,
+                              bool good_inclusive) {
+    if (good_inclusive) {
+        if (value <= good_max) return AlertBand::Good;
+    } else {
+        if (value < good_max) return AlertBand::Good;
+    }
+    if (value <= moderate_max) return AlertBand::Moderate;
+    if (value <= bad_max) return AlertBand::Bad;
+    return AlertBand::Critical;
+}
+
+const char *alert_band_name(AlertBand band) {
+    switch (band) {
+        case AlertBand::Good:
+            return "good";
+        case AlertBand::Moderate:
+            return "moderate";
+        case AlertBand::Bad:
+            return "bad";
+        case AlertBand::Critical:
+            return "critical";
+        case AlertBand::Unknown:
+        default:
+            return "unknown";
+    }
+}
+
+const char *alert_band_phrase(AlertBand band) {
+    switch (band) {
+        case AlertBand::Moderate:
+            return "elevated";
+        case AlertBand::Bad:
+            return "high";
+        case AlertBand::Critical:
+            return "critical";
+        case AlertBand::Good:
+            return "normal";
+        case AlertBand::Unknown:
+        default:
+            return "unknown";
+    }
+}
+
+void log_air_metric_transition(const char *name,
+                               const char *unit,
+                               float value,
+                               bool valid,
+                               float good_max,
+                               float moderate_max,
+                               float bad_max,
+                               bool good_inclusive,
+                               const char *value_fmt,
+                               AlertBand &previous_band) {
+    if (!valid || !isfinite(value)) {
+        previous_band = AlertBand::Unknown;
+        return;
+    }
+
+    const AlertBand current_band =
+        classify_upper_band(value, good_max, moderate_max, bad_max, good_inclusive);
+    if (current_band == previous_band) {
+        return;
+    }
+
+    char value_buf[24];
+    snprintf(value_buf, sizeof(value_buf), value_fmt, value);
+
+    if (previous_band == AlertBand::Unknown) {
+        if (current_band != AlertBand::Good) {
+            LOGW("Sensors", "%s %s: %s %s",
+                 name,
+                 alert_band_phrase(current_band),
+                 value_buf,
+                 unit);
+        }
+        previous_band = current_band;
+        return;
+    }
+
+    if (current_band == AlertBand::Good) {
+        if (previous_band != AlertBand::Good) {
+            LOGI("Sensors", "%s back to normal: %s %s", name, value_buf, unit);
+        }
+    } else if (static_cast<uint8_t>(current_band) > static_cast<uint8_t>(previous_band)) {
+        LOGW("Sensors", "%s worsened to %s: %s %s",
+             name,
+             alert_band_name(current_band),
+             value_buf,
+             unit);
+    } else {
+        LOGI("Sensors", "%s improved to %s: %s %s",
+             name,
+             alert_band_name(current_band),
+             value_buf,
+             unit);
+    }
+
+    previous_band = current_band;
+}
+
+void log_soft_warnings(const SensorData &data, bool gas_warmup) {
     static bool temp_outside = false;
     static bool hum_outside = false;
+    static AlertBand co2_band = AlertBand::Unknown;
+    static AlertBand co_band = AlertBand::Unknown;
+    static AlertBand voc_band = AlertBand::Unknown;
+    static AlertBand nox_band = AlertBand::Unknown;
+    static AlertBand hcho_band = AlertBand::Unknown;
+    static AlertBand pm05_band = AlertBand::Unknown;
+    static AlertBand pm1_band = AlertBand::Unknown;
+    static AlertBand pm25_band = AlertBand::Unknown;
+    static AlertBand pm4_band = AlertBand::Unknown;
+    static AlertBand pm10_band = AlertBand::Unknown;
 
-    bool temp_now = data.temp_valid &&
-                    (data.temperature < Config::SEN66_TEMP_RECOMM_MIN_C ||
-                     data.temperature > Config::SEN66_TEMP_RECOMM_MAX_C);
-    if (temp_now && !temp_outside) {
-        LOGW("Sensors", "Temperature outside recommended range: %.1f C", data.temperature);
+    if (data.temp_valid) {
+        bool temp_now_outside =
+            (data.temperature < Config::SEN66_TEMP_RECOMM_MIN_C ||
+             data.temperature > Config::SEN66_TEMP_RECOMM_MAX_C);
+        if (temp_now_outside && !temp_outside) {
+            LOGW("Sensors", "Temperature outside recommended range: %.1f C", data.temperature);
+        } else if (!temp_now_outside && temp_outside) {
+            LOGI("Sensors", "Temperature back within recommended range: %.1f C", data.temperature);
+        }
+        temp_outside = temp_now_outside;
     }
-    temp_outside = temp_now;
 
-    bool hum_now = data.hum_valid &&
-                   (data.humidity < Config::SEN66_HUM_RECOMM_MIN ||
-                    data.humidity > Config::SEN66_HUM_RECOMM_MAX);
-    if (hum_now && !hum_outside) {
-        LOGW("Sensors", "Humidity outside recommended range: %.0f%%", data.humidity);
+    if (data.hum_valid) {
+        bool hum_now_outside =
+            (data.humidity < Config::SEN66_HUM_RECOMM_MIN ||
+             data.humidity > Config::SEN66_HUM_RECOMM_MAX);
+        if (hum_now_outside && !hum_outside) {
+            LOGW("Sensors", "Humidity outside recommended range: %.0f%%", data.humidity);
+        } else if (!hum_now_outside && hum_outside) {
+            LOGI("Sensors", "Humidity back within recommended range: %.0f%%", data.humidity);
+        }
+        hum_outside = hum_now_outside;
     }
-    hum_outside = hum_now;
+
+    log_air_metric_transition("CO2",
+                              "ppm",
+                              static_cast<float>(data.co2),
+                              data.co2_valid && data.co2 > 0,
+                              Config::AQ_CO2_GREEN_MAX_PPM,
+                              Config::AQ_CO2_YELLOW_MAX_PPM,
+                              Config::AQ_CO2_ORANGE_MAX_PPM,
+                              false,
+                              "%.0f",
+                              co2_band);
+
+    log_air_metric_transition("CO",
+                              "ppm",
+                              data.co_ppm,
+                              data.co_sensor_present && data.co_valid,
+                              Config::AQ_CO_GREEN_MAX_PPM,
+                              Config::AQ_CO_YELLOW_MAX_PPM,
+                              Config::AQ_CO_ORANGE_MAX_PPM,
+                              false,
+                              "%.1f",
+                              co_band);
+
+    log_air_metric_transition("PM0.5",
+                              "#/cm3",
+                              data.pm05,
+                              data.pm05_valid,
+                              Config::AQ_PM05_GREEN_MAX_PPCM3,
+                              Config::AQ_PM05_YELLOW_MAX_PPCM3,
+                              Config::AQ_PM05_ORANGE_MAX_PPCM3,
+                              true,
+                              "%.0f",
+                              pm05_band);
+
+    log_air_metric_transition("PM1.0",
+                              "ug/m3",
+                              data.pm1,
+                              data.pm1_valid,
+                              Config::AQ_PM1_GREEN_MAX_UGM3,
+                              Config::AQ_PM1_YELLOW_MAX_UGM3,
+                              Config::AQ_PM1_ORANGE_MAX_UGM3,
+                              true,
+                              "%.1f",
+                              pm1_band);
+
+    log_air_metric_transition("PM2.5",
+                              "ug/m3",
+                              data.pm25,
+                              data.pm25_valid,
+                              Config::AQ_PM25_GREEN_MAX_UGM3,
+                              Config::AQ_PM25_YELLOW_MAX_UGM3,
+                              Config::AQ_PM25_ORANGE_MAX_UGM3,
+                              true,
+                              "%.1f",
+                              pm25_band);
+
+    log_air_metric_transition("PM4.0",
+                              "ug/m3",
+                              data.pm4,
+                              data.pm4_valid,
+                              Config::AQ_PM4_GREEN_MAX_UGM3,
+                              Config::AQ_PM4_YELLOW_MAX_UGM3,
+                              Config::AQ_PM4_ORANGE_MAX_UGM3,
+                              true,
+                              "%.1f",
+                              pm4_band);
+
+    log_air_metric_transition("PM10",
+                              "ug/m3",
+                              data.pm10,
+                              data.pm10_valid,
+                              Config::AQ_PM10_GREEN_MAX_UGM3,
+                              Config::AQ_PM10_YELLOW_MAX_UGM3,
+                              Config::AQ_PM10_ORANGE_MAX_UGM3,
+                              true,
+                              "%.1f",
+                              pm10_band);
+
+    log_air_metric_transition("HCHO",
+                              "ppb",
+                              data.hcho,
+                              data.hcho_valid,
+                              30.0f,
+                              60.0f,
+                              100.0f,
+                              false,
+                              "%.1f",
+                              hcho_band);
+
+    log_air_metric_transition("VOC",
+                              "idx",
+                              static_cast<float>(data.voc_index),
+                              !gas_warmup && data.voc_valid,
+                              static_cast<float>(Config::AQ_VOC_GREEN_MAX_INDEX),
+                              static_cast<float>(Config::AQ_VOC_YELLOW_MAX_INDEX),
+                              static_cast<float>(Config::AQ_VOC_ORANGE_MAX_INDEX),
+                              true,
+                              "%.0f",
+                              voc_band);
+
+    log_air_metric_transition("NOx",
+                              "idx",
+                              static_cast<float>(data.nox_index),
+                              !gas_warmup && data.nox_valid,
+                              static_cast<float>(Config::AQ_NOX_GREEN_MAX_INDEX),
+                              static_cast<float>(Config::AQ_NOX_YELLOW_MAX_INDEX),
+                              static_cast<float>(Config::AQ_NOX_ORANGE_MAX_INDEX),
+                              true,
+                              "%.0f",
+                              nox_band);
 }
 
 } // namespace
@@ -365,16 +606,20 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         }
     }
 
-    if (apply_sanity_filters(data)) {
-        result.data_changed = true;
-    }
-    log_soft_warnings(data);
-
     bool warmup_now = sen66_.isWarmupActive();
     if (warmup_now != warmup_active_last_) {
         warmup_active_last_ = warmup_now;
         result.warmup_changed = true;
     }
+
+    if (sync_co_fields(data, sen0466_)) {
+        result.data_changed = true;
+    }
+
+    if (apply_sanity_filters(data)) {
+        result.data_changed = true;
+    }
+    log_soft_warnings(data, warmup_now);
 
     uint32_t sen66_last_ms = sen66_.lastDataMs();
     if (sen66_last_ms != 0 && (now - sen66_last_ms > Config::SEN66_STALE_MS)) {
@@ -386,10 +631,6 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
         (now - sfa_last_ms > Config::SFA3X_STALE_MS)) {
         data.hcho_valid = false;
         sfa3x_.invalidate();
-        result.data_changed = true;
-    }
-
-    if (sync_co_fields(data, sen0466_)) {
         result.data_changed = true;
     }
 

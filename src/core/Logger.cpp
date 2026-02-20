@@ -11,6 +11,7 @@
 
 namespace {
 constexpr size_t kLogBufferSize = 256;
+constexpr uint32_t kRecentDedupWindowMs = 30000;
 }
 
 HardwareSerial *Logger::serial_ = &Serial;
@@ -79,24 +80,45 @@ void Logger::vlog(Level level, const char *tag, const char *fmt, va_list args) {
 }
 
 void Logger::storeRecent(Level level, const char *tag, const char *message) {
-    RecentEntry &entry = recent_[recent_head_];
+    uint32_t now_ms = 0;
 #if defined(ARDUINO)
-    entry.ms = millis();
-#else
-    entry.ms = 0;
+    now_ms = millis();
 #endif
-    entry.level = level;
-    entry.tag[0] = '\0';
-    entry.message[0] = '\0';
+
+    char tag_buf[sizeof(RecentEntry::tag)];
+    char message_buf[sizeof(RecentEntry::message)];
+    tag_buf[0] = '\0';
+    message_buf[0] = '\0';
 
     if (tag) {
-        strncpy(entry.tag, tag, sizeof(entry.tag) - 1);
-        entry.tag[sizeof(entry.tag) - 1] = '\0';
+        strncpy(tag_buf, tag, sizeof(tag_buf) - 1);
+        tag_buf[sizeof(tag_buf) - 1] = '\0';
     }
     if (message) {
-        strncpy(entry.message, message, sizeof(entry.message) - 1);
-        entry.message[sizeof(entry.message) - 1] = '\0';
+        strncpy(message_buf, message, sizeof(message_buf) - 1);
+        message_buf[sizeof(message_buf) - 1] = '\0';
     }
+
+    if (recent_count_ > 0) {
+        const size_t last_index = (recent_head_ + kRecentCapacity - 1) % kRecentCapacity;
+        const RecentEntry &last = recent_[last_index];
+        const bool same_event =
+            last.level == level &&
+            strcmp(last.tag, tag_buf) == 0 &&
+            strcmp(last.message, message_buf) == 0;
+        const bool within_dedup_window = (now_ms - last.ms) <= kRecentDedupWindowMs;
+        if (same_event && within_dedup_window) {
+            return;
+        }
+    }
+
+    RecentEntry &entry = recent_[recent_head_];
+    entry.ms = now_ms;
+    entry.level = level;
+    strncpy(entry.tag, tag_buf, sizeof(entry.tag) - 1);
+    entry.tag[sizeof(entry.tag) - 1] = '\0';
+    strncpy(entry.message, message_buf, sizeof(entry.message) - 1);
+    entry.message[sizeof(entry.message) - 1] = '\0';
 
     recent_head_ = (recent_head_ + 1) % kRecentCapacity;
     if (recent_count_ < kRecentCapacity) {
