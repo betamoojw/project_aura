@@ -65,6 +65,7 @@ UiContext ui_context{
     networkManager,
     mqttManager,
     sensorManager,
+    chartsHistory,
     timeManager,
     themeManager,
     backlightManager,

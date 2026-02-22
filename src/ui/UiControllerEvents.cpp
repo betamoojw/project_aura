@@ -113,6 +113,10 @@ void UiController::on_rh_info_event_cb(lv_event_t *e) { if (instance_) instance_
 void UiController::on_ah_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_ah_info_event(e); }
 void UiController::on_mr_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_mr_info_event(e); }
 void UiController::on_dp_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_dp_info_event(e); }
+void UiController::on_info_graph_event_cb(lv_event_t *e) { if (instance_) instance_->on_info_graph_event(e); }
+void UiController::on_temp_range_1h_event_cb(lv_event_t *e) { if (instance_) instance_->on_temp_range_1h_event(e); }
+void UiController::on_temp_range_3h_event_cb(lv_event_t *e) { if (instance_) instance_->on_temp_range_3h_event(e); }
+void UiController::on_temp_range_24h_event_cb(lv_event_t *e) { if (instance_) instance_->on_temp_range_24h_event(e); }
 void UiController::on_pm10_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm10_info_event(e); }
 void UiController::on_pm1_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm1_info_event(e); }
 void UiController::on_card_pm05_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm05_event(e); }
@@ -689,24 +693,7 @@ void UiController::on_card_temp_event(lv_event_t *e) {
         return;
     }
     info_sensor = INFO_TEMP;
-    hide_all_sensor_info_containers();
-    set_visible(objects.temperature_info, true);
-    if (objects.label_sensor_info_title) {
-        safe_label_set_text(objects.label_sensor_info_title, UiText::SensorInfoTitleTemperature());
-    }
-    const char *value = UiText::ValueMissing();
-    if (objects.label_temp_value_1) {
-        value = lv_label_get_text(objects.label_temp_value_1);
-    }
-    safe_label_set_text(objects.label_sensor_value, value);
-    const char *unit = nullptr;
-    if (objects.label_temp_unit_1) {
-        unit = lv_label_get_text(objects.label_temp_unit_1);
-    } else {
-        unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
-    }
-    safe_label_set_text(objects.label_sensor_info_unit, unit);
-    update_sensor_info_ui();
+    restore_sensor_info_selection();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
 }
 
@@ -831,6 +818,65 @@ void UiController::on_dp_info_event(lv_event_t *e) {
     if (current_screen_id != SCREEN_ID_PAGE_SENSORS_INFO) {
         pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
     }
+}
+
+void UiController::on_info_graph_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    LOGD("UI", "info/graph pressed, code=%d info_sensor=%d mode=%d", static_cast<int>(code), static_cast<int>(info_sensor), temp_graph_mode_ ? 1 : 0);
+    if (info_sensor != INFO_TEMP) {
+        info_sensor = INFO_TEMP;
+        restore_sensor_info_selection();
+    }
+    set_temperature_info_mode(!temp_graph_mode_);
+    update_sensor_info_ui();
+}
+
+void UiController::on_temp_range_1h_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    LOGD("UI", "temp range 1h pressed, code=%d", static_cast<int>(code));
+    if (info_sensor != INFO_TEMP) {
+        info_sensor = INFO_TEMP;
+        restore_sensor_info_selection();
+    }
+    temp_graph_range_ = TEMP_GRAPH_RANGE_1H;
+    set_temperature_info_mode(true);
+    update_sensor_info_ui();
+}
+
+void UiController::on_temp_range_3h_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    LOGD("UI", "temp range 3h pressed, code=%d", static_cast<int>(code));
+    if (info_sensor != INFO_TEMP) {
+        info_sensor = INFO_TEMP;
+        restore_sensor_info_selection();
+    }
+    temp_graph_range_ = TEMP_GRAPH_RANGE_3H;
+    set_temperature_info_mode(true);
+    update_sensor_info_ui();
+}
+
+void UiController::on_temp_range_24h_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    LOGD("UI", "temp range 24h pressed, code=%d", static_cast<int>(code));
+    if (info_sensor != INFO_TEMP) {
+        info_sensor = INFO_TEMP;
+        restore_sensor_info_selection();
+    }
+    temp_graph_range_ = TEMP_GRAPH_RANGE_24H;
+    set_temperature_info_mode(true);
+    update_sensor_info_ui();
 }
 
 void UiController::on_pm10_info_event(lv_event_t *e) {
