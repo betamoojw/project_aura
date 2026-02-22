@@ -4,11 +4,17 @@ param(
   [string]$Repo = "21cncstudio/project_aura",
   [string]$Tag,
   [string]$OutputRoot = "release-assets",
-  [switch]$SkipBuild
+  [switch]$SkipBuild,
+  [switch]$SkipWebInstallerSync
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+function Write-Step {
+  param([string]$Message)
+  Write-Host ("[{0}] {1}" -f (Get-Date -Format "HH:mm:ss"), $Message)
+}
 
 function Resolve-PlatformioCommand {
   $preferred = Join-Path $env:USERPROFILE ".platformio\\penv\\Scripts\\platformio.exe"
@@ -80,7 +86,9 @@ if (-not $Tag) {
 $platformioExe = Resolve-PlatformioCommand
 
 if (-not $SkipBuild) {
+  Write-Step "Building firmware"
   Invoke-Platformio -Exe $platformioExe -PioArgs @("run", "-e", $Env)
+  Write-Step "Building filesystem image"
   Invoke-Platformio -Exe $platformioExe -PioArgs @("run", "-e", $Env, "-t", "buildfs")
 }
 
@@ -125,6 +133,7 @@ if (-not $littlefsOffset) {
 $outDir = Join-Path $root (Join-Path $OutputRoot $Tag)
 New-Item -ItemType Directory -Force $outDir | Out-Null
 
+Write-Step "Copying release binaries"
 Copy-Item -Force (Join-Path $buildDir "bootloader.bin") (Join-Path $outDir "bootloader.bin")
 Copy-Item -Force (Join-Path $buildDir "partitions.bin") (Join-Path $outDir "partitions.bin")
 Copy-Item -Force (Join-Path $buildDir "firmware.bin") (Join-Path $outDir "firmware.bin")
@@ -135,7 +144,6 @@ $otaFileName = "project_aura_{0}_ota_firmware.bin" -f $Version
 Copy-Item -Force (Join-Path $buildDir "firmware.bin") (Join-Path $outDir $otaFileName)
 
 $baseUrl = "https://github.com/$Repo/releases/download/$Tag"
-
 $manifestFull = [ordered]@{
   name = "Project Aura"
   version = $Version
@@ -152,7 +160,6 @@ $manifestFull = [ordered]@{
     }
   )
 }
-
 $manifestUpdate = [ordered]@{
   name = "Project Aura"
   version = $Version
@@ -167,26 +174,16 @@ $manifestUpdate = [ordered]@{
   )
 }
 
+Write-Step "Writing release manifests"
 $manifestFull | ConvertTo-Json -Depth 8 | Set-Content -Encoding Ascii (Join-Path $outDir "manifest.json")
 $manifestUpdate | ConvertTo-Json -Depth 8 | Set-Content -Encoding Ascii (Join-Path $outDir "manifest-update.json")
-
-$zipPath = Join-Path $outDir ("project_aura_{0}_web_installer_full.zip" -f $Version)
-Compress-Archive -Force -DestinationPath $zipPath -Path @(
-  (Join-Path $outDir "bootloader.bin"),
-  (Join-Path $outDir "partitions.bin"),
-  (Join-Path $outDir "boot_app0.bin"),
-  (Join-Path $outDir "firmware.bin"),
-  (Join-Path $outDir "littlefs.bin"),
-  (Join-Path $outDir "manifest.json"),
-  (Join-Path $outDir "manifest-update.json")
-)
 
 $releaseNotes = Join-Path $root ("docs\\releases\\v{0}.md" -f $Version)
 if (Test-Path $releaseNotes) {
   Copy-Item -Force $releaseNotes (Join-Path $outDir ("release-notes-v{0}.md" -f $Version))
 }
 
-$filesForHashes = @(
+$hashFiles = @(
   "bootloader.bin",
   "partitions.bin",
   "boot_app0.bin",
@@ -194,18 +191,33 @@ $filesForHashes = @(
   "littlefs.bin",
   "manifest.json",
   "manifest-update.json",
-  $otaFileName,
-  ("project_aura_{0}_web_installer_full.zip" -f $Version)
+  $otaFileName
 )
-
-$hashLines = foreach ($fileName in $filesForHashes) {
+$hashLines = foreach ($fileName in $hashFiles) {
   $filePath = Join-Path $outDir $fileName
   $hash = (Get-FileHash -Algorithm SHA256 -Path $filePath).Hash.ToLowerInvariant()
   "$hash  $fileName"
 }
 $hashLines | Set-Content -Encoding Ascii (Join-Path $outDir "sha256sums.txt")
 
+if (-not $SkipWebInstallerSync) {
+  $webPrepareScript = Join-Path $root "web-installer\\prepare_web_installer.ps1"
+  if (Test-Path $webPrepareScript) {
+    Write-Step "Syncing local web-installer files"
+    & powershell -ExecutionPolicy Bypass -File $webPrepareScript -Env $Env -Version $Version -SkipBuild
+    if ($LASTEXITCODE -ne 0) {
+      throw "Failed to sync web-installer files."
+    }
+  } else {
+    Write-Warning "web-installer\\prepare_web_installer.ps1 not found, skipping local web-installer sync."
+  }
+}
+
+Write-Host ""
 Write-Host "Release assets prepared in: $outDir"
 Write-Host "Tag: $Tag"
-Write-Host "Upload these files to GitHub Release:"
-$filesForHashes | ForEach-Object { Write-Host " - $_" }
+Write-Host "Upload this file to GitHub Release:"
+Write-Host " - $otaFileName"
+Write-Host "Other files in release-assets are for local installer workflow."
+Write-Host ""
+Write-Host "Local website installer files are refreshed in: $root\\web-installer"

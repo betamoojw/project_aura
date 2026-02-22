@@ -1,26 +1,23 @@
-# Releasing Firmware (GitHub Release Assets)
+# Releasing Firmware
 
 ## 1) Bump firmware version
 - Edit `platformio.ini`:
   - `-DAPP_VERSION=\"X.Y.Z\"`
 
-## 2) Build and prepare release assets
+## 2) Prepare assets
 Run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\prepare_release_assets.ps1 -Version X.Y.Z -Tag vX.Y.Z -Repo 21cncstudio/project_aura
+powershell -ExecutionPolicy Bypass -File scripts\prepare_release_assets.ps1 -Version X.Y.Z
 ```
 
-Output folder:
-- `release-assets/vX.Y.Z`
+This prepares files in `release-assets/vX.Y.Z` and refreshes local website installer files in `web-installer/`.
 
-## 3) Create GitHub Release
-- GitHub -> `project_aura` -> Releases -> Draft new release
-- Tag: `vX.Y.Z`
-- Title: `Project Aura vX.Y.Z`
-- Body: use notes from `docs/releases/vX.Y.Z.md`
+Important:
+- GitHub Release should publish OTA file only.
+- Full installer binaries/manifests are for your private hosting workflow.
 
-Upload all files from `release-assets/vX.Y.Z`:
+Main generated files:
 - `bootloader.bin`
 - `partitions.bin`
 - `boot_app0.bin`
@@ -29,14 +26,25 @@ Upload all files from `release-assets/vX.Y.Z`:
 - `manifest.json`
 - `manifest-update.json`
 - `project_aura_X.Y.Z_ota_firmware.bin`
-- `project_aura_X.Y.Z_web_installer_full.zip`
 - `sha256sums.txt`
 
-## 4) URLs to use on website
-- Full install manifest:
-  - `https://github.com/21cncstudio/project_aura/releases/download/vX.Y.Z/manifest.json`
-- Update-only manifest:
-  - `https://github.com/21cncstudio/project_aura/releases/download/vX.Y.Z/manifest-update.json`
+## 3) Publish to GitHub Release
+Recommended command:
 
-## 5) OTA file for dashboard upload
-- Use `project_aura_X.Y.Z_ota_firmware.bin` (or `firmware.bin`, same payload).
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\publish_github_release.ps1 -Version X.Y.Z -SkipReleaseUpdate -PruneAssetsToList
+```
+
+Notes:
+- `-SkipReleaseUpdate` avoids metadata PATCH (useful on flaky networks).
+- `-PruneAssetsToList` removes stale assets from previous uploads.
+- By default, the script uploads only:
+  - `project_aura_X.Y.Z_ota_firmware.bin`
+
+## 4) Website usage
+- Keep HTML installer block on your site.
+- Keep manifests on your own hosting (`/wp-content/uploads/aura-installer/...`).
+- Point manifest `path` fields to your storage/CDN links.
+
+## 5) OTA dashboard update
+- Use `project_aura_X.Y.Z_ota_firmware.bin` in `/dashboard -> System -> Update Firmware`.

@@ -1511,7 +1511,7 @@ void ota_handle_update() {
     server.send(status_code, "application/json", json);
 
     if (success) {
-        delay(120);
+        delay(300);
         server.client().stop();
         ESP.restart();
     } else {
