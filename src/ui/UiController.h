@@ -165,6 +165,7 @@ private:
     void set_pm25_4_info_mode(bool graph_mode);
     void set_pm1_10_info_mode(bool graph_mode);
     void set_pressure_info_mode(bool graph_mode);
+    uint16_t graph_points_for_range(TempGraphRange range) const;
     uint16_t humidity_graph_points() const;
     uint16_t voc_graph_points() const;
     uint16_t nox_graph_points() const;
@@ -197,6 +198,17 @@ private:
                                            float latest_temp);
     void ensure_temperature_zone_overlay();
     void update_temperature_zone_overlay(const SensorGraphProfile &profile, float y_min_display, float y_max_display);
+    void ensure_graph_time_labels(lv_obj_t *graph_container, lv_obj_t *chart, lv_obj_t **labels, uint8_t label_count);
+    void update_graph_time_labels(lv_obj_t *graph_container,
+                                  lv_obj_t *chart,
+                                  lv_obj_t **labels,
+                                  uint8_t label_count,
+                                  uint16_t points,
+                                  bool clear_when_points_lt_two = false,
+                                  bool chart_layout_before_position = false,
+                                  bool move_foreground_after_position = true);
+    void ensure_graph_stat_overlays(lv_obj_t *chart, lv_obj_t *&label_min, lv_obj_t *&label_now, lv_obj_t *&label_max);
+    void style_graph_stat_overlays(lv_obj_t *chart, lv_obj_t *label_min, lv_obj_t *label_now, lv_obj_t *label_max);
     void ensure_temperature_time_labels();
     void update_temperature_time_labels();
     void ensure_humidity_graph_overlays();
