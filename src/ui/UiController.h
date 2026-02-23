@@ -138,6 +138,12 @@ private:
         float zone_bounds[kMaxGraphZoneBounds] = {};
         GraphZoneTone zone_tones[kMaxGraphZoneBands] = {};
     };
+    struct GraphSeriesStats {
+        bool has_values = false;
+        float min_value = 0.0f;
+        float max_value = 0.0f;
+        float latest_value = 0.0f;
+    };
 
     void update_temp_offset_label();
     void update_hum_offset_label();
@@ -166,6 +172,16 @@ private:
     void set_pm1_10_info_mode(bool graph_mode);
     void set_pressure_info_mode(bool graph_mode);
     uint16_t graph_points_for_range(TempGraphRange range) const;
+    uint8_t graph_vertical_divisions_for_range(TempGraphRange range) const;
+    void apply_standard_info_chart_theme(lv_obj_t *chart, uint8_t horizontal_divisions, uint8_t vertical_divisions);
+    lv_chart_series_t *ensure_info_chart_series(lv_obj_t *chart, uint16_t points);
+    GraphSeriesStats populate_info_chart_series(lv_obj_t *chart,
+                                                lv_chart_series_t *series,
+                                                uint16_t points,
+                                                int metric_id,
+                                                float point_scale,
+                                                bool require_non_negative,
+                                                bool convert_temperature_to_display = false);
     uint16_t humidity_graph_points() const;
     uint16_t voc_graph_points() const;
     uint16_t nox_graph_points() const;

@@ -74,6 +74,126 @@ uint16_t UiController::pressure_graph_points() const {
     return graph_points_for_range(pressure_graph_range_);
 }
 
+uint8_t UiController::graph_vertical_divisions_for_range(TempGraphRange range) const {
+    return (range == TEMP_GRAPH_RANGE_24H) ? 25U : 13U;
+}
+
+void UiController::apply_standard_info_chart_theme(lv_obj_t *chart, uint8_t horizontal_divisions, uint8_t vertical_divisions) {
+    if (!chart) {
+        return;
+    }
+
+    lv_color_t card_bg = lv_color_hex(0xff160c09);
+    lv_color_t border_color = color_card_border();
+    if (objects.card_co2_pro) {
+        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
+        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
+    }
+
+    const lv_color_t text_color = active_text_color();
+    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
+    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
+
+    lv_chart_set_type(chart, LV_CHART_TYPE_LINE);
+    lv_chart_set_update_mode(chart, LV_CHART_UPDATE_MODE_SHIFT);
+    lv_chart_set_div_line_count(chart, horizontal_divisions, vertical_divisions);
+
+    lv_obj_set_style_bg_color(chart, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(chart, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(chart, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(chart, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(chart, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_color(chart, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_opa(chart, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_width(chart, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_line_color(chart, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_width(chart, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_opa(chart, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_size(chart, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+}
+
+lv_chart_series_t *UiController::ensure_info_chart_series(lv_obj_t *chart, uint16_t points) {
+    if (!chart) {
+        return nullptr;
+    }
+
+    lv_chart_set_point_count(chart, points);
+
+    lv_chart_series_t *series = lv_chart_get_series_next(chart, nullptr);
+    if (!series) {
+        series = lv_chart_add_series(chart,
+                                     lv_obj_get_style_line_color(chart, LV_PART_ITEMS),
+                                     LV_CHART_AXIS_PRIMARY_Y);
+    }
+    if (!series) {
+        return nullptr;
+    }
+
+    series->color = lv_obj_get_style_line_color(chart, LV_PART_ITEMS);
+    lv_chart_set_all_value(chart, series, LV_CHART_POINT_NONE);
+    return series;
+}
+
+UiController::GraphSeriesStats UiController::populate_info_chart_series(lv_obj_t *chart,
+                                                                        lv_chart_series_t *series,
+                                                                        uint16_t points,
+                                                                        int metric_id,
+                                                                        float point_scale,
+                                                                        bool require_non_negative,
+                                                                        bool convert_temperature_to_display) {
+    GraphSeriesStats stats{};
+    stats.has_values = false;
+    stats.min_value = FLT_MAX;
+    stats.max_value = -FLT_MAX;
+    stats.latest_value = NAN;
+
+    if (!chart || !series || points == 0) {
+        return stats;
+    }
+
+    const uint16_t total_count = chartsHistory.count();
+    const uint16_t available = (total_count < points) ? total_count : points;
+    const uint16_t missing_prefix = points - available;
+    const uint16_t start_offset = total_count - available;
+    const ChartsHistory::Metric metric = static_cast<ChartsHistory::Metric>(metric_id);
+
+    for (uint16_t i = 0; i < points; ++i) {
+        lv_coord_t point_value = LV_CHART_POINT_NONE;
+        if (i >= missing_prefix) {
+            const uint16_t offset = start_offset + (i - missing_prefix);
+            float raw_value = 0.0f;
+            bool valid = false;
+            if (chartsHistory.metricValueFromOldest(offset, metric, raw_value, valid) &&
+                valid && isfinite(raw_value)) {
+                float display_value = raw_value;
+                if (convert_temperature_to_display) {
+                    display_value = temperature_to_display(raw_value, temp_units_c);
+                }
+                if (isfinite(display_value) && (!require_non_negative || display_value >= 0.0f)) {
+                    if (!stats.has_values) {
+                        stats.min_value = display_value;
+                        stats.max_value = display_value;
+                        stats.has_values = true;
+                    } else {
+                        if (display_value < stats.min_value) {
+                            stats.min_value = display_value;
+                        }
+                        if (display_value > stats.max_value) {
+                            stats.max_value = display_value;
+                        }
+                    }
+                    stats.latest_value = display_value;
+                    point_value = static_cast<lv_coord_t>(lroundf(display_value * point_scale));
+                }
+            }
+        }
+        lv_chart_set_value_by_id(chart, series, i, point_value);
+    }
+
+    return stats;
+}
+
 UiController::SensorGraphProfile UiController::build_temperature_graph_profile() const {
     SensorGraphProfile profile{};
     profile.min_span = temp_units_c ? 2.0f : 3.5f;

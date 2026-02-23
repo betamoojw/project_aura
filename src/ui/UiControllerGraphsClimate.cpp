@@ -23,36 +23,9 @@ void UiController::apply_temperature_graph_theme(const SensorGraphProfile &profi
         return;
     }
 
-    lv_color_t card_bg = lv_color_hex(0xff160c09);
-    lv_color_t border_color = color_card_border();
-    if (objects.card_co2_pro) {
-        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
-        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
-    }
-
-    const lv_color_t text_color = active_text_color();
-    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
-    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
-
-    lv_chart_set_type(objects.chart_temp_info, LV_CHART_TYPE_LINE);
-    lv_chart_set_update_mode(objects.chart_temp_info, LV_CHART_UPDATE_MODE_SHIFT);
     const uint8_t initial_horizontal = (profile.horizontal_divisions_min > 0) ? profile.horizontal_divisions_min : 3;
     const uint8_t initial_vertical = (profile.vertical_divisions > 0) ? profile.vertical_divisions : 15;
-    lv_chart_set_div_line_count(objects.chart_temp_info, initial_horizontal, initial_vertical);
-
-    lv_obj_set_style_bg_color(objects.chart_temp_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(objects.chart_temp_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(objects.chart_temp_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(objects.chart_temp_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(objects.chart_temp_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(objects.chart_temp_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_temp_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_temp_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_line_color(objects.chart_temp_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_temp_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_temp_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_size(objects.chart_temp_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    apply_standard_info_chart_theme(objects.chart_temp_info, initial_horizontal, initial_vertical);
 }
 
 void UiController::ensure_temperature_graph_overlays() {
@@ -455,58 +428,22 @@ void UiController::update_temperature_info_graph() {
     apply_temperature_graph_theme(profile);
 
     const uint16_t points = temperature_graph_points();
-    lv_chart_set_point_count(objects.chart_temp_info, points);
-
-    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_temp_info, nullptr);
-    if (!series) {
-        series = lv_chart_add_series(objects.chart_temp_info,
-                                     lv_obj_get_style_line_color(objects.chart_temp_info, LV_PART_ITEMS),
-                                     LV_CHART_AXIS_PRIMARY_Y);
-    }
+    lv_chart_series_t *series = ensure_info_chart_series(objects.chart_temp_info, points);
     if (!series) {
         return;
     }
 
-    series->color = lv_obj_get_style_line_color(objects.chart_temp_info, LV_PART_ITEMS);
-    lv_chart_set_all_value(objects.chart_temp_info, series, LV_CHART_POINT_NONE);
-
-    const uint16_t total_count = chartsHistory.count();
-    const uint16_t available = (total_count < points) ? total_count : points;
-    const uint16_t missing_prefix = points - available;
-    const uint16_t start_offset = total_count - available;
-
-    bool has_values = false;
-    float min_temp = FLT_MAX;
-    float max_temp = -FLT_MAX;
-    float latest_temp = NAN;
-
-    for (uint16_t i = 0; i < points; ++i) {
-        lv_coord_t point_value = LV_CHART_POINT_NONE;
-        if (i >= missing_prefix) {
-            const uint16_t offset = start_offset + (i - missing_prefix);
-            float value_c = 0.0f;
-            bool valid = false;
-            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_TEMPERATURE, value_c, valid) &&
-                valid && isfinite(value_c)) {
-                const float display_value = temperature_to_display(value_c, temp_units_c);
-                if (!has_values) {
-                    min_temp = display_value;
-                    max_temp = display_value;
-                    has_values = true;
-                } else {
-                    if (display_value < min_temp) {
-                        min_temp = display_value;
-                    }
-                    if (display_value > max_temp) {
-                        max_temp = display_value;
-                    }
-                }
-                latest_temp = display_value;
-                point_value = static_cast<lv_coord_t>(lroundf(display_value * 10.0f));
-            }
-        }
-        lv_chart_set_value_by_id(objects.chart_temp_info, series, i, point_value);
-    }
+    const GraphSeriesStats stats = populate_info_chart_series(objects.chart_temp_info,
+                                                              series,
+                                                              points,
+                                                              static_cast<int>(ChartsHistory::METRIC_TEMPERATURE),
+                                                              10.0f,
+                                                              false,
+                                                              true);
+    const bool has_values = stats.has_values;
+    float min_temp = stats.min_value;
+    float max_temp = stats.max_value;
+    float latest_temp = stats.latest_value;
 
     const float fallback = profile.fallback_value;
 
@@ -592,92 +529,25 @@ void UiController::update_humidity_info_graph() {
         return;
     }
 
-    lv_color_t card_bg = lv_color_hex(0xff160c09);
-    lv_color_t border_color = color_card_border();
-    if (objects.card_co2_pro) {
-        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
-        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
-    }
-
-    const lv_color_t text_color = active_text_color();
-    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
-    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
-
-    lv_chart_set_type(objects.chart_rh_info, LV_CHART_TYPE_LINE);
-    lv_chart_set_update_mode(objects.chart_rh_info, LV_CHART_UPDATE_MODE_SHIFT);
-
-    uint8_t vertical_divisions = 13;
-    if (rh_graph_range_ == TEMP_GRAPH_RANGE_24H) {
-        vertical_divisions = 25;
-    }
-    lv_chart_set_div_line_count(objects.chart_rh_info, 5, vertical_divisions);
-
-    lv_obj_set_style_bg_color(objects.chart_rh_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(objects.chart_rh_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(objects.chart_rh_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(objects.chart_rh_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(objects.chart_rh_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(objects.chart_rh_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_rh_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_rh_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_line_color(objects.chart_rh_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_rh_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_rh_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_size(objects.chart_rh_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    const uint8_t vertical_divisions = graph_vertical_divisions_for_range(rh_graph_range_);
+    apply_standard_info_chart_theme(objects.chart_rh_info, 5, vertical_divisions);
 
     const uint16_t points = humidity_graph_points();
-    lv_chart_set_point_count(objects.chart_rh_info, points);
-
-    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_rh_info, nullptr);
-    if (!series) {
-        series = lv_chart_add_series(objects.chart_rh_info,
-                                     lv_obj_get_style_line_color(objects.chart_rh_info, LV_PART_ITEMS),
-                                     LV_CHART_AXIS_PRIMARY_Y);
-    }
+    lv_chart_series_t *series = ensure_info_chart_series(objects.chart_rh_info, points);
     if (!series) {
         return;
     }
 
-    series->color = lv_obj_get_style_line_color(objects.chart_rh_info, LV_PART_ITEMS);
-    lv_chart_set_all_value(objects.chart_rh_info, series, LV_CHART_POINT_NONE);
-
-    const uint16_t total_count = chartsHistory.count();
-    const uint16_t available = (total_count < points) ? total_count : points;
-    const uint16_t missing_prefix = points - available;
-    const uint16_t start_offset = total_count - available;
-
-    bool has_values = false;
-    float min_h = FLT_MAX;
-    float max_h = -FLT_MAX;
-    float latest_h = NAN;
-
-    for (uint16_t i = 0; i < points; ++i) {
-        lv_coord_t point_value = LV_CHART_POINT_NONE;
-        if (i >= missing_prefix) {
-            const uint16_t offset = start_offset + (i - missing_prefix);
-            float value = 0.0f;
-            bool valid = false;
-            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_HUMIDITY, value, valid) &&
-                valid && isfinite(value)) {
-                if (!has_values) {
-                    min_h = value;
-                    max_h = value;
-                    has_values = true;
-                } else {
-                    if (value < min_h) {
-                        min_h = value;
-                    }
-                    if (value > max_h) {
-                        max_h = value;
-                    }
-                }
-                latest_h = value;
-                point_value = static_cast<lv_coord_t>(lroundf(value * 10.0f));
-            }
-        }
-        lv_chart_set_value_by_id(objects.chart_rh_info, series, i, point_value);
-    }
+    const GraphSeriesStats stats = populate_info_chart_series(objects.chart_rh_info,
+                                                              series,
+                                                              points,
+                                                              static_cast<int>(ChartsHistory::METRIC_HUMIDITY),
+                                                              10.0f,
+                                                              false);
+    const bool has_values = stats.has_values;
+    float min_h = stats.min_value;
+    float max_h = stats.max_value;
+    float latest_h = stats.latest_value;
 
     float scale_min = has_values ? min_h : 50.0f;
     float scale_max = has_values ? max_h : 50.0f;

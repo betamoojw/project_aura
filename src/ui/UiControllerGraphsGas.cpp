@@ -215,91 +215,25 @@ void UiController::update_voc_info_graph() {
         return;
     }
 
-    lv_color_t card_bg = lv_color_hex(0xff160c09);
-    lv_color_t border_color = color_card_border();
-    if (objects.card_co2_pro) {
-        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
-        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
-    }
-
-    const lv_color_t text_color = active_text_color();
-    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
-    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
-
-    lv_chart_set_type(objects.chart_voc_info, LV_CHART_TYPE_LINE);
-    lv_chart_set_update_mode(objects.chart_voc_info, LV_CHART_UPDATE_MODE_SHIFT);
-
-    uint8_t vertical_divisions = 13;
-    if (voc_graph_range_ == TEMP_GRAPH_RANGE_24H) {
-        vertical_divisions = 25;
-    }
-
-    lv_obj_set_style_bg_color(objects.chart_voc_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(objects.chart_voc_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(objects.chart_voc_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(objects.chart_voc_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(objects.chart_voc_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(objects.chart_voc_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_voc_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_voc_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_line_color(objects.chart_voc_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_voc_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_voc_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_size(objects.chart_voc_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    const uint8_t vertical_divisions = graph_vertical_divisions_for_range(voc_graph_range_);
+    apply_standard_info_chart_theme(objects.chart_voc_info, 5, vertical_divisions);
 
     const uint16_t points = voc_graph_points();
-    lv_chart_set_point_count(objects.chart_voc_info, points);
-
-    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_voc_info, nullptr);
-    if (!series) {
-        series = lv_chart_add_series(objects.chart_voc_info,
-                                     lv_obj_get_style_line_color(objects.chart_voc_info, LV_PART_ITEMS),
-                                     LV_CHART_AXIS_PRIMARY_Y);
-    }
+    lv_chart_series_t *series = ensure_info_chart_series(objects.chart_voc_info, points);
     if (!series) {
         return;
     }
 
-    series->color = lv_obj_get_style_line_color(objects.chart_voc_info, LV_PART_ITEMS);
-    lv_chart_set_all_value(objects.chart_voc_info, series, LV_CHART_POINT_NONE);
-
-    const uint16_t total_count = chartsHistory.count();
-    const uint16_t available = (total_count < points) ? total_count : points;
-    const uint16_t missing_prefix = points - available;
-    const uint16_t start_offset = total_count - available;
-
-    bool has_values = false;
-    float min_voc = FLT_MAX;
-    float max_voc = -FLT_MAX;
-    float latest_voc = NAN;
-
-    for (uint16_t i = 0; i < points; ++i) {
-        lv_coord_t point_value = LV_CHART_POINT_NONE;
-        if (i >= missing_prefix) {
-            const uint16_t offset = start_offset + (i - missing_prefix);
-            float value = 0.0f;
-            bool valid = false;
-            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_VOC, value, valid) &&
-                valid && isfinite(value)) {
-                if (!has_values) {
-                    min_voc = value;
-                    max_voc = value;
-                    has_values = true;
-                } else {
-                    if (value < min_voc) {
-                        min_voc = value;
-                    }
-                    if (value > max_voc) {
-                        max_voc = value;
-                    }
-                }
-                latest_voc = value;
-                point_value = static_cast<lv_coord_t>(lroundf(value));
-            }
-        }
-        lv_chart_set_value_by_id(objects.chart_voc_info, series, i, point_value);
-    }
+    const GraphSeriesStats stats = populate_info_chart_series(objects.chart_voc_info,
+                                                              series,
+                                                              points,
+                                                              static_cast<int>(ChartsHistory::METRIC_VOC),
+                                                              1.0f,
+                                                              false);
+    const bool has_values = stats.has_values;
+    float min_voc = stats.min_value;
+    float max_voc = stats.max_value;
+    float latest_voc = stats.latest_value;
 
     float scale_min = has_values ? min_voc : 100.0f;
     float scale_max = has_values ? max_voc : 100.0f;
@@ -555,91 +489,25 @@ void UiController::update_nox_info_graph() {
         return;
     }
 
-    lv_color_t card_bg = lv_color_hex(0xff160c09);
-    lv_color_t border_color = color_card_border();
-    if (objects.card_co2_pro) {
-        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
-        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
-    }
-
-    const lv_color_t text_color = active_text_color();
-    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
-    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
-
-    lv_chart_set_type(objects.chart_nox_info, LV_CHART_TYPE_LINE);
-    lv_chart_set_update_mode(objects.chart_nox_info, LV_CHART_UPDATE_MODE_SHIFT);
-
-    uint8_t vertical_divisions = 13;
-    if (nox_graph_range_ == TEMP_GRAPH_RANGE_24H) {
-        vertical_divisions = 25;
-    }
-
-    lv_obj_set_style_bg_color(objects.chart_nox_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(objects.chart_nox_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(objects.chart_nox_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(objects.chart_nox_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(objects.chart_nox_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(objects.chart_nox_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_nox_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_nox_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_line_color(objects.chart_nox_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_nox_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_nox_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_size(objects.chart_nox_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    const uint8_t vertical_divisions = graph_vertical_divisions_for_range(nox_graph_range_);
+    apply_standard_info_chart_theme(objects.chart_nox_info, 5, vertical_divisions);
 
     const uint16_t points = nox_graph_points();
-    lv_chart_set_point_count(objects.chart_nox_info, points);
-
-    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_nox_info, nullptr);
-    if (!series) {
-        series = lv_chart_add_series(objects.chart_nox_info,
-                                     lv_obj_get_style_line_color(objects.chart_nox_info, LV_PART_ITEMS),
-                                     LV_CHART_AXIS_PRIMARY_Y);
-    }
+    lv_chart_series_t *series = ensure_info_chart_series(objects.chart_nox_info, points);
     if (!series) {
         return;
     }
 
-    series->color = lv_obj_get_style_line_color(objects.chart_nox_info, LV_PART_ITEMS);
-    lv_chart_set_all_value(objects.chart_nox_info, series, LV_CHART_POINT_NONE);
-
-    const uint16_t total_count = chartsHistory.count();
-    const uint16_t available = (total_count < points) ? total_count : points;
-    const uint16_t missing_prefix = points - available;
-    const uint16_t start_offset = total_count - available;
-
-    bool has_values = false;
-    float min_nox = FLT_MAX;
-    float max_nox = -FLT_MAX;
-    float latest_nox = NAN;
-
-    for (uint16_t i = 0; i < points; ++i) {
-        lv_coord_t point_value = LV_CHART_POINT_NONE;
-        if (i >= missing_prefix) {
-            const uint16_t offset = start_offset + (i - missing_prefix);
-            float value = 0.0f;
-            bool valid = false;
-            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_NOX, value, valid) &&
-                valid && isfinite(value)) {
-                if (!has_values) {
-                    min_nox = value;
-                    max_nox = value;
-                    has_values = true;
-                } else {
-                    if (value < min_nox) {
-                        min_nox = value;
-                    }
-                    if (value > max_nox) {
-                        max_nox = value;
-                    }
-                }
-                latest_nox = value;
-                point_value = static_cast<lv_coord_t>(lroundf(value));
-            }
-        }
-        lv_chart_set_value_by_id(objects.chart_nox_info, series, i, point_value);
-    }
+    const GraphSeriesStats stats = populate_info_chart_series(objects.chart_nox_info,
+                                                              series,
+                                                              points,
+                                                              static_cast<int>(ChartsHistory::METRIC_NOX),
+                                                              1.0f,
+                                                              false);
+    const bool has_values = stats.has_values;
+    float min_nox = stats.min_value;
+    float max_nox = stats.max_value;
+    float latest_nox = stats.latest_value;
 
     float scale_min = has_values ? min_nox : 50.0f;
     float scale_max = has_values ? max_nox : 50.0f;
@@ -895,91 +763,25 @@ void UiController::update_hcho_info_graph() {
         return;
     }
 
-    lv_color_t card_bg = lv_color_hex(0xff160c09);
-    lv_color_t border_color = color_card_border();
-    if (objects.card_co2_pro) {
-        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
-        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
-    }
-
-    const lv_color_t text_color = active_text_color();
-    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
-    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
-
-    lv_chart_set_type(objects.chart_hcho_info, LV_CHART_TYPE_LINE);
-    lv_chart_set_update_mode(objects.chart_hcho_info, LV_CHART_UPDATE_MODE_SHIFT);
-
-    uint8_t vertical_divisions = 13;
-    if (hcho_graph_range_ == TEMP_GRAPH_RANGE_24H) {
-        vertical_divisions = 25;
-    }
-
-    lv_obj_set_style_bg_color(objects.chart_hcho_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(objects.chart_hcho_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(objects.chart_hcho_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(objects.chart_hcho_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(objects.chart_hcho_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(objects.chart_hcho_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_hcho_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_hcho_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_line_color(objects.chart_hcho_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_hcho_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_hcho_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_size(objects.chart_hcho_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    const uint8_t vertical_divisions = graph_vertical_divisions_for_range(hcho_graph_range_);
+    apply_standard_info_chart_theme(objects.chart_hcho_info, 5, vertical_divisions);
 
     const uint16_t points = hcho_graph_points();
-    lv_chart_set_point_count(objects.chart_hcho_info, points);
-
-    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_hcho_info, nullptr);
-    if (!series) {
-        series = lv_chart_add_series(objects.chart_hcho_info,
-                                     lv_obj_get_style_line_color(objects.chart_hcho_info, LV_PART_ITEMS),
-                                     LV_CHART_AXIS_PRIMARY_Y);
-    }
+    lv_chart_series_t *series = ensure_info_chart_series(objects.chart_hcho_info, points);
     if (!series) {
         return;
     }
 
-    series->color = lv_obj_get_style_line_color(objects.chart_hcho_info, LV_PART_ITEMS);
-    lv_chart_set_all_value(objects.chart_hcho_info, series, LV_CHART_POINT_NONE);
-
-    const uint16_t total_count = chartsHistory.count();
-    const uint16_t available = (total_count < points) ? total_count : points;
-    const uint16_t missing_prefix = points - available;
-    const uint16_t start_offset = total_count - available;
-
-    bool has_values = false;
-    float min_hcho = FLT_MAX;
-    float max_hcho = -FLT_MAX;
-    float latest_hcho = NAN;
-
-    for (uint16_t i = 0; i < points; ++i) {
-        lv_coord_t point_value = LV_CHART_POINT_NONE;
-        if (i >= missing_prefix) {
-            const uint16_t offset = start_offset + (i - missing_prefix);
-            float value = 0.0f;
-            bool valid = false;
-            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_HCHO, value, valid) &&
-                valid && isfinite(value)) {
-                if (!has_values) {
-                    min_hcho = value;
-                    max_hcho = value;
-                    has_values = true;
-                } else {
-                    if (value < min_hcho) {
-                        min_hcho = value;
-                    }
-                    if (value > max_hcho) {
-                        max_hcho = value;
-                    }
-                }
-                latest_hcho = value;
-                point_value = static_cast<lv_coord_t>(lroundf(value));
-            }
-        }
-        lv_chart_set_value_by_id(objects.chart_hcho_info, series, i, point_value);
-    }
+    const GraphSeriesStats stats = populate_info_chart_series(objects.chart_hcho_info,
+                                                              series,
+                                                              points,
+                                                              static_cast<int>(ChartsHistory::METRIC_HCHO),
+                                                              1.0f,
+                                                              false);
+    const bool has_values = stats.has_values;
+    float min_hcho = stats.min_value;
+    float max_hcho = stats.max_value;
+    float latest_hcho = stats.latest_value;
 
     float scale_min = has_values ? min_hcho : 20.0f;
     float scale_max = has_values ? max_hcho : 20.0f;
@@ -1233,91 +1035,25 @@ void UiController::update_co2_info_graph() {
         return;
     }
 
-    lv_color_t card_bg = lv_color_hex(0xff160c09);
-    lv_color_t border_color = color_card_border();
-    if (objects.card_co2_pro) {
-        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
-        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
-    }
-
-    const lv_color_t text_color = active_text_color();
-    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
-    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
-
-    lv_chart_set_type(objects.chart_co2_info, LV_CHART_TYPE_LINE);
-    lv_chart_set_update_mode(objects.chart_co2_info, LV_CHART_UPDATE_MODE_SHIFT);
-
-    uint8_t vertical_divisions = 13;
-    if (co2_graph_range_ == TEMP_GRAPH_RANGE_24H) {
-        vertical_divisions = 25;
-    }
-
-    lv_obj_set_style_bg_color(objects.chart_co2_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(objects.chart_co2_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(objects.chart_co2_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(objects.chart_co2_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(objects.chart_co2_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(objects.chart_co2_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_co2_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_co2_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_line_color(objects.chart_co2_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_co2_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_co2_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_size(objects.chart_co2_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    const uint8_t vertical_divisions = graph_vertical_divisions_for_range(co2_graph_range_);
+    apply_standard_info_chart_theme(objects.chart_co2_info, 5, vertical_divisions);
 
     const uint16_t points = co2_graph_points();
-    lv_chart_set_point_count(objects.chart_co2_info, points);
-
-    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_co2_info, nullptr);
-    if (!series) {
-        series = lv_chart_add_series(objects.chart_co2_info,
-                                     lv_obj_get_style_line_color(objects.chart_co2_info, LV_PART_ITEMS),
-                                     LV_CHART_AXIS_PRIMARY_Y);
-    }
+    lv_chart_series_t *series = ensure_info_chart_series(objects.chart_co2_info, points);
     if (!series) {
         return;
     }
 
-    series->color = lv_obj_get_style_line_color(objects.chart_co2_info, LV_PART_ITEMS);
-    lv_chart_set_all_value(objects.chart_co2_info, series, LV_CHART_POINT_NONE);
-
-    const uint16_t total_count = chartsHistory.count();
-    const uint16_t available = (total_count < points) ? total_count : points;
-    const uint16_t missing_prefix = points - available;
-    const uint16_t start_offset = total_count - available;
-
-    bool has_values = false;
-    float min_co2 = FLT_MAX;
-    float max_co2 = -FLT_MAX;
-    float latest_co2 = NAN;
-
-    for (uint16_t i = 0; i < points; ++i) {
-        lv_coord_t point_value = LV_CHART_POINT_NONE;
-        if (i >= missing_prefix) {
-            const uint16_t offset = start_offset + (i - missing_prefix);
-            float value = 0.0f;
-            bool valid = false;
-            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_CO2, value, valid) &&
-                valid && isfinite(value)) {
-                if (!has_values) {
-                    min_co2 = value;
-                    max_co2 = value;
-                    has_values = true;
-                } else {
-                    if (value < min_co2) {
-                        min_co2 = value;
-                    }
-                    if (value > max_co2) {
-                        max_co2 = value;
-                    }
-                }
-                latest_co2 = value;
-                point_value = static_cast<lv_coord_t>(lroundf(value));
-            }
-        }
-        lv_chart_set_value_by_id(objects.chart_co2_info, series, i, point_value);
-    }
+    const GraphSeriesStats stats = populate_info_chart_series(objects.chart_co2_info,
+                                                              series,
+                                                              points,
+                                                              static_cast<int>(ChartsHistory::METRIC_CO2),
+                                                              1.0f,
+                                                              false);
+    const bool has_values = stats.has_values;
+    float min_co2 = stats.min_value;
+    float max_co2 = stats.max_value;
+    float latest_co2 = stats.latest_value;
 
     float scale_min = has_values ? min_co2 : 700.0f;
     float scale_max = has_values ? max_co2 : 700.0f;
@@ -1574,91 +1310,25 @@ void UiController::update_co_info_graph() {
         return;
     }
 
-    lv_color_t card_bg = lv_color_hex(0xff160c09);
-    lv_color_t border_color = color_card_border();
-    if (objects.card_co2_pro) {
-        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
-        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
-    }
-
-    const lv_color_t text_color = active_text_color();
-    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
-    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
-
-    lv_chart_set_type(objects.chart_co_info, LV_CHART_TYPE_LINE);
-    lv_chart_set_update_mode(objects.chart_co_info, LV_CHART_UPDATE_MODE_SHIFT);
-
-    uint8_t vertical_divisions = 13;
-    if (co_graph_range_ == TEMP_GRAPH_RANGE_24H) {
-        vertical_divisions = 25;
-    }
-
-    lv_obj_set_style_bg_color(objects.chart_co_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(objects.chart_co_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(objects.chart_co_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(objects.chart_co_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(objects.chart_co_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_color(objects.chart_co_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_co_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_co_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    lv_obj_set_style_line_color(objects.chart_co_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_width(objects.chart_co_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_line_opa(objects.chart_co_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_size(objects.chart_co_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    const uint8_t vertical_divisions = graph_vertical_divisions_for_range(co_graph_range_);
+    apply_standard_info_chart_theme(objects.chart_co_info, 5, vertical_divisions);
 
     const uint16_t points = co_graph_points();
-    lv_chart_set_point_count(objects.chart_co_info, points);
-
-    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_co_info, nullptr);
-    if (!series) {
-        series = lv_chart_add_series(objects.chart_co_info,
-                                     lv_obj_get_style_line_color(objects.chart_co_info, LV_PART_ITEMS),
-                                     LV_CHART_AXIS_PRIMARY_Y);
-    }
+    lv_chart_series_t *series = ensure_info_chart_series(objects.chart_co_info, points);
     if (!series) {
         return;
     }
 
-    series->color = lv_obj_get_style_line_color(objects.chart_co_info, LV_PART_ITEMS);
-    lv_chart_set_all_value(objects.chart_co_info, series, LV_CHART_POINT_NONE);
-
-    const uint16_t total_count = chartsHistory.count();
-    const uint16_t available = (total_count < points) ? total_count : points;
-    const uint16_t missing_prefix = points - available;
-    const uint16_t start_offset = total_count - available;
-
-    bool has_values = false;
-    float min_co = FLT_MAX;
-    float max_co = -FLT_MAX;
-    float latest_co = NAN;
-
-    for (uint16_t i = 0; i < points; ++i) {
-        lv_coord_t point_value = LV_CHART_POINT_NONE;
-        if (i >= missing_prefix) {
-            const uint16_t offset = start_offset + (i - missing_prefix);
-            float value = 0.0f;
-            bool valid = false;
-            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_CO, value, valid) &&
-                valid && isfinite(value) && value >= 0.0f) {
-                if (!has_values) {
-                    min_co = value;
-                    max_co = value;
-                    has_values = true;
-                } else {
-                    if (value < min_co) {
-                        min_co = value;
-                    }
-                    if (value > max_co) {
-                        max_co = value;
-                    }
-                }
-                latest_co = value;
-                point_value = static_cast<lv_coord_t>(lroundf(value * 10.0f));
-            }
-        }
-        lv_chart_set_value_by_id(objects.chart_co_info, series, i, point_value);
-    }
+    const GraphSeriesStats stats = populate_info_chart_series(objects.chart_co_info,
+                                                              series,
+                                                              points,
+                                                              static_cast<int>(ChartsHistory::METRIC_CO),
+                                                              10.0f,
+                                                              true);
+    const bool has_values = stats.has_values;
+    float min_co = stats.min_value;
+    float max_co = stats.max_value;
+    float latest_co = stats.latest_value;
 
     float scale_min = has_values ? min_co : 0.0f;
     float scale_max = has_values ? max_co : Config::AQ_CO_GREEN_MAX_PPM;
