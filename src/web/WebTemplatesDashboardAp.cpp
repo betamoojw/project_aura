@@ -1181,12 +1181,18 @@ const toggleRequestState = {
   backlight_on: { inFlight: false, queued: null },
 };
 let toggleMsgTimer = null;
+let chartsRefreshToken = 0;
+let chartsRefreshController = null;
 
 // ─────────────────────────────────────────────
 // API helpers
 // ─────────────────────────────────────────────
-async function getJson(url) {
-  const r = await fetch(url, { cache: 'no-store' });
+async function getJson(url, init) {
+  const requestInit = init ? Object.assign({}, init) : {};
+  if (!Object.prototype.hasOwnProperty.call(requestInit, 'cache')) {
+    requestInit.cache = 'no-store';
+  }
+  const r = await fetch(url, requestInit);
   if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + url);
   return r.json();
 }
@@ -1676,8 +1682,33 @@ async function refreshSensorHistory() {
 
 async function refreshCharts() {
   if (otaUploadInFlight || otaRestartPending) return;
-  const payload = await getJson('/api/charts?group=' + encodeURIComponent(chartGroup) + '&window=' + encodeURIComponent(chartRange));
-  renderCharts(payload);
+  if (chartsRefreshController) {
+    chartsRefreshController.abort();
+    chartsRefreshController = null;
+  }
+  const token = ++chartsRefreshToken;
+  const controller = new AbortController();
+  chartsRefreshController = controller;
+
+  try {
+    const payload = await getJson(
+      '/api/charts?group=' + encodeURIComponent(chartGroup) + '&window=' + encodeURIComponent(chartRange),
+      { signal: controller.signal }
+    );
+    if (token !== chartsRefreshToken) {
+      return;
+    }
+    renderCharts(payload);
+  } catch (error) {
+    if (error && error.name === 'AbortError') {
+      return;
+    }
+    throw error;
+  } finally {
+    if (chartsRefreshController === controller) {
+      chartsRefreshController = null;
+    }
+  }
 }
 
 async function refreshEvents() {

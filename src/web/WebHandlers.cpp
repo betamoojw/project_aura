@@ -557,6 +557,7 @@ void wifi_handle_root() {
         return;
     }
     if (!context->wifi_is_ap_mode || !context->wifi_is_ap_mode()) {
+        send_no_store_headers(*context->server);
         context->server->send(404, "text/plain", "Not found");
         return;
     }
@@ -568,6 +569,7 @@ void wifi_handle_root() {
         doc["scan_in_progress"] = context->wifi_scan_in_progress && *context->wifi_scan_in_progress;
         String json;
         serializeJson(doc, json);
+        send_no_store_headers(server);
         server.send(200, "application/json", json);
         return;
     }
@@ -588,6 +590,7 @@ void wifi_handle_root() {
     html.replace("{{SSID_ITEMS}}", list_items);
     html.replace("{{SCAN_IN_PROGRESS}}",
                  (context->wifi_scan_in_progress && *context->wifi_scan_in_progress) ? "1" : "0");
+    send_no_store_headers(server);
     server.send(200, "text/html", html);
 }
 
@@ -1483,15 +1486,22 @@ void settings_handle_update() {
         server.send(409, "text/plain", "night_mode is locked by auto mode");
         return;
     }
-    if (has_units_c) {
-        ui.webSetUnitsC(requested_units_c);
+    if (has_units_c && !ui.webSetUnitsC(requested_units_c)) {
+        server.send(500, "text/plain", "Failed to persist units setting");
+        return;
     }
-    if (has_offsets) {
-        ui.webSetOffsets(requested_temp_offset, requested_hum_offset);
+    if (has_offsets && !ui.webSetOffsets(requested_temp_offset, requested_hum_offset)) {
+        server.send(500, "text/plain", "Failed to persist offsets");
+        return;
     }
     if (has_display_name) {
+        const String previous_display_name = context->storage->config().web_display_name;
         context->storage->config().web_display_name = requested_display_name;
-        context->storage->saveConfig(true);
+        if (!context->storage->saveConfig(true)) {
+            context->storage->config().web_display_name = previous_display_name;
+            server.send(500, "text/plain", "Failed to persist display_name");
+            return;
+        }
     }
 
     ArduinoJson::JsonDocument response_doc;
