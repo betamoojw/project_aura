@@ -241,18 +241,27 @@ void StorageManager::saveWiFiSettings(const String &ssid, const String &pass, bo
     config_.wifi_ssid = ssid;
     config_.wifi_pass = pass;
     config_.wifi_enabled = enabled;
-    saveConfig(true);
+    if (!saveConfig(true)) {
+        requestSave();
+        LOGE("Storage", "failed to persist WiFi settings");
+    }
 }
 
 void StorageManager::saveWiFiEnabled(bool enabled) {
     config_.wifi_enabled = enabled;
-    saveConfig(true);
+    if (!saveConfig(true)) {
+        requestSave();
+        LOGE("Storage", "failed to persist WiFi enabled state");
+    }
 }
 
 void StorageManager::clearWiFiCredentials() {
     config_.wifi_ssid = "";
     config_.wifi_pass = "";
-    saveConfig(true);
+    if (!saveConfig(true)) {
+        requestSave();
+        LOGE("Storage", "failed to clear WiFi credentials");
+    }
 }
 
 void StorageManager::loadMqttSettings(String &host, uint16_t &port, String &user, String &pass,
@@ -280,12 +289,18 @@ void StorageManager::saveMqttSettings(const String &host, uint16_t port, const S
     config_.mqtt_device_name = device_name;
     config_.mqtt_discovery = discovery;
     config_.mqtt_anonymous = anonymous;
-    saveConfig(true);
+    if (!saveConfig(true)) {
+        requestSave();
+        LOGE("Storage", "failed to persist MQTT settings");
+    }
 }
 
 void StorageManager::saveMqttEnabled(bool enabled) {
     config_.mqtt_user_enabled = enabled;
-    saveConfig(true);
+    if (!saveConfig(true)) {
+        requestSave();
+        LOGE("Storage", "failed to persist MQTT enabled state");
+    }
 }
 
 bool StorageManager::loadVocState(uint8_t *out, size_t len) const {

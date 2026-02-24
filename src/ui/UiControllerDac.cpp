@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "core/Logger.h"
 #include "modules/FanControl.h"
 #include "modules/NetworkManager.h"
 #include "modules/StorageManager.h"
@@ -470,7 +471,10 @@ void UiController::on_dac_manual_auto_event(lv_event_t *e) {
     fanControl.requestAutoStart();
     if (!storage.config().dac_auto_mode) {
         storage.config().dac_auto_mode = true;
-        storage.saveConfig(true);
+        if (!storage.saveConfig(true)) {
+            storage.requestSave();
+            LOGE("UI", "failed to persist DAC auto mode");
+        }
     }
     update_dac_ui(millis());
 }
@@ -482,7 +486,10 @@ void UiController::on_dac_auto_start_event(lv_event_t *e) {
     fanControl.requestAutoStart();
     if (!storage.config().dac_auto_mode) {
         storage.config().dac_auto_mode = true;
-        storage.saveConfig(true);
+        if (!storage.saveConfig(true)) {
+            storage.requestSave();
+            LOGE("UI", "failed to persist DAC auto mode");
+        }
     }
     update_dac_ui(millis());
 }

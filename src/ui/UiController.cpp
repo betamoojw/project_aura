@@ -1134,7 +1134,10 @@ void UiController::mqtt_apply_pending() {
         if (alert_blink_enabled != pending.alert_blink_value) {
             alert_blink_enabled = pending.alert_blink_value;
             storage.config().alert_blink = alert_blink_enabled;
-            storage.saveConfig(true);
+            if (!storage.saveConfig(true)) {
+                storage.requestSave();
+                LOGE("UI", "failed to persist alert blink change from MQTT");
+            }
             if (alert_blink_enabled) {
                 blink_state = true;
                 last_blink_ms = millis();

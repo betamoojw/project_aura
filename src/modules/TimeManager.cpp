@@ -96,7 +96,10 @@ bool TimeManager::setNtpEnabledPref(bool enabled) {
     ntp_enabled_pref_ = enabled;
     if (storage_) {
         storage_->config().ntp_enabled = ntp_enabled_pref_;
-        storage_->saveConfig(true);
+        if (!storage_->saveConfig(true)) {
+            storage_->requestSave();
+            LOGE("Time", "failed to persist NTP preference");
+        }
     }
     return syncNtpWithWifi();
 }
@@ -161,7 +164,10 @@ bool TimeManager::setTimezoneIndex(int index) {
     applyTimezone();
     if (storage_) {
         storage_->config().tz_index = tz_index_;
-        storage_->saveConfig(true);
+        if (!storage_->saveConfig(true)) {
+            storage_->requestSave();
+            LOGE("Time", "failed to persist timezone index");
+        }
     }
     return changed;
 }
