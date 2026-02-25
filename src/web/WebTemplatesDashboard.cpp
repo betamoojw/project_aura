@@ -1967,14 +1967,18 @@ function AuraDashboard() {
 
   useEffect(() => {
     if (isEditingName) return;
-    const savedDisplayName =
+    const localDisplayName =
+      typeof settings.displayName === 'string' && settings.displayName.trim().length > 0
+        ? settings.displayName.trim()
+        : null;
+    const apiDisplayName =
       typeof stateSettings.displayName === 'string' && stateSettings.displayName.trim().length > 0
         ? stateSettings.displayName.trim()
         : null;
-    const resolved = savedDisplayName || stateConnectivity.hostname || PREVIEW_HOSTNAME;
+    const resolved = localDisplayName || apiDisplayName || stateConnectivity.hostname || PREVIEW_HOSTNAME;
     setDeviceName(resolved);
     setTempDeviceName(resolved);
-  }, [isEditingName, stateSettings.displayName, stateConnectivity.hostname]);
+  }, [isEditingName, settings.displayName, stateSettings.displayName, stateConnectivity.hostname]);
   
   const fallbackAlerts = [
     { time: '14:32', type: 'CO2', message: 'Threshold exceeded (>1000 ppm)', severity: 'warning' },

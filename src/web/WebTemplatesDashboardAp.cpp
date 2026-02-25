@@ -1191,6 +1191,21 @@ let toggleMsgTimer = null;
 let chartsRefreshToken = 0;
 let chartsRefreshController = null;
 
+function resolveHeaderDeviceName() {
+  const displayName =
+    (typeof settings.displayName === 'string' && settings.displayName.trim())
+      ? settings.displayName.trim()
+      : '';
+  const net = (stateCache && stateCache.network) || {};
+  return displayName || net.hostname || 'aura';
+}
+
+function renderHeaderDeviceName() {
+  const el = document.getElementById('deviceNameLabel');
+  if (!el) return;
+  el.textContent = resolveHeaderDeviceName();
+}
+
 // ─────────────────────────────────────────────
 // API helpers
 // ─────────────────────────────────────────────
@@ -1419,6 +1434,8 @@ function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
     nameDirty = false;
     updateNameBtn('idle');
   }
+
+  renderHeaderDeviceName();
 
   Object.assign(savedSettings, settings);
   if (!force && settingsSaveStatus !== 'error') {
@@ -1683,10 +1700,7 @@ async function refreshState() {
   }
 
   // Device name
-  const s = (payload && payload.settings) || {};
-  const net = (payload && payload.network) || {};
-  const name = (typeof s.display_name === 'string' && s.display_name.trim()) ? s.display_name.trim() : (net.hostname || 'aura');
-  document.getElementById('deviceNameLabel').textContent = name;
+  renderHeaderDeviceName();
 
   // Sensors tab
   renderHeroMetric(payload.sensors, historyCache);
