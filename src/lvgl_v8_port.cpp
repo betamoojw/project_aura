@@ -1303,6 +1303,16 @@ bool lvgl_port_prepare_restart(void)
 {
     // Prevent VSYNC ISR from notifying a task handle during reboot teardown.
     lvgl_vsync_notify_enabled = false;
+#if LVGL_PORT_AVOID_TEAR
+    if (lvgl_port_lcd != nullptr) {
+        lvgl_port_lcd->attachRefreshFinishCallback(nullptr, nullptr);
+    }
+#endif
+#if !LV_TICK_CUSTOM
+    if (lvgl_tick_timer != nullptr) {
+        esp_timer_stop(lvgl_tick_timer);
+    }
+#endif
     TaskHandle_t task = lvgl_task_handle;
     TaskHandle_t current = xTaskGetCurrentTaskHandle();
     if ((task != nullptr) && (task != current)) {

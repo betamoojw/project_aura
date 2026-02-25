@@ -1349,6 +1349,17 @@ function AuraDashboard() {
   const otaUploadInProgress = otaUploadState === 'uploading';
   const otaRestartPending = otaUploadState === 'success';
   const otaBusy = otaUploadInProgress || otaRestartPending;
+  const OTA_UPLOAD_MIN_TIMEOUT_MS = 180000;
+  const OTA_UPLOAD_MAX_TIMEOUT_MS = 900000;
+  const OTA_UPLOAD_MIN_BYTES_PER_SEC = 20 * 1024;
+  const computeOtaTimeoutMs = (sizeBytes) => {
+    if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+      return OTA_UPLOAD_MIN_TIMEOUT_MS;
+    }
+    const transferMs = Math.ceil((sizeBytes * 1000) / OTA_UPLOAD_MIN_BYTES_PER_SEC);
+    const timeoutMs = transferMs + 120000;
+    return Math.min(OTA_UPLOAD_MAX_TIMEOUT_MS, Math.max(OTA_UPLOAD_MIN_TIMEOUT_MS, timeoutMs));
+  };
   const toggleRequestRef = React.useRef({
     night_mode: { inFlight: false, queued: null },
     backlight_on: { inFlight: false, queued: null },
@@ -1582,7 +1593,7 @@ function AuraDashboard() {
     setOtaUploadMessage('Uploading firmware...');
 
     xhr.open('POST', '/api/ota', true);
-    xhr.timeout = 180000;
+    xhr.timeout = computeOtaTimeoutMs(otaFile.size);
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable || event.total <= 0) return;
       const progress = Math.min(100, Math.round((event.loaded / event.total) * 100));

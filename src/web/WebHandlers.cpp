@@ -25,6 +25,7 @@
 #include "modules/FanControl.h"
 #include "modules/SensorManager.h"
 #include "modules/StorageManager.h"
+#include "web/OtaDeferredRestart.h"
 #include "web/WebTemplates.h"
 #include "ui/UiController.h"
 #include "ui/ThemeManager.h"
@@ -40,11 +41,9 @@ constexpr uint32_t kDeferredActionDelayMs = 200;
 constexpr uint32_t kDeferredRestartDelayMs = 1500;
 bool g_deferred_wifi_start_sta = false;
 bool g_deferred_mqtt_sync = false;
-bool g_deferred_restart = false;
-bool g_restart_requested = false;
+OtaDeferredRestart::Controller g_restart_controller;
 uint32_t g_deferred_wifi_start_sta_due_ms = 0;
 uint32_t g_deferred_mqtt_sync_due_ms = 0;
-uint32_t g_deferred_restart_due_ms = 0;
 constexpr uint32_t kChartStepS = Config::CHART_HISTORY_STEP_MS / 1000UL;
 constexpr size_t kEventsApiMaxEntries = 48;
 constexpr size_t kWebDisplayNameMaxLen = 32;
@@ -447,24 +446,18 @@ void WebHandlersInit(WebHandlerContext *context) {
     g_ctx = context;
     g_deferred_wifi_start_sta = false;
     g_deferred_mqtt_sync = false;
-    g_deferred_restart = false;
-    g_restart_requested = false;
+    g_restart_controller.reset();
     g_deferred_wifi_start_sta_due_ms = 0;
     g_deferred_mqtt_sync_due_ms = 0;
-    g_deferred_restart_due_ms = 0;
     ota_reset_state();
 }
 
 bool WebHandlersIsOtaBusy() {
-    return g_ota_upload_active || g_deferred_restart || g_restart_requested;
+    return g_restart_controller.is_busy(g_ota_upload_active);
 }
 
 bool WebHandlersConsumeRestartRequest() {
-    if (!g_restart_requested) {
-        return false;
-    }
-    g_restart_requested = false;
-    return true;
+    return g_restart_controller.consume_request();
 }
 
 void WebHandlersPollDeferred() {
@@ -490,10 +483,7 @@ void WebHandlersPollDeferred() {
         }
     }
 
-    if (g_deferred_restart && deadline_reached(now_ms, g_deferred_restart_due_ms)) {
-        g_deferred_restart = false;
-        g_deferred_restart_due_ms = 0;
-        g_restart_requested = true;
+    if (g_restart_controller.poll(now_ms)) {
         LOGI("OTA", "deferred reboot: restart requested");
     }
 }
@@ -1375,6 +1365,11 @@ void settings_handle_update() {
     if (!context || !context->server) {
         return;
     }
+    if (WebHandlersIsOtaBusy()) {
+        context->server->send(503, "application/json",
+                              "{\"success\":false,\"error\":\"OTA upload in progress\"}");
+        return;
+    }
 
     WebServer &server = *context->server;
     if (!context->ui_controller) {
@@ -1606,8 +1601,7 @@ void settings_handle_update() {
     server.send(200, "application/json", json);
 
     if (restart_requested) {
-        g_deferred_restart = true;
-        g_deferred_restart_due_ms = millis() + kDeferredActionDelayMs;
+        g_restart_controller.schedule(millis(), kDeferredActionDelayMs);
         LOGI("Web", "settings restart requested, deferred reboot in %u ms",
              static_cast<unsigned>(kDeferredActionDelayMs));
     }
@@ -1797,8 +1791,7 @@ void ota_handle_update() {
     if (success) {
         LOGI("OTA", "response sent, deferred reboot in %u ms",
              static_cast<unsigned>(kDeferredRestartDelayMs));
-        g_deferred_restart = true;
-        g_deferred_restart_due_ms = millis() + kDeferredRestartDelayMs;
+        g_restart_controller.schedule(millis(), kDeferredRestartDelayMs);
     } else {
         ota_set_ui_screen(false);
     }

@@ -11,15 +11,22 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <stdlib.h>
 
 #include "core/Logger.h"
 
 namespace {
 
 constexpr uint32_t kCore0RestartTaskStackBytes = 4096;
+constexpr uint32_t kCore0RestartTaskStackWords =
+    kCore0RestartTaskStackBytes / sizeof(StackType_t);
 constexpr UBaseType_t kCore0RestartTaskPriority = configMAX_PRIORITIES - 1;
 TaskHandle_t core0_restart_task_handle = nullptr;
-portMUX_TYPE core0_restart_task_mux = portMUX_INITIALIZER_UNLOCKED;
+
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
+StaticTask_t core0_restart_task_tcb;
+StackType_t core0_restart_task_stack[kCore0RestartTaskStackWords];
+#endif
 
 void core0_restart_task(void *) {
     for (;;) {
@@ -28,14 +35,33 @@ void core0_restart_task(void *) {
     }
 }
 
-TaskHandle_t ensure_core0_restart_task() {
-    taskENTER_CRITICAL(&core0_restart_task_mux);
-    TaskHandle_t existing = core0_restart_task_handle;
-    taskEXIT_CRITICAL(&core0_restart_task_mux);
-    if (existing != nullptr) {
-        return existing;
+[[noreturn]] void hard_restart_fallback() {
+    esp_restart();
+    abort();
+    while (true) {}
+}
+
+} // namespace
+
+bool safe_restart_init() {
+    if (core0_restart_task_handle != nullptr) {
+        return true;
     }
 
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
+    core0_restart_task_handle = xTaskCreateStaticPinnedToCore(core0_restart_task,
+                                                               "restart_core0",
+                                                               kCore0RestartTaskStackWords,
+                                                               nullptr,
+                                                               kCore0RestartTaskPriority,
+                                                               core0_restart_task_stack,
+                                                               &core0_restart_task_tcb,
+                                                               0);
+    if (core0_restart_task_handle == nullptr) {
+        LOGE("Restart", "failed to create static Core0 restart task");
+        return false;
+    }
+#else
     TaskHandle_t created = nullptr;
     const BaseType_t ok = xTaskCreatePinnedToCore(core0_restart_task,
                                                    "restart_core0",
@@ -46,46 +72,30 @@ TaskHandle_t ensure_core0_restart_task() {
                                                    0);
     if (ok != pdPASS || created == nullptr) {
         LOGE("Restart", "failed to create Core0 restart task");
-        return nullptr;
+        return false;
     }
+    core0_restart_task_handle = created;
+#endif
 
-    taskENTER_CRITICAL(&core0_restart_task_mux);
-    if (core0_restart_task_handle == nullptr) {
-        core0_restart_task_handle = created;
-        created = nullptr;
-    }
-    TaskHandle_t result = core0_restart_task_handle;
-    taskEXIT_CRITICAL(&core0_restart_task_mux);
-
-    if (created != nullptr) {
-        vTaskDelete(created);
-    }
-    return result;
+    return true;
 }
-
-[[noreturn]] void hard_restart_fallback() {
-    esp_restart();
-    for (;;) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
-
-} // namespace
 
 [[noreturn]] void safe_restart_via_core0() {
     if (esp_cpu_get_core_id() == 0) {
         hard_restart_fallback();
     }
 
-    TaskHandle_t task = ensure_core0_restart_task();
-    if (task == nullptr) {
-        hard_restart_fallback();
+    if (!safe_restart_init()) {
+        LOGE("Restart", "Core0 restart task unavailable");
+        abort();
+        while (true) {}
     }
 
-    const BaseType_t notify_ok = xTaskNotifyGive(task);
+    const BaseType_t notify_ok = xTaskNotifyGive(core0_restart_task_handle);
     if (notify_ok != pdPASS) {
         LOGE("Restart", "failed to notify Core0 restart task");
-        hard_restart_fallback();
+        abort();
+        while (true) {}
     }
 
     for (;;) {

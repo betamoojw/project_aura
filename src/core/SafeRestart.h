@@ -6,6 +6,10 @@
 
 #pragma once
 
+// Initialize the dedicated Core0 restart task ahead of time.
+// Returns true if the task is ready.
+bool safe_restart_init();
+
 // Restart the system with Core 0 as the initiator without using IPC task stack.
 // Does not return.
 [[noreturn]] void safe_restart_via_core0();
