@@ -20,6 +20,7 @@
 #include "config/AppData.h"
 #include "core/MathUtils.h"
 #include "core/Logger.h"
+#include "core/Watchdog.h"
 #include "modules/ChartsHistory.h"
 #include "modules/DacAutoConfig.h"
 #include "modules/FanControl.h"
@@ -39,6 +40,8 @@ namespace {
 WebHandlerContext *g_ctx = nullptr;
 constexpr uint32_t kDeferredActionDelayMs = 200;
 constexpr uint32_t kDeferredRestartDelayMs = 1500;
+constexpr uint32_t kTaskWdtDefaultMs = 180000;
+constexpr uint32_t kTaskWdtOtaMs = 10UL * 60UL * 1000UL;
 bool g_deferred_wifi_start_sta = false;
 bool g_deferred_mqtt_sync = false;
 OtaDeferredRestart::Controller g_restart_controller;
@@ -56,6 +59,7 @@ size_t g_ota_expected_size = 0;
 size_t g_ota_slot_size = 0;
 size_t g_ota_written_size = 0;
 String g_ota_error;
+bool g_ota_wdt_extended = false;
 
 struct ChartMetricSpec {
     const char *key;
@@ -201,6 +205,32 @@ void ota_reset_state() {
     g_ota_error = "";
 }
 
+void ota_extend_task_wdt() {
+    if (g_ota_wdt_extended) {
+        return;
+    }
+    if (Watchdog::setup(kTaskWdtOtaMs)) {
+        g_ota_wdt_extended = true;
+        LOGI("OTA", "Task WDT extended to %u ms for upload",
+             static_cast<unsigned>(kTaskWdtOtaMs));
+    } else {
+        LOGW("OTA", "failed to extend Task WDT for upload");
+    }
+}
+
+void ota_restore_task_wdt() {
+    if (!g_ota_wdt_extended) {
+        return;
+    }
+    if (Watchdog::setup(kTaskWdtDefaultMs)) {
+        g_ota_wdt_extended = false;
+        LOGI("OTA", "Task WDT restored to %u ms",
+             static_cast<unsigned>(kTaskWdtDefaultMs));
+    } else {
+        LOGW("OTA", "failed to restore Task WDT");
+    }
+}
+
 void ota_set_ui_screen(bool active) {
     WebHandlerContext *context = ctx();
     if (!context || !context->ui_controller) {
@@ -240,6 +270,7 @@ void ota_set_error(const String &error) {
     }
     g_ota_upload_success = false;
     g_ota_upload_active = false;
+    ota_restore_task_wdt();
     ota_set_ui_screen(false);
 }
 
@@ -1645,6 +1676,7 @@ void ota_handle_upload() {
         ota_reset_state();
         g_ota_upload_seen = true;
         g_ota_upload_active = true;
+        ota_extend_task_wdt();
         size_t expected_size = 0;
         const bool size_known = parse_size_arg(server.arg("ota_size"), expected_size);
         const uint32_t client_timeout_ms = ota_upload_timeout_ms(size_known ? expected_size : 0);
@@ -1822,6 +1854,7 @@ void ota_handle_update() {
     } else {
         ota_set_ui_screen(false);
     }
+    ota_restore_task_wdt();
     ota_reset_state();
 }
 
