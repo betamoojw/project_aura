@@ -275,7 +275,6 @@ namespace Config {
     constexpr uint32_t WIFI_CONNECT_RETRY_DELAY_MS = 1000;
     constexpr uint8_t WIFI_CONNECT_MAX_RETRIES = 3;
     constexpr uint32_t WIFI_UI_UPDATE_MS = 500;
-    constexpr uint32_t OTA_HTTP_CLIENT_TIMEOUT_MS = 30000;
     constexpr char WIFI_AP_SSID[] = "ProjectAura-Setup";
     constexpr uint32_t DPS310_POLL_MS = 10000;
     constexpr uint32_t DPS310_STALE_MS = 30000;

@@ -172,8 +172,8 @@ typedef struct _objects_t {
     lv_obj_t *label_btn_temp_offset_plus;
     lv_obj_t *btn_night_mode;
     lv_obj_t *label_btn_night_mode;
-    lv_obj_t *btn_units_c_f;
-    lv_obj_t *label_btn_units_c_f;
+    lv_obj_t *btn_units;
+    lv_obj_t *label_btn_units;
     lv_obj_t *btn_head_status;
     lv_obj_t *label_btn_head_status;
     lv_obj_t *btn_wifi;
@@ -386,8 +386,6 @@ typedef struct _objects_t {
     lv_obj_t *label_btn_set_date_year_minus;
     lv_obj_t *btn_set_date_year_plus;
     lv_obj_t *label_btn_set_date_year_plus;
-    lv_obj_t *btn_units_mdy;
-    lv_obj_t *label_btn_units_mdy;
     lv_obj_t *container_datetime_header;
     lv_obj_t *label_datetime_title;
     lv_obj_t *btn_datetime_back;

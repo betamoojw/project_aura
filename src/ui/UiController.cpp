@@ -327,19 +327,32 @@ bool UiController::webSetBacklight(bool enabled) {
 
 bool UiController::webSetUnitsC(bool units_c) {
     if (units_c == temp_units_c) {
+        const bool expected_mdy = !units_c;
+        if (date_units_mdy != expected_mdy) {
+            date_units_mdy = expected_mdy;
+            storage.config().units_mdy = expected_mdy;
+            clock_ui_dirty = true;
+        }
         return true;
     }
     const bool previous_units_c = temp_units_c;
+    const bool previous_units_mdy = date_units_mdy;
     temp_units_c = units_c;
+    date_units_mdy = !units_c;
     storage.config().units_c = temp_units_c;
+    storage.config().units_mdy = date_units_mdy;
     if (!storage.saveConfig(true)) {
         temp_units_c = previous_units_c;
+        date_units_mdy = previous_units_mdy;
         storage.config().units_c = previous_units_c;
-        update_ui();
+        storage.config().units_mdy = previous_units_mdy;
+        clock_ui_dirty = true;
+        data_dirty = true;
         LOGE("UI", "failed to persist temperature unit change");
         return false;
     }
-    update_ui();
+    clock_ui_dirty = true;
+    data_dirty = true;
     mqttManager.requestPublish();
     return true;
 }
@@ -962,6 +975,32 @@ void UiController::apply_toggle_style(lv_obj_t *btn) {
     if (!btn) return;
     lv_obj_set_style_border_color(btn, color_green(), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_shadow_color(btn, color_green(), LV_PART_MAIN | LV_STATE_CHECKED);
+}
+
+float UiController::pressure_to_display(float pressure_hpa) const {
+    if (!isfinite(pressure_hpa)) {
+        return pressure_hpa;
+    }
+    if (!pressure_display_uses_inhg()) {
+        return pressure_hpa;
+    }
+    constexpr float kHpaToInHg = 0.0295299830714f;
+    return pressure_hpa * kHpaToInHg;
+}
+
+float UiController::pressure_delta_to_display(float pressure_delta_hpa) const {
+    if (!isfinite(pressure_delta_hpa)) {
+        return pressure_delta_hpa;
+    }
+    if (!pressure_display_uses_inhg()) {
+        return pressure_delta_hpa;
+    }
+    constexpr float kHpaToInHg = 0.0295299830714f;
+    return pressure_delta_hpa * kHpaToInHg;
+}
+
+const char *UiController::pressure_display_unit() const {
+    return pressure_display_uses_inhg() ? "inHg" : "hPa";
 }
 
 void UiController::update_clock_labels() {
@@ -1661,9 +1700,17 @@ void UiController::init_ui_defaults() {
     if (objects.label_btn_night_mode) {
         lv_obj_set_style_text_color(objects.label_btn_night_mode, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
     }
-
     ui_language = storage.config().language;
     date_units_mdy = storage.config().units_mdy;
+    const bool expected_units_mdy = !temp_units_c;
+    if (date_units_mdy != expected_units_mdy) {
+        date_units_mdy = expected_units_mdy;
+        storage.config().units_mdy = expected_units_mdy;
+        if (!storage.saveConfig(true)) {
+            storage.requestSave();
+            LOGW("UI", "failed to normalize date format for unit system");
+        }
+    }
     language_dirty = false;
     header_status_enabled = storage.config().header_status_enabled;
     UiLocalization::applyCurrentLanguage(*this);

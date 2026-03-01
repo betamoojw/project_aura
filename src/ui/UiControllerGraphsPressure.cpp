@@ -51,9 +51,19 @@ void UiController::update_pressure_graph_overlays(bool has_values,
     char min_buf[32];
     char now_buf[32];
     char max_buf[32];
-    snprintf(min_buf, sizeof(min_buf), "MIN %.1f hPa", min_pressure);
-    snprintf(now_buf, sizeof(now_buf), "NOW %.1f hPa", latest_pressure);
-    snprintf(max_buf, sizeof(max_buf), "MAX %.1f hPa", max_pressure);
+    const float min_display = pressure_to_display(min_pressure);
+    const float now_display = pressure_to_display(latest_pressure);
+    const float max_display = pressure_to_display(max_pressure);
+    const char *unit = pressure_display_unit();
+    if (pressure_display_uses_inhg()) {
+        snprintf(min_buf, sizeof(min_buf), "MIN %.2f %s", min_display, unit);
+        snprintf(now_buf, sizeof(now_buf), "NOW %.2f %s", now_display, unit);
+        snprintf(max_buf, sizeof(max_buf), "MAX %.2f %s", max_display, unit);
+    } else {
+        snprintf(min_buf, sizeof(min_buf), "MIN %.1f %s", min_display, unit);
+        snprintf(now_buf, sizeof(now_buf), "NOW %.1f %s", now_display, unit);
+        snprintf(max_buf, sizeof(max_buf), "MAX %.1f %s", max_display, unit);
+    }
     safe_label_set_text(pressure_graph_label_min_, min_buf);
     safe_label_set_text(pressure_graph_label_now_, now_buf);
     safe_label_set_text(pressure_graph_label_max_, max_buf);

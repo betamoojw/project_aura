@@ -738,12 +738,17 @@ void UiController::on_units_c_f_event(lv_event_t *e) {
     }
     lv_obj_t *btn = lv_event_get_target(e);
     bool use_c = lv_obj_has_state(btn, LV_STATE_CHECKED);
-    if (use_c == temp_units_c) {
+    const bool use_mdy = !use_c;
+    if (use_c == temp_units_c && use_mdy == date_units_mdy) {
         return;
     }
     temp_units_c = use_c;
+    date_units_mdy = use_mdy;
     storage.config().units_c = temp_units_c;
-    persist_ui_config(storage, "temperature units");
+    storage.config().units_mdy = date_units_mdy;
+    persist_ui_config(storage, "unit system");
+    clock_ui_dirty = true;
+    update_clock_labels();
     update_ui();
 }
 
@@ -753,14 +758,18 @@ void UiController::on_units_mdy_event(lv_event_t *e) {
     }
     lv_obj_t *btn = lv_event_get_target(e);
     bool use_mdy = lv_obj_has_state(btn, LV_STATE_CHECKED);
-    if (use_mdy == date_units_mdy) {
+    const bool use_c = !use_mdy;
+    if (use_c == temp_units_c && use_mdy == date_units_mdy) {
         return;
     }
     date_units_mdy = use_mdy;
+    temp_units_c = use_c;
     storage.config().units_mdy = date_units_mdy;
-    persist_ui_config(storage, "date units");
+    storage.config().units_c = temp_units_c;
+    persist_ui_config(storage, "unit system");
     clock_ui_dirty = true;
     update_clock_labels();
+    update_ui();
 }
 
 void UiController::on_restart_event(lv_event_t *e) {
@@ -1618,13 +1627,6 @@ void UiController::on_time_date_event(lv_event_t *e) {
     datetime_changed = false;
     datetime_ui_dirty = true;
     clock_ui_dirty = true;
-    if (objects.btn_units_mdy) {
-        if (date_units_mdy) {
-            lv_obj_add_state(objects.btn_units_mdy, LV_STATE_CHECKED);
-        } else {
-            lv_obj_clear_state(objects.btn_units_mdy, LV_STATE_CHECKED);
-        }
-    }
     pending_screen_id = SCREEN_ID_PAGE_CLOCK;
 }
 

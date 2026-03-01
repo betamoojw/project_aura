@@ -22,7 +22,7 @@ void UiController::update_settings_texts() {
     if (objects.label_temp_offset_title) safe_label_set_text(objects.label_temp_offset_title, UiText::LabelTempOffsetTitle());
     if (objects.label_hum_offset_title) safe_label_set_text(objects.label_hum_offset_title, UiText::LabelHumOffsetTitle());
     if (objects.label_btn_night_mode) safe_label_set_text(objects.label_btn_night_mode, UiText::LabelNightMode());
-    if (objects.label_btn_units_c_f) safe_label_set_text(objects.label_btn_units_c_f, UiText::LabelUnitsCF());
+    if (objects.label_btn_units) safe_label_set_text(objects.label_btn_units, "UNITS");
     if (objects.label_btn_head_status) safe_label_set_text(objects.label_btn_head_status, UiText::LabelHeadStatus());
     if (objects.label_btn_wifi) safe_label_set_text(objects.label_btn_wifi, UiText::LabelWifi());
     if (objects.label_btn_time_date) safe_label_set_text(objects.label_btn_time_date, UiText::LabelTimeDate());

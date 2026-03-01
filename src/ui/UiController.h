@@ -326,6 +326,10 @@ private:
     void update_theme_custom_info(bool presets);
     void update_status_message(uint32_t now_ms, bool gas_warmup);
     void update_clock_labels();
+    float pressure_to_display(float pressure_hpa) const;
+    float pressure_delta_to_display(float pressure_delta_hpa) const;
+    const char *pressure_display_unit() const;
+    bool pressure_display_uses_inhg() const { return !temp_units_c; }
     void update_datetime_ui();
     void update_settings_texts();
     void update_main_texts();

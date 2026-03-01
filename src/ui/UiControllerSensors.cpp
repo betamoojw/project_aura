@@ -381,17 +381,35 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     }
 
     if (currentData.pressure_valid) {
-        snprintf(buf, sizeof(buf), "%.0f", currentData.pressure);
+        const float pressure_display = pressure_to_display(currentData.pressure);
+        if (pressure_display_uses_inhg()) {
+            snprintf(buf, sizeof(buf), "%.1f", pressure_display);
+        } else {
+            snprintf(buf, sizeof(buf), "%.0f", pressure_display);
+        }
         safe_label_set_text(objects.label_pressure_value_1, buf);
     } else {
         safe_label_set_text_static(objects.label_pressure_value_1, UiText::ValueMissing());
     }
+    if (objects.label_pressure_unit_1) {
+        safe_label_set_text_static(objects.label_pressure_unit_1, pressure_display_unit());
+    }
 
     if (currentData.pressure_delta_3h_valid) {
-        if (currentData.pressure_delta_3h > 0.05f) {
-            snprintf(buf, sizeof(buf), "+%.1f", currentData.pressure_delta_3h);
+        const float delta_display = pressure_delta_to_display(currentData.pressure_delta_3h);
+        const float plus_threshold = pressure_display_uses_inhg() ? 0.005f : 0.05f;
+        if (delta_display > plus_threshold) {
+            if (pressure_display_uses_inhg()) {
+                snprintf(buf, sizeof(buf), "+%.2f", delta_display);
+            } else {
+                snprintf(buf, sizeof(buf), "+%.1f", delta_display);
+            }
         } else {
-            snprintf(buf, sizeof(buf), "%.1f", currentData.pressure_delta_3h);
+            if (pressure_display_uses_inhg()) {
+                snprintf(buf, sizeof(buf), "%.2f", delta_display);
+            } else {
+                snprintf(buf, sizeof(buf), "%.1f", delta_display);
+            }
         }
         safe_label_set_text(objects.label_delta_5, buf);
         safe_label_set_text(objects.label_delta_5, buf);
@@ -401,10 +419,20 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     }
 
     if (currentData.pressure_delta_24h_valid) {
-        if (currentData.pressure_delta_24h > 0.05f) {
-            snprintf(buf, sizeof(buf), "+%.1f", currentData.pressure_delta_24h);
+        const float delta_display = pressure_delta_to_display(currentData.pressure_delta_24h);
+        const float plus_threshold = pressure_display_uses_inhg() ? 0.005f : 0.05f;
+        if (delta_display > plus_threshold) {
+            if (pressure_display_uses_inhg()) {
+                snprintf(buf, sizeof(buf), "+%.2f", delta_display);
+            } else {
+                snprintf(buf, sizeof(buf), "+%.1f", delta_display);
+            }
         } else {
-            snprintf(buf, sizeof(buf), "%.1f", currentData.pressure_delta_24h);
+            if (pressure_display_uses_inhg()) {
+                snprintf(buf, sizeof(buf), "%.2f", delta_display);
+            } else {
+                snprintf(buf, sizeof(buf), "%.1f", delta_display);
+            }
         }
         safe_label_set_text(objects.label_delta_26, buf);
         safe_label_set_text(objects.label_delta_26, buf);

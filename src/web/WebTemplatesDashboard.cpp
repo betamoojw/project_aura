@@ -155,9 +155,9 @@ const formatHeaderTime = (date) =>
     hour12: false,
   });
 
-const formatHeaderDate = (date) =>
+const formatHeaderDate = (date, tempUnit) =>
   date
-    .toLocaleDateString('en-GB', {
+    .toLocaleDateString(tempUnit === 'f' ? 'en-US' : 'en-GB', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -481,6 +481,25 @@ const tempOffsetCToDisplay = (offsetC, tempUnit) =>
   tempUnit === 'f' ? (offsetC * 9) / 5 : offsetC;
 const tempOffsetDisplayToC = (offsetDisplay, tempUnit) =>
   tempUnit === 'f' ? (offsetDisplay * 5) / 9 : offsetDisplay;
+const tempToDisplay = (tempC, tempUnit) =>
+  tempUnit === 'f' ? tempC * 9 / 5 + 32 : tempC;
+const pressureToDisplay = (pressureHpa, tempUnit) =>
+  tempUnit === 'f' ? pressureHpa * 0.0295299830714 : pressureHpa;
+const pressureDeltaToDisplay = (deltaHpa, tempUnit) =>
+  tempUnit === 'f' ? deltaHpa * 0.0295299830714 : deltaHpa;
+const temperatureUnitLabel = (tempUnit) => (tempUnit === 'f' ? '\u00B0F' : '\u00B0C');
+const pressureUnitLabel = (tempUnit) => (tempUnit === 'f' ? 'inHg' : 'hPa');
+const pressureDigits = (tempUnit) => (tempUnit === 'f' ? 2 : 1);
+const convertChartValueByKey = (key, value, tempUnit) => {
+  if (!isFiniteNumber(value)) return value;
+  if (key === 'temp' || key === 'temperature') {
+    return tempToDisplay(value, tempUnit);
+  }
+  if (key === 'pressure') {
+    return pressureToDisplay(value, tempUnit);
+  }
+  return value;
+};
 
 const metricStatus = (value, threshold, { round = false } = {}) => {
   if (!isFiniteNumber(value)) return null;
@@ -551,8 +570,8 @@ const buildSmoothPath = (segment) => {
 
 const formatChartValue = (value, unit = '') => {
   if (!isFiniteNumber(value)) return '-';
-  const base = value.toFixed(1);
   const unitTrimmed = (unit || '').trim();
+  const base = value.toFixed(unitTrimmed === 'inHg' ? 2 : 1);
   return unitTrimmed ? `${base} ${unitTrimmed}` : base;
 };
 
@@ -564,8 +583,10 @@ const formatMinMaxNumber = (value) => {
 };
 
 const formatMinMaxValue = (value, unit = '') => {
-  const base = formatMinMaxNumber(value);
   const unitTrimmed = (unit || '').trim();
+  const base = unitTrimmed === 'inHg'
+    ? (isFiniteNumber(value) ? value.toFixed(2) : '-')
+    : formatMinMaxNumber(value);
   if (base === '-' || !unitTrimmed) return base;
   return `${base} ${unitTrimmed}`;
 };
@@ -898,6 +919,7 @@ const ClimateOverview = ({
   delta24h,
   pressureTrend3h,
   pressureTrend24h,
+  tempUnit,
 }) => {
   const statusRank = { good: 0, moderate: 1, bad: 2, critical: 3 };
   const climateCandidates = [tempStatus, rhStatus, moldStatus].filter((entry) =>
@@ -909,6 +931,15 @@ const ClimateOverview = ({
   // Device UI colors dew point by rounded value (roundf), mirror it for exact match.
   const dewPointStatus = metricStatus(dewPoint, thresholds.dewPoint, { round: true });
   const ahStatus = metricStatus(ah, thresholds.ah);
+  const tempDisplay = isFiniteNumber(temp) ? tempToDisplay(temp, tempUnit) : temp;
+  const dewPointDisplay = isFiniteNumber(dewPoint) ? tempToDisplay(dewPoint, tempUnit) : dewPoint;
+  const pressureDisplay = isFiniteNumber(pressure) ? pressureToDisplay(pressure, tempUnit) : pressure;
+  const delta3hDisplay = isFiniteNumber(delta3h) ? pressureDeltaToDisplay(delta3h, tempUnit) : delta3h;
+  const delta24hDisplay = isFiniteNumber(delta24h) ? pressureDeltaToDisplay(delta24h, tempUnit) : delta24h;
+  const temperatureUnit = temperatureUnitLabel(tempUnit);
+  const pressureUnit = pressureUnitLabel(tempUnit);
+  const pressureValueDigits = pressureDigits(tempUnit);
+  const pressureDeltaDigits = pressureDigits(tempUnit);
   const miniCardClass = "rounded-xl bg-gray-700/30 border border-gray-600/40 p-3 md:p-4";
   const climateLabelClass = "text-[10px] md:text-[11px] uppercase tracking-[0.08em] text-gray-400 font-semibold whitespace-nowrap";
   const unitClass = "text-sm md:text-base text-gray-300 leading-none self-end";
@@ -925,8 +956,8 @@ const ClimateOverview = ({
           <div className={miniCardClass}>
             <div className="text-[10px] md:text-xs uppercase tracking-wide text-gray-400 font-semibold">Temperature</div>
             <div className="mt-2 flex items-end gap-1.5">
-              <span className="text-3xl md:text-4xl font-semibold leading-none" style={{ color: statusColorOf(tempStatus) }}>{formatMetricValue(temp, 1)}</span>
-              <span className={unitClass}>{'\u00B0C'}</span>
+              <span className="text-3xl md:text-4xl font-semibold leading-none" style={{ color: statusColorOf(tempStatus) }}>{formatMetricValue(tempDisplay, 1)}</span>
+              <span className={unitClass}>{temperatureUnit}</span>
             </div>
           </div>
           <div className={miniCardClass}>
@@ -950,8 +981,8 @@ const ClimateOverview = ({
           <div className={`${miniCardClass} h-full`}>
             <div className={climateLabelClass}>Dew Point</div>
             <div className="mt-1.5 flex items-end gap-1.5">
-              <span className="text-3xl md:text-4xl font-semibold leading-none" style={{ color: statusColorOf(dewPointStatus) }}>{formatMetricValue(dewPoint, 1)}</span>
-              <span className={unitClass}>{'\u00B0C'}</span>
+              <span className="text-3xl md:text-4xl font-semibold leading-none" style={{ color: statusColorOf(dewPointStatus) }}>{formatMetricValue(dewPointDisplay, 1)}</span>
+              <span className={unitClass}>{temperatureUnit}</span>
             </div>
           </div>
 
@@ -969,21 +1000,21 @@ const ClimateOverview = ({
             <div>
               <div className="text-[10px] md:text-xs uppercase tracking-wide text-gray-400 font-semibold">Pressure</div>
               <div className="mt-1 flex items-end gap-1.5">
-                <span className="text-2xl md:text-3xl font-semibold leading-none text-white">{formatMetricValue(pressure, 1)}</span>
-                <span className={unitClass}>hPa</span>
+                <span className="text-2xl md:text-3xl font-semibold leading-none text-white">{formatMetricValue(pressureDisplay, pressureValueDigits)}</span>
+                <span className={unitClass}>{pressureUnit}</span>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2.5 sm:min-w-[200px]">
               <div className="rounded-md border px-3 py-2" style={pressureTrend3h.surfaceStyle}>
                 <div className="text-[11px] md:text-xs text-gray-400 leading-none">3h</div>
                 <div className="mt-1 text-base md:text-lg font-semibold leading-none" style={pressureTrend3h.textStyle}>
-                  {formatSignedMetricValue(delta3h, 1)}
+                  {formatSignedMetricValue(delta3hDisplay, pressureDeltaDigits)}
                 </div>
               </div>
               <div className="rounded-md border px-3 py-2" style={pressureTrend24h.surfaceStyle}>
                 <div className="text-[11px] md:text-xs text-gray-400 leading-none">24h</div>
                 <div className="mt-1 text-base md:text-lg font-semibold leading-none" style={pressureTrend24h.textStyle}>
-                  {formatSignedMetricValue(delta24h, 1)}
+                  {formatSignedMetricValue(delta24hDisplay, pressureDeltaDigits)}
                 </div>
               </div>
             </div>
@@ -1073,15 +1104,16 @@ const ChartSection = ({ title, data, lines, unit, color, latestValues = {} }) =>
   }, [data, lines]);
 
   const latestItems = lines.map((line, index) => {
+    const digits = Number.isInteger(line?.digits) ? line.digits : 1;
     const fromApi = latestValues[line.key];
     if (typeof fromApi === 'number' && Number.isFinite(fromApi)) {
-      return { text: fromApi.toFixed(1), color: lineColors[index] };
+      return { text: fromApi.toFixed(digits), color: lineColors[index] };
     }
 
     for (let i = data.length - 1; i >= 0; i--) {
       const raw = data[i]?.[line.key];
       if (typeof raw === 'number' && Number.isFinite(raw)) {
-        return { text: raw.toFixed(1), color: lineColors[index] };
+        return { text: raw.toFixed(digits), color: lineColors[index] };
       }
     }
 
@@ -1904,6 +1936,22 @@ function AuraDashboard() {
     });
     return merged;
   }, [chartApiLatest, current]);
+  const chartLatestValuesDisplay = useMemo(() => {
+    const converted = {};
+    Object.entries(chartLatestValues).forEach(([key, value]) => {
+      converted[key] = convertChartValueByKey(key, value, settings.tempUnit);
+    });
+    return converted;
+  }, [chartLatestValues, settings.tempUnit]);
+  const chartDataDisplay = useMemo(
+    () =>
+      chartData.map((row) => ({
+        ...row,
+        temp: convertChartValueByKey('temp', row?.temp, settings.tempUnit),
+        pressure: convertChartValueByKey('pressure', row?.pressure, settings.tempUnit),
+      })),
+    [chartData, settings.tempUnit]
+  );
   
   const ah = stateDerived.ah ?? null;
   const dewPoint = stateDerived.dewPoint ?? null;
@@ -1948,7 +1996,7 @@ function AuraDashboard() {
     ? new Date(deviceClockRef.epochMs + (clockTickMs - deviceClockRef.capturedAtMs))
     : new Date(clockTickMs);
   const headerTime = formatHeaderTime(headerNow);
-  const headerDate = formatHeaderDate(headerNow);
+  const headerDate = formatHeaderDate(headerNow, settings.tempUnit);
   const tempOffsetStep = settings.tempUnit === 'f' ? 0.2 : 0.1;
   const tempOffsetDisplayValue = Number(tempOffsetCToDisplay(settings.tempOffset, settings.tempUnit).toFixed(1));
   const tempOffsetUnitLabel = settings.tempUnit === 'f' ? '\u00B0F' : '\u00B0C';
@@ -2074,6 +2122,7 @@ function AuraDashboard() {
                 delta24h={delta24h}
                 pressureTrend3h={pressureTrend3h}
                 pressureTrend24h={pressureTrend24h}
+                tempUnit={settings.tempUnit}
               />
             </div>
           </div>
@@ -2141,36 +2190,36 @@ function AuraDashboard() {
 
           {chartGroup === 'core' && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4">
-              <ChartSection title="CO2 Concentration" data={chartData} lines={[{ key: 'co2', name: 'CO2' }]} unit="ppm" color="#10b981" latestValues={chartLatestValues} />
-              <ChartSection title="Temperature" data={chartData} lines={[{ key: 'temp', name: 'Temp' }]} unit={"\u00B0C"} color="#f59e0b" latestValues={chartLatestValues} />
-              <ChartSection title="Humidity" data={chartData} lines={[{ key: 'rh', name: 'RH' }]} unit="%" color="#3b82f6" latestValues={chartLatestValues} />
-              <ChartSection title="Pressure" data={chartData} lines={[{ key: 'pressure', name: 'hPa' }]} unit="hPa" color="#0ea5e9" latestValues={chartLatestValues} />
+              <ChartSection title="CO2 Concentration" data={chartDataDisplay} lines={[{ key: 'co2', name: 'CO2', digits: 0 }]} unit="ppm" color="#10b981" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="Temperature" data={chartDataDisplay} lines={[{ key: 'temp', name: 'Temp', digits: 1 }]} unit={temperatureUnitLabel(settings.tempUnit)} color="#f59e0b" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="Humidity" data={chartDataDisplay} lines={[{ key: 'rh', name: 'RH', digits: 0 }]} unit="%" color="#3b82f6" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="Pressure" data={chartDataDisplay} lines={[{ key: 'pressure', name: 'Pressure', digits: pressureDigits(settings.tempUnit) }]} unit={pressureUnitLabel(settings.tempUnit)} color="#0ea5e9" latestValues={chartLatestValuesDisplay} />
             </div>
           )}
 
           {chartGroup === 'gases' && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4">
-              <ChartSection title="Carbon Monoxide (CO)" data={chartData} lines={[{ key: 'co', name: 'CO' }]} unit="ppm" color="#f97316" latestValues={chartLatestValues} />
-              <ChartSection title="VOC Index" data={chartData} lines={[{ key: 'voc', name: 'VOC' }]} unit="" color="#ef4444" latestValues={chartLatestValues} />
-              <ChartSection title="NOx Index" data={chartData} lines={[{ key: 'nox', name: 'NOx' }]} unit="" color="#f43f5e" latestValues={chartLatestValues} />
-              <ChartSection title="Formaldehyde (HCHO)" data={chartData} lines={[{ key: 'hcho', name: 'HCHO' }]} unit="ppb" color="#d946ef" latestValues={chartLatestValues} />
+              <ChartSection title="Carbon Monoxide (CO)" data={chartDataDisplay} lines={[{ key: 'co', name: 'CO' }]} unit="ppm" color="#f97316" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="VOC Index" data={chartDataDisplay} lines={[{ key: 'voc', name: 'VOC' }]} unit="" color="#ef4444" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="NOx Index" data={chartDataDisplay} lines={[{ key: 'nox', name: 'NOx' }]} unit="" color="#f43f5e" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="Formaldehyde (HCHO)" data={chartDataDisplay} lines={[{ key: 'hcho', name: 'HCHO' }]} unit="ppb" color="#d946ef" latestValues={chartLatestValuesDisplay} />
             </div>
           )}
 
           {chartGroup === 'pm' && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4">
-              <ChartSection title="PM0.5" data={chartData} lines={[{ key: 'pm05', name: 'PM0.5' }]} unit={"#/cm\u00B3"} color="#14b8a6" latestValues={chartLatestValues} />
-              <ChartSection title="PM1.0" data={chartData} lines={[{ key: 'pm1', name: 'PM1.0' }]} unit={"\u00B5g/m\u00B3"} color="#a78bfa" latestValues={chartLatestValues} />
-              <ChartSection title="PM2.5" data={chartData} lines={[{ key: 'pm25', name: 'PM2.5' }]} unit={"\u00B5g/m\u00B3"} color="#8b5cf6" latestValues={chartLatestValues} />
+              <ChartSection title="PM0.5" data={chartDataDisplay} lines={[{ key: 'pm05', name: 'PM0.5' }]} unit={"#/cm\u00B3"} color="#14b8a6" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="PM1.0" data={chartDataDisplay} lines={[{ key: 'pm1', name: 'PM1.0' }]} unit={"\u00B5g/m\u00B3"} color="#a78bfa" latestValues={chartLatestValuesDisplay} />
+              <ChartSection title="PM2.5" data={chartDataDisplay} lines={[{ key: 'pm25', name: 'PM2.5' }]} unit={"\u00B5g/m\u00B3"} color="#8b5cf6" latestValues={chartLatestValuesDisplay} />
               <ChartSection
                 title="PM10 + PM4.0"
-                data={chartData}
+                data={chartDataDisplay}
                 lines={[
                   { key: 'pm10', name: 'PM10', color: '#6d28d9' },
                   { key: 'pm4', name: 'PM4.0', color: '#0ea5e9' },
                 ]}
                 unit={"\u00B5g/m\u00B3"}
-                latestValues={chartLatestValues}
+                latestValues={chartLatestValuesDisplay}
               />
             </div>
           )}
@@ -2232,10 +2281,10 @@ function AuraDashboard() {
             <div className="space-y-3 md:space-y-4">
               <SettingGroup title="Measurements">
                 <SettingSegmentControl
-                  label="Temperature Unit"
+                  label="Unit System"
                   options={[
-                    { label: '\u00B0C', value: 'c' },
-                    { label: '\u00B0F', value: 'f' },
+                    { label: 'Metric', value: 'c' },
+                    { label: 'US', value: 'f' },
                   ]}
                   value={settings.tempUnit}
                   onChange={setTemperatureUnit}

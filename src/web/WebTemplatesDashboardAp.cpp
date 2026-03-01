@@ -374,10 +374,10 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
           <div class="sg-title">Measurements</div>
           <div class="sg-rows">
             <div class="seg-row">
-              <span class="seg-label">Temperature unit</span>
+              <span class="seg-label">Unit system</span>
               <div class="seg-ctrl" id="tempUnitSeg">
-                <button class="seg-btn active" type="button" data-unit="c">&deg;C</button>
-                <button class="seg-btn" type="button" data-unit="f">&deg;F</button>
+                <button class="seg-btn active" type="button" data-unit="c">Metric</button>
+                <button class="seg-btn" type="button" data-unit="f">US</button>
               </div>
             </div>
             <div class="stepper-row">
@@ -512,8 +512,35 @@ function fmtSigned(v, d) {
 }
 function fmtMM(v, unit) {
   if (!isNum(v)) return '-';
-  const s = Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1);
+  const s = unit === 'inHg'
+    ? v.toFixed(2)
+    : (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1));
   return unit ? s + ' ' + unit : s;
+}
+function isUsUnitSystem(tempUnit) { return tempUnit === 'f'; }
+function tempToDisplay(tempC, tempUnit) {
+  return isUsUnitSystem(tempUnit) ? (tempC * 9 / 5) + 32 : tempC;
+}
+function pressureToDisplay(pressureHpa, tempUnit) {
+  return isUsUnitSystem(tempUnit) ? (pressureHpa * 0.0295299830714) : pressureHpa;
+}
+function pressureDeltaToDisplay(deltaHpa, tempUnit) {
+  return isUsUnitSystem(tempUnit) ? (deltaHpa * 0.0295299830714) : deltaHpa;
+}
+function temperatureUnitLabel(tempUnit) {
+  return isUsUnitSystem(tempUnit) ? '\u00B0F' : '\u00B0C';
+}
+function pressureUnitLabel(tempUnit) {
+  return isUsUnitSystem(tempUnit) ? 'inHg' : 'hPa';
+}
+function pressureDigits(tempUnit) {
+  return isUsUnitSystem(tempUnit) ? 2 : 1;
+}
+function convertChartValueByKey(key, value, tempUnit) {
+  if (!isNum(value)) return value;
+  if (key === 'temp' || key === 'temperature') return tempToDisplay(value, tempUnit);
+  if (key === 'pressure') return pressureToDisplay(value, tempUnit);
+  return value;
 }
 
 function formatChartTime(ts) {
@@ -773,6 +800,14 @@ function renderClimateOverview(sensors, derived) {
 
   const t3  = trendToken(delta3h, false);
   const t24 = trendToken(delta24h, true);
+  const tempDisplay = isNum(temp) ? tempToDisplay(temp, settings.tempUnit) : temp;
+  const dewPointDisplay = isNum(dewPoint) ? tempToDisplay(dewPoint, settings.tempUnit) : dewPoint;
+  const pressureDisplay = isNum(pressure) ? pressureToDisplay(pressure, settings.tempUnit) : pressure;
+  const delta3hDisplay = isNum(delta3h) ? pressureDeltaToDisplay(delta3h, settings.tempUnit) : delta3h;
+  const delta24hDisplay = isNum(delta24h) ? pressureDeltaToDisplay(delta24h, settings.tempUnit) : delta24h;
+  const tempUnitText = temperatureUnitLabel(settings.tempUnit);
+  const pressureUnitText = pressureUnitLabel(settings.tempUnit);
+  const pressureValueDigits = pressureDigits(settings.tempUnit);
 
   document.getElementById('climateOverview').innerHTML =
     `<div class="climate-wrap">
@@ -784,8 +819,8 @@ function renderClimateOverview(sensors, derived) {
         <div class="mini-card">
           <div class="mini-label">Temperature</div>
           <div class="mini-val-row">
-            <span class="mini-val" style="color:${statusColorOf(tempStatus)}">${fmtVal(temp,1)}</span>
-            <span class="mini-unit">°C</span>
+            <span class="mini-val" style="color:${statusColorOf(tempStatus)}">${fmtVal(tempDisplay,1)}</span>
+            <span class="mini-unit">${tempUnitText}</span>
           </div>
         </div>
         <div class="mini-card">
@@ -807,8 +842,8 @@ function renderClimateOverview(sensors, derived) {
         <div class="mini-card">
           <div class="mini-label">Dew Point</div>
           <div class="mini-val-row">
-            <span class="mini-val" style="color:${statusColorOf(dpStatus)}">${fmtVal(dewPoint,1)}</span>
-            <span class="mini-unit">°C</span>
+            <span class="mini-val" style="color:${statusColorOf(dpStatus)}">${fmtVal(dewPointDisplay,1)}</span>
+            <span class="mini-unit">${tempUnitText}</span>
           </div>
         </div>
         <div class="mini-card">
@@ -824,18 +859,18 @@ function renderClimateOverview(sensors, derived) {
           <div>
             <div class="mini-label">Pressure</div>
             <div class="mini-val-row">
-              <span class="mini-val" style="font-size:22px;color:#f9fafb">${fmtVal(pressure,1)}</span>
-              <span class="mini-unit">hPa</span>
+              <span class="mini-val" style="font-size:22px;color:#f9fafb">${fmtVal(pressureDisplay,pressureValueDigits)}</span>
+              <span class="mini-unit">${pressureUnitText}</span>
             </div>
           </div>
           <div class="pressure-delta-grid">
             <div class="pdelta-box" style="${t3.surfaceStyle}">
               <div class="pdelta-lbl">3h</div>
-              <div class="pdelta-val" style="${t3.textStyle}">${fmtSigned(delta3h,1)}</div>
+              <div class="pdelta-val" style="${t3.textStyle}">${fmtSigned(delta3hDisplay,pressureValueDigits)}</div>
             </div>
             <div class="pdelta-box" style="${t24.surfaceStyle}">
               <div class="pdelta-lbl">24h</div>
-              <div class="pdelta-val" style="${t24.textStyle}">${fmtSigned(delta24h,1)}</div>
+              <div class="pdelta-val" style="${t24.textStyle}">${fmtSigned(delta24hDisplay,pressureValueDigits)}</div>
             </div>
           </div>
         </div>
@@ -1031,7 +1066,8 @@ function renderCharts(payload) {
     const row = { _ts: ts, _time: formatChartTime(ts) };
     series.forEach(s => {
       if (s && typeof s.key === 'string') {
-        row[s.key] = (Array.isArray(s.values) && isNum(s.values[i])) ? s.values[i] : null;
+        const rawValue = (Array.isArray(s.values) && isNum(s.values[i])) ? s.values[i] : null;
+        row[s.key] = convertChartValueByKey(s.key, rawValue, settings.tempUnit);
       }
     });
     return row;
@@ -1042,14 +1078,25 @@ function renderCharts(payload) {
     const lineKeys = card.lines.map(line => line.key);
     const lineColors = card.lines.map(line => line.color || '#3dd6c6');
     const lineNames = card.lines.map(line => line.name || line.key.toUpperCase());
-    const lineUnits = card.lines.map(line => line.unit || card.unit || '');
-    const lineDigits = card.lines.map(line => Number.isInteger(line.digits) ? line.digits : 1);
+    const lineUnits = card.lines.map(line => {
+      if (line.key === 'temperature') return temperatureUnitLabel(settings.tempUnit);
+      if (line.key === 'pressure') return pressureUnitLabel(settings.tempUnit);
+      return line.unit || card.unit || '';
+    });
+    const lineDigits = card.lines.map(line => {
+      if (line.key === 'pressure') return pressureDigits(settings.tempUnit);
+      return Number.isInteger(line.digits) ? line.digits : 1;
+    });
+    const cardUnit = card.lines.length === 1
+      ? lineUnits[0]
+      : (card.unit || '');
 
     const latestItems = card.lines.map((line, idx) => {
       const liveKey = mapSeriesKeyToSensorKey(line.key);
       const liveVal = stateCache && stateCache.sensors ? stateCache.sensors[liveKey] : null;
       const apiLatest = seriesByKey[line.key] && isNum(seriesByKey[line.key].latest) ? seriesByKey[line.key].latest : null;
-      const v = isNum(liveVal) ? liveVal : apiLatest;
+      const rawLatest = isNum(liveVal) ? liveVal : apiLatest;
+      const v = convertChartValueByKey(line.key, rawLatest, settings.tempUnit);
       return {
         value: v,
         digits: lineDigits[idx],
@@ -1079,8 +1126,8 @@ function renderCharts(payload) {
       </div>
       <div class="chart-svg-wrap">${svgHtml}<div class="chart-tooltip"></div></div>
       <div class="chart-minmax">
-        <span>min ${fmtMM(mmMin, card.unit)}</span>
-        <span>max ${fmtMM(mmMax, card.unit)}</span>
+        <span>min ${fmtMM(mmMin, cardUnit)}</span>
+        <span>max ${fmtMM(mmMax, cardUnit)}</span>
       </div>
     </div>`;
   }).join('');
@@ -1206,6 +1253,16 @@ function renderHeaderDeviceName() {
   el.textContent = resolveHeaderDeviceName();
 }
 
+function rerenderUnitDependentViews() {
+  updateHeaderClock();
+  if (stateCache) {
+    renderClimateOverview(stateCache.sensors, stateCache.derived);
+  }
+  if (historyCache) {
+    renderCharts(historyCache);
+  }
+}
+
 // ─────────────────────────────────────────────
 // API helpers
 // ─────────────────────────────────────────────
@@ -1301,7 +1358,10 @@ function updateHeaderClock() {
     ? new Date(deviceClockRef.epochMs + (nowMs - deviceClockRef.capturedAtMs))
     : new Date(nowMs);
   document.getElementById('headerTime').textContent = now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', hour12:false });
-  document.getElementById('headerDate').textContent = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+  document.getElementById('headerDate').textContent = now.toLocaleDateString(
+    settings.tempUnit === 'f' ? 'en-US' : 'en-GB',
+    { day:'2-digit', month:'short', year:'numeric' }
+  ).toUpperCase();
 }
 
 // ─────────────────────────────────────────────
@@ -1404,6 +1464,7 @@ function shouldApplyToggleFromApi(toggleKey, overrideKey) {
 function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
   if (!apiSettings) return;
   if (settingsSaveStatus === 'dirty' && !force) return;
+  const prevTempUnit = settings.tempUnit;
 
   if (typeof apiSettings.night_mode === 'boolean' &&
       shouldApplyToggleFromApi('night_mode', toggleOverrideKey)) {
@@ -1427,6 +1488,9 @@ function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
   updateTempOffsetLabel();
   updateTempOffsetDisplay();
   updateHumOffsetDisplay();
+  if (prevTempUnit !== settings.tempUnit) {
+    rerenderUnitDependentViews();
+  }
 
   const nameInput = document.getElementById('displayNameInput');
   if (nameInput && (!nameDirty || force)) {
@@ -1562,6 +1626,7 @@ function initSettingsUI() {
       updateSegmentDom('tempUnitSeg', 'data-unit', unit);
       updateTempOffsetLabel();
       updateTempOffsetDisplay();
+      rerenderUnitDependentViews();
       markMeasurementsDirty();
     });
   });

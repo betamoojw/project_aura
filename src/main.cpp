@@ -189,7 +189,6 @@ void loop()
             }
         }
         networkManager.poll();
-        storage.poll(loop_now);
         memoryMonitor.poll(loop_now);
         if (!ota_lvgl_quiesced) {
             uiController.poll(loop_now);

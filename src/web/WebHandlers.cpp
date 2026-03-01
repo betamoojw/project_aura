@@ -60,6 +60,17 @@ size_t g_ota_slot_size = 0;
 size_t g_ota_written_size = 0;
 String g_ota_error;
 bool g_ota_wdt_extended = false;
+uint32_t g_ota_upload_start_ms = 0;
+uint32_t g_ota_first_chunk_ms = 0;
+uint32_t g_ota_last_chunk_ms = 0;
+uint32_t g_ota_finalize_ms = 0;
+uint32_t g_ota_chunk_count = 0;
+size_t g_ota_chunk_min_size = 0;
+size_t g_ota_chunk_max_size = 0;
+size_t g_ota_chunk_sum_size = 0;
+bool g_ota_first_chunk_seen = false;
+bool g_ota_start_rssi_valid = false;
+int g_ota_start_rssi = 0;
 
 struct ChartMetricSpec {
     const char *key;
@@ -203,6 +214,17 @@ void ota_reset_state() {
     g_ota_slot_size = 0;
     g_ota_written_size = 0;
     g_ota_error = "";
+    g_ota_upload_start_ms = 0;
+    g_ota_first_chunk_ms = 0;
+    g_ota_last_chunk_ms = 0;
+    g_ota_finalize_ms = 0;
+    g_ota_chunk_count = 0;
+    g_ota_chunk_min_size = 0;
+    g_ota_chunk_max_size = 0;
+    g_ota_chunk_sum_size = 0;
+    g_ota_first_chunk_seen = false;
+    g_ota_start_rssi_valid = false;
+    g_ota_start_rssi = 0;
 }
 
 void ota_extend_task_wdt() {
@@ -1676,6 +1698,11 @@ void ota_handle_upload() {
         ota_reset_state();
         g_ota_upload_seen = true;
         g_ota_upload_active = true;
+        g_ota_upload_start_ms = millis();
+        if (WiFi.status() == WL_CONNECTED) {
+            g_ota_start_rssi_valid = true;
+            g_ota_start_rssi = WiFi.RSSI();
+        }
         ota_extend_task_wdt();
         size_t expected_size = 0;
         const bool size_known = parse_size_arg(server.arg("ota_size"), expected_size);
@@ -1718,11 +1745,20 @@ void ota_handle_upload() {
             }
         }
 
-        LOGI("OTA", "upload started (slot=%u, expected=%u, known=%s, timeout=%u ms)",
-             static_cast<unsigned>(g_ota_slot_size),
-             static_cast<unsigned>(g_ota_expected_size),
-             g_ota_size_known ? "YES" : "NO",
-             static_cast<unsigned>(client_timeout_ms));
+        if (g_ota_start_rssi_valid) {
+            LOGI("OTA", "upload started (slot=%u, expected=%u, known=%s, timeout=%u ms, rssi=%d dBm)",
+                 static_cast<unsigned>(g_ota_slot_size),
+                 static_cast<unsigned>(g_ota_expected_size),
+                 g_ota_size_known ? "YES" : "NO",
+                 static_cast<unsigned>(client_timeout_ms),
+                 g_ota_start_rssi);
+        } else {
+            LOGI("OTA", "upload started (slot=%u, expected=%u, known=%s, timeout=%u ms, rssi=n/a)",
+                 static_cast<unsigned>(g_ota_slot_size),
+                 static_cast<unsigned>(g_ota_expected_size),
+                 g_ota_size_known ? "YES" : "NO",
+                 static_cast<unsigned>(client_timeout_ms));
+        }
         return;
     }
 
@@ -1733,6 +1769,22 @@ void ota_handle_upload() {
         if (upload.currentSize == 0) {
             return;
         }
+        if (!g_ota_first_chunk_seen) {
+            g_ota_first_chunk_seen = true;
+            g_ota_first_chunk_ms = millis();
+            LOGI("OTA", "first chunk received after %u ms (size=%u bytes)",
+                 static_cast<unsigned>(g_ota_first_chunk_ms - g_ota_upload_start_ms),
+                 static_cast<unsigned>(upload.currentSize));
+        }
+        g_ota_last_chunk_ms = millis();
+        if (g_ota_chunk_count == 0 || upload.currentSize < g_ota_chunk_min_size) {
+            g_ota_chunk_min_size = upload.currentSize;
+        }
+        if (upload.currentSize > g_ota_chunk_max_size) {
+            g_ota_chunk_max_size = upload.currentSize;
+        }
+        g_ota_chunk_sum_size += upload.currentSize;
+        g_ota_chunk_count++;
         if (g_ota_written_size + upload.currentSize > g_ota_slot_size) {
             if (Update.isRunning()) {
                 Update.abort();
@@ -1771,14 +1823,32 @@ void ota_handle_upload() {
             LOGW("OTA", "size mismatch");
             return;
         }
+        const uint32_t finalize_start_ms = millis();
         if (!Update.end(true)) {
+            g_ota_finalize_ms = millis() - finalize_start_ms;
             ota_set_error(ota_error_prefixed("Update finalize failed"));
             LOGE("OTA", "%s", g_ota_error.c_str());
             return;
         }
+        g_ota_finalize_ms = millis() - finalize_start_ms;
         g_ota_upload_success = true;
         g_ota_upload_active = false;
-        LOGI("OTA", "upload complete, written=%u bytes", static_cast<unsigned>(g_ota_written_size));
+        const uint32_t total_ms = millis() - g_ota_upload_start_ms;
+        const uint32_t first_chunk_delay_ms =
+            g_ota_first_chunk_seen ? (g_ota_first_chunk_ms - g_ota_upload_start_ms) : 0;
+        const size_t avg_chunk_size =
+            g_ota_chunk_count > 0 ? (g_ota_chunk_sum_size / g_ota_chunk_count) : 0;
+        LOGI("OTA",
+             "upload complete, written=%u bytes, total=%u ms, first_chunk_seen=%s, first_chunk=%u ms, finalize=%u ms, chunks=%u, chunk[min/avg/max]=%u/%u/%u bytes",
+             static_cast<unsigned>(g_ota_written_size),
+             static_cast<unsigned>(total_ms),
+             g_ota_first_chunk_seen ? "YES" : "NO",
+             static_cast<unsigned>(first_chunk_delay_ms),
+             static_cast<unsigned>(g_ota_finalize_ms),
+             static_cast<unsigned>(g_ota_chunk_count),
+             static_cast<unsigned>(g_ota_chunk_min_size),
+             static_cast<unsigned>(avg_chunk_size),
+             static_cast<unsigned>(g_ota_chunk_max_size));
         return;
     }
 
@@ -1804,6 +1874,15 @@ void ota_handle_update() {
     const size_t slot_size = g_ota_slot_size;
     const bool size_known = g_ota_size_known;
     const size_t expected_size = g_ota_expected_size;
+    const uint32_t upload_start_ms = g_ota_upload_start_ms;
+    const uint32_t first_chunk_ms = g_ota_first_chunk_ms;
+    const uint32_t last_chunk_ms = g_ota_last_chunk_ms;
+    const bool first_chunk_seen = g_ota_first_chunk_seen;
+    const uint32_t finalize_ms = g_ota_finalize_ms;
+    const uint32_t chunk_count = g_ota_chunk_count;
+    const size_t chunk_min = g_ota_chunk_min_size;
+    const size_t chunk_max = g_ota_chunk_max_size;
+    const size_t chunk_sum = g_ota_chunk_sum_size;
     String error = g_ota_error;
 
     if (!has_upload && error.isEmpty()) {
@@ -1846,6 +1925,31 @@ void ota_handle_update() {
     String json;
     serializeJson(doc, json);
     server.send(status_code, "application/json", json);
+
+    if (has_upload) {
+        const uint32_t total_ms = upload_start_ms == 0 ? 0 : (millis() - upload_start_ms);
+        const uint32_t first_chunk_delay_ms =
+            first_chunk_seen ? (first_chunk_ms - upload_start_ms) : 0;
+        const uint32_t transfer_phase_ms =
+            first_chunk_seen && last_chunk_ms >= first_chunk_ms ? (last_chunk_ms - first_chunk_ms) : 0;
+        const size_t avg_chunk = chunk_count > 0 ? (chunk_sum / chunk_count) : 0;
+        LOGI("OTA",
+             "summary success=%s written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms transfer=%u ms finalize=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes",
+             success ? "YES" : "NO",
+             static_cast<unsigned>(written_size),
+             static_cast<unsigned>(slot_size),
+             static_cast<unsigned>(expected_size),
+             size_known ? "YES" : "NO",
+             static_cast<unsigned>(total_ms),
+             first_chunk_seen ? "YES" : "NO",
+             static_cast<unsigned>(first_chunk_delay_ms),
+             static_cast<unsigned>(transfer_phase_ms),
+             static_cast<unsigned>(finalize_ms),
+             static_cast<unsigned>(chunk_count),
+             static_cast<unsigned>(chunk_min),
+             static_cast<unsigned>(avg_chunk),
+             static_cast<unsigned>(chunk_max));
+    }
 
     if (success) {
         LOGI("OTA", "response sent, deferred reboot in %u ms",
