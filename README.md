@@ -22,6 +22,7 @@ This repository contains the firmware source code and configuration needed to fl
 - [Highlights](#highlights)
 - [Gallery](#gallery)
 - [UI Screens](#ui-screens)
+- [Web Dashboard](#web-dashboard)
 - [Hardware and BOM](#hardware-and-bom)
 - [Assembly and Wiring Notice](#assembly-and-wiring-notice)
 - [Pin Configuration](#pin-configuration)
@@ -44,8 +45,8 @@ Click the image.
 - Professional telemetry: PM0.5/PM1/PM2.5/PM4/PM10, CO, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO.
 - No soldering required: designed for easy assembly using Grove/QT connectors.
 - Smooth LVGL UI with night mode, custom themes, and status indicators.
-- Integrated web dashboard at `/dashboard` with live state, charts, events, settings sync, and OTA firmware update.
-- Easy setup: Wi-Fi AP onboarding + mDNS portal (http://aura.local) for configuration.
+- Integrated web dashboard at `/dashboard` with live state, charts, events, settings sync, DAC page, and OTA firmware update.
+- Easy setup: Wi-Fi AP onboarding + mDNS access (`http://<hostname>.local`).
 - Home Assistant ready: automatic MQTT discovery and ready-to-use dashboard code.
 - Optional DAC control (GP8403, 0-10V): manual levels/timer plus automatic demand mode from air-quality thresholds.
 - Robust Safe Boot: automatic rollback to the last-known-good config after crashes.
@@ -70,6 +71,22 @@ Click the image.
     <td align="center"><img src="docs/assets/ui-backlight.jpg" alt="Backlight"/><br/>Backlight</td>
   </tr>
 </table>
+
+## Web Dashboard
+Project Aura serves two web experiences from the device:
+
+- Setup portal (AP mode): opening `/` in AP mode shows the captive Wi-Fi setup flow (`/wifi`).
+- Full dashboard (`/dashboard`): tabs for Sensors, Charts, Events, Settings, and System.
+- Dedicated DAC page (`/dac`): live status, manual controls, auto mode, and auto-threshold config.
+- OTA from dashboard: upload firmware `.bin` directly via the web UI.
+- AP-safe dashboard variant: in AP mode, `/dashboard` serves a CDN-free offline page.
+
+Useful API routes used by the dashboard:
+- `GET /api/state`
+- `GET /api/charts?group=core|gases|pm&window=1h|3h|24h`
+- `GET /api/events`
+- `POST /api/settings`
+- `POST /api/ota`
 
 ## Hardware and BOM
 Project Aura is designed around high-quality components to ensure accuracy. If you are sourcing parts yourself,
@@ -192,10 +209,11 @@ pio device monitor -b 115200
 
 ## Configuration
 1. Wi-Fi setup:
-   On first boot, the device creates a hotspot: `ProjectAura-Setup`.
+   On first boot, the device creates a hotspot: `Aura-XXXXXX-AP` (fallback: `ProjectAura-Setup`).
    Connect to it and open http://192.168.4.1 to configure Wi-Fi credentials.
 2. Web portal:
-   Once connected to your network, access the device at http://aura.local/. Configure MQTT, timezone, and themes there.
+   Once connected to your network, access the device at `http://<hostname>.local/` (default hostname format: `aura-XXXXXX`, for example `aura-1a2b3c.local`) or by IP.
+   In STA mode, `/` opens the dashboard. In AP mode, `/` opens setup and `/dashboard` opens the offline dashboard.
 3. Home Assistant:
    MQTT discovery is enabled by default. The device appears in HA via MQTT integration automatically.
    A ready-to-use dashboard YAML is available at `docs/home_assistant/dashboard.yaml`.
