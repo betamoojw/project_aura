@@ -20,40 +20,99 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       color: #f9fafb;
-      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-size: 14px;
       line-height: 1.5;
-      background-color: #020712;
-      background-image:
-        radial-gradient(1200px 700px at 18% -12%, rgba(8, 145, 178, 0.22), transparent 62%),
-        radial-gradient(900px 520px at 84% -6%, rgba(59, 130, 246, 0.14), transparent 58%),
-        linear-gradient(180deg, #050d1f 0%, #030918 48%, #020712 100%);
-      background-attachment: fixed;
+      background: #111827;
     }
-    body { padding: 12px; }
-    .wrap { max-width: 1100px; margin: 0 auto; }
+    body { padding: 16px; }
+    @media (min-width: 768px) { body { padding: 16px 24px; } }
+    @media (min-width: 1024px) { body { padding: 16px 32px; } }
+    .wrap { width: 100%; max-width: 448px; margin: 0 auto; }
+    @media (min-width: 768px) { .wrap { max-width: 768px; } }
+    @media (min-width: 1024px) { .wrap { max-width: 1152px; } }
 
     /* ── Header ── */
-    .hdr { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-    .hdr-left { display: flex; flex-direction: column; gap: 2px; }
-    .brand { display: flex; align-items: center; gap: 8px; }
-    .brand-dot { width: 10px; height: 10px; border-radius: 999px; background: #34d399; box-shadow: 0 0 8px #34d399; flex: 0 0 auto; }
-    .brand-name { font-size: 22px; font-weight: 700; letter-spacing: .02em; color: #f9fafb; }
-    .brand-sub { font-size: 12px; color: #9ca3af; }
+    .hdr { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .hdr-left { min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand-dot {
+      position: relative;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    .brand-dot::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 211, 153, 0.75);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.75);
+      animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+    .brand-dot::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #34d399;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.95);
+    }
+    @keyframes pulse-dot {
+      0% { transform: scale(0.88); opacity: 0.72; }
+      70% { transform: scale(1.1); opacity: 0.2; }
+      100% { transform: scale(0.88); opacity: 0.72; }
+    }
+    .brand-name { font-size: 20px; font-weight: 700; color: #f9fafb; letter-spacing: .01em; }
+    .brand-sub {
+      margin-left: 22px;
+      margin-top: 3px;
+      font-size: 13px;
+      color: #9ca3af;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
     .hdr-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
     .clock { text-align: right; }
-    .clock-time { font-size: 22px; font-weight: 700; line-height: 1; letter-spacing: .03em; }
-    .clock-date { margin-top: 3px; color: #9ca3af; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+    .clock-time { font-size: 20px; font-weight: 700; line-height: 1; letter-spacing: .03em; }
+    .clock-date { margin-top: 4px; color: #9ca3af; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+    @media (min-width: 768px) {
+      .hdr { margin-bottom: 24px; }
+      .brand-name { font-size: 24px; }
+      .brand-sub { font-size: 14px; }
+      .clock-time { font-size: 24px; }
+      .clock-date { font-size: 12px; }
+    }
     .hdr-actions { display: flex; gap: 8px; }
-    .btn { cursor: pointer; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; border: 1px solid #374151; background: #1f2937; color: #d1d5db; transition: border-color .15s; }
-    .btn:hover { border-color: #4b5563; color: #f9fafb; }
+    .btn {
+      cursor: pointer;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid #374151;
+      background: rgba(31,41,55,.78);
+      color: #d1d5db;
+      transition: border-color .15s, background .15s, color .15s;
+    }
+    .btn:hover { border-color: #4b5563; background: rgba(55,65,81,.55); color: #f9fafb; }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .btn-cyan { background: #0e7490; border-color: #0891b2; color: #fff; }
-    .btn-cyan:hover { background: #0891b2; }
-    .btn-danger { background: #1c0a0a; border-color: #7f1d1d; color: #fca5a5; }
-    .btn-danger:hover { border-color: #dc2626; }
-    .btn-amber { background: #1c1100; border-color: #78350f; color: #fcd34d; }
-    .btn-amber:hover { border-color: #d97706; }
+    .btn-cyan { background: rgba(6,182,212,.12); border-color: rgba(6,182,212,.45); color: #67e8f9; }
+    .btn-cyan:hover { background: rgba(6,182,212,.22); border-color: rgba(6,182,212,.62); color: #a5f3fc; }
+    .btn-danger { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.45); color: #fca5a5; }
+    .btn-danger:hover { background: rgba(239,68,68,.2); border-color: rgba(239,68,68,.62); color: #fecaca; }
+    .btn-amber { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.45); color: #fcd34d; }
+    .btn-amber:hover { background: rgba(245,158,11,.22); border-color: rgba(245,158,11,.62); color: #fde68a; }
     .link-btn { text-decoration: none; display: inline-flex; align-items: center; }
     .net-status {
       margin: -4px 0 12px;
@@ -79,7 +138,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     /* ── Tab nav ── */
     .tab-nav { display: flex; flex-wrap: wrap; background: #1f2937; padding: 4px; border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(55,65,81,.5); gap: 4px; }
     .tab-btn { display: flex; align-items: center; justify-content: center; gap: 7px; flex: 1; min-width: 48%; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: #9ca3af; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; }
-    @media (min-width:640px) { .tab-btn { min-width: 0; flex: none; } }
+    @media (min-width:640px) { .tab-btn { min-width: 132px; flex: none; } }
     .tab-btn:hover { color: #e5e7eb; }
     .tab-btn.active { background: #0891b2; color: #fff; box-shadow: 0 4px 16px rgba(8,145,178,.3); }
     .tab-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
@@ -87,9 +146,14 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     .tab-panel.active { display: block; }
 
     /* ── Cards & grids ── */
-    .card-g8 { background: linear-gradient(135deg, #1f2937, #111827); border: 1px solid rgba(55,65,81,.6); border-radius: 16px; }
-    .card-g7 { background: #1f2937; border: 1px solid rgba(55,65,81,.5); border-radius: 12px; }
-    .mini-card { background: rgba(55,65,81,.3); border: 1px solid rgba(75,85,99,.4); border-radius: 12px; padding: 12px 14px; }
+    .card-g8 {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      border: 1px solid rgba(55,65,81,.62);
+      border-radius: 16px;
+      box-shadow: 0 12px 24px rgba(2, 6, 23, 0.32);
+    }
+    .card-g7 { background: #1f2937; border: 1px solid rgba(55,65,81,.55); border-radius: 12px; }
+    .mini-card { background: rgba(55,65,81,.32); border: 1px solid rgba(75,85,99,.5); border-radius: 12px; padding: 12px 14px; }
 
     /* ── HeroMetric ── */
     .hero-wrap { padding: 20px 22px 16px; }
@@ -161,7 +225,8 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     .sec-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; font-weight: 700; margin-bottom: 12px; }
 
     /* ── Sensors layout ── */
-    .sensor-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 0; }
+    .sensor-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 0; }
+    @media (min-width: 768px) { .sensor-grid { gap: 20px; } }
     .sensor-hero, .sensor-climate { min-width: 0; }
     @media (min-width: 1280px) {
       .sensor-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
@@ -170,14 +235,42 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     }
 
     /* ── Chart section ── */
-    .chart-controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-    .chart-ctrl-label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: #6b7280; font-weight: 600; margin-bottom: 6px; }
+    .chart-controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: start;
+    }
+    @media (min-width: 1280px) {
+      .chart-controls {
+        grid-template-columns: 320px minmax(0, 1fr);
+        gap: 16px;
+      }
+    }
+    .chart-controls .seg-ctrl {
+      background: #1f2937;
+      border: 1px solid rgba(55,65,81,.55);
+      border-radius: 8px;
+      padding: 4px;
+      gap: 4px;
+    }
     .seg-ctrl { display: flex; background: rgba(17,24,39,.6); border: 1px solid #374151; border-radius: 8px; padding: 2px; gap: 2px; }
     .seg-btn { border: none; background: transparent; color: #9ca3af; padding: 5px 11px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background .12s, color .12s; }
+    .chart-controls .seg-btn { flex: 1; padding: 6px 10px; font-size: 12px; font-weight: 700; color: #6b7280; }
+    .chart-controls .seg-btn:hover { color: #d1d5db; }
     .seg-btn.active { background: #0891b2; color: #fff; }
+    #cgroupSeg .seg-btn.active,
+    #crangeSeg .seg-btn.active {
+      background: #374151;
+      color: #f9fafb;
+      box-shadow: 0 1px 3px rgba(2,6,23,.35), inset 0 0 0 1px rgba(148,163,184,.2);
+    }
     .chart-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 768px) { .chart-grid { gap: 16px; } }
     @media (min-width: 1280px) { .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .chart-box { padding: 12px; }
+    @media (min-width: 768px) { .chart-box { padding: 16px; } }
     .chart-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .chart-name { font-size: 12px; font-weight: 700; color: #9ca3af; }
     .chart-latest-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
@@ -190,19 +283,25 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
       top: 0;
       bottom: 0;
       width: 1px;
-      border-left: 1px dashed rgba(148, 163, 184, 0.55);
+      border-left: 1px dashed rgba(100, 116, 139, 0.72);
       opacity: 0;
       pointer-events: none;
       transition: opacity .12s;
     }
     .chart-vline.show { opacity: 1; }
+    .chart-focus-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
     .chart-focus {
       position: absolute;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
-      border: 2px solid #22c55e;
-      background: #031226;
+      border: 1px solid #0f172a;
+      background: #22c55e;
       box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.28);
       transform: translate(-50%, -50%);
       opacity: 0;
@@ -214,29 +313,31 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
       position: absolute;
       z-index: 6;
       pointer-events: none;
-      background: rgba(2, 10, 30, 0.96);
-      border: 1px solid rgba(71, 85, 105, 0.72);
-      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.48);
-      border-radius: 14px;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid rgba(75, 85, 99, 0.95);
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+      border-radius: 8px;
       color: #f9fafb;
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1.35;
-      padding: 10px 12px;
-      min-width: 170px;
-      max-width: 260px;
+      padding: 8px 10px;
+      min-width: 120px;
+      max-width: 250px;
       transform: translate(-50%, 0);
       display: none;
     }
     .chart-tooltip.show { display: block; }
-    .chart-tooltip-time { color: #94a3b8; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .chart-tooltip-time { color: #9ca3af; font-size: 11px; font-weight: 500; margin-bottom: 4px; }
     .chart-tooltip-rows { display: flex; flex-direction: column; gap: 4px; }
-    .chart-tooltip-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-    .chart-tooltip-name { font-size: 12px; font-weight: 700; }
-    .chart-tooltip-value { color: #f8fafc; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .chart-tooltip-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .chart-tooltip-name { font-size: 11px; font-weight: 600; }
+    .chart-tooltip-value { color: #f8fafc; font-size: 11px; font-weight: 700; white-space: nowrap; }
     .chart-minmax { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: #6b7280; }
     .no-data { color: #6b7280; font-size: 13px; padding: 24px 0; text-align: center; }
 
     /* ── Events ── */
+    .events-shell { padding: 16px 18px; }
+    .events-title { margin-bottom: 12px; }
     .events-list { display: flex; flex-direction: column; gap: 0; }
     .alert-item { display: flex; flex-direction: column; padding: 10px 14px; border-left: 4px solid; border-radius: 0 8px 8px 0; margin-bottom: 8px; }
     .alert-item.sev-warning { border-color: #eab308; background: rgba(234,179,8,.1); }
@@ -269,27 +370,41 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     .stepper-ctrl { display: flex; align-items: center; gap: 8px; }
     .stepper-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: #d1d5db; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
     .stepper-btn:hover { border-color: #4b5563; }
-    .stepper-val { min-width: 52px; text-align: center; font-size: 14px; font-weight: 600; color: #f9fafb; }
+    .stepper-val { min-width: 52px; text-align: center; font-size: 14px; font-weight: 600; color: #f9fafb; font-family: Consolas, "Courier New", monospace; }
     .text-field-row { display: flex; flex-direction: column; gap: 6px; }
     .text-field-lbl { font-size: 12px; color: #9ca3af; }
     .text-input { width: 100%; background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; color: #f9fafb; font-size: 14px; }
     .text-input:focus { outline: none; border-color: #0891b2; }
-    .save-btn { margin-top: 14px; padding: 9px 18px; border-radius: 10px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; }
-    .save-btn.idle { background: #1f2937; color: #9ca3af; border: 1px solid #374151; cursor: default; }
-    .save-btn.dirty { background: #0891b2; color: #fff; }
-    .save-btn.dirty:hover { background: #0e7490; }
-    .save-btn.saving { background: #374151; color: #9ca3af; cursor: not-allowed; }
-    .save-btn.saved { background: #14532d; color: #86efac; }
-    .save-btn.error { background: #7f1d1d; color: #fca5a5; }
+    .save-btn {
+      margin-top: 14px;
+      padding: 9px 18px;
+      border-radius: 10px;
+      border: 1px solid #374151;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .save-btn.idle { background: rgba(31,41,55,.7); color: #6b7280; border-color: #374151; cursor: default; }
+    .save-btn.dirty { background: rgba(6,182,212,.12); color: #67e8f9; border-color: rgba(6,182,212,.45); }
+    .save-btn.dirty:hover { background: rgba(6,182,212,.22); border-color: rgba(6,182,212,.62); }
+    .save-btn.saving { background: rgba(31,41,55,.85); color: #6b7280; border-color: #374151; cursor: not-allowed; }
+    .save-btn.saved { background: rgba(34,197,94,.14); color: #86efac; border-color: rgba(34,197,94,.45); }
+    .save-btn.error { background: rgba(239,68,68,.12); color: #fca5a5; border-color: rgba(239,68,68,.45); }
     .settings-grid { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; }
     .settings-col { display: flex; flex-direction: column; gap: 12px; }
     .settings-col .sg + .sg { margin-top: 0; }
     .conn-rows { display: flex; flex-direction: column; gap: 0; }
     .conn-rows .info-row:last-child { border-bottom: none; }
+    @media (min-width: 768px) {
+      .settings-grid { gap: 16px; }
+      .settings-col { gap: 16px; }
+    }
     @media (min-width: 1024px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
 
     /* ── System tab ── */
     .system-grid { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; }
+    @media (min-width: 768px) { .system-grid { gap: 16px; } }
     @media (min-width: 1024px) { .system-grid { grid-template-columns: 1fr 1fr; } }
     .info-rows { display: flex; flex-direction: column; gap: 0; }
     .info-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(55,65,81,.4); font-size: 13px; }
@@ -298,7 +413,9 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     .info-val { color: #f9fafb; text-align: right; font-weight: 500; }
     .info-val.ok { color: #4ade80; }
     .info-val.err { color: #f87171; }
-    .sys-btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .sys-btn-row { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .sys-btn-row .btn,
+    .sys-btn-row .link-btn { width: 100%; justify-content: center; }
 
     /* ── OTA progress ── */
     .progress-track { height: 8px; background: #1f2937; border-radius: 999px; overflow: hidden; border: 1px solid #374151; margin-top: 10px; }
@@ -320,6 +437,25 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     .ota-precheck.ok { border-color: rgba(34,197,94,.45); color: #86efac; background: rgba(20,83,45,.28); }
     .ota-precheck.warn { border-color: rgba(245,158,11,.45); color: #fcd34d; background: rgba(120,53,15,.24); }
     .ota-precheck.err { border-color: rgba(239,68,68,.45); color: #fca5a5; background: rgba(127,29,29,.28); }
+    .file-input {
+      display: block;
+      width: 100%;
+      font-size: 12px;
+      color: #d1d5db;
+    }
+    .file-input::file-selector-button {
+      margin-right: 10px;
+      border-radius: 6px;
+      border: 1px solid #4b5563;
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .file-input:disabled { opacity: .6; cursor: not-allowed; }
+    .file-input:disabled::file-selector-button { cursor: not-allowed; opacity: .8; }
 
     /* ── Misc ── */
     .muted { color: #6b7280; }
@@ -387,21 +523,15 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
   <!-- === CHARTS === -->
   <div id="tab-charts" class="tab-panel">
     <div class="chart-controls">
-      <div>
-        <div class="chart-ctrl-label">Group</div>
-        <div class="seg-ctrl" id="cgroupSeg">
-          <button class="seg-btn active" type="button" data-group="core">Core</button>
-          <button class="seg-btn" type="button" data-group="gases">Gases</button>
-          <button class="seg-btn" type="button" data-group="pm">PM</button>
-        </div>
+      <div class="seg-ctrl" id="crangeSeg">
+        <button class="seg-btn" type="button" data-range="1h">1h</button>
+        <button class="seg-btn" type="button" data-range="3h">3h</button>
+        <button class="seg-btn active" type="button" data-range="24h">24h</button>
       </div>
-      <div>
-        <div class="chart-ctrl-label">Range</div>
-        <div class="seg-ctrl" id="crangeSeg">
-          <button class="seg-btn" type="button" data-range="1h">1h</button>
-          <button class="seg-btn" type="button" data-range="3h">3h</button>
-          <button class="seg-btn active" type="button" data-range="24h">24h</button>
-        </div>
+      <div class="seg-ctrl" id="cgroupSeg">
+        <button class="seg-btn active" type="button" data-group="core">Core</button>
+        <button class="seg-btn" type="button" data-group="gases">Gases</button>
+        <button class="seg-btn" type="button" data-group="pm">PM</button>
       </div>
     </div>
     <div id="chartGrid" class="chart-grid"></div>
@@ -409,7 +539,10 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
 
   <!-- === EVENTS === -->
   <div id="tab-events" class="tab-panel">
-    <div id="eventsList" class="events-list"><div class="no-data">Loading...</div></div>
+    <div class="card-g7 events-shell">
+      <div class="sg-title events-title">System Log</div>
+      <div id="eventsList" class="events-list"><div class="no-data">Loading...</div></div>
+    </div>
   </div>
 
   <!-- === SETTINGS === -->
@@ -514,7 +647,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
           <div id="otaPrecheck" class="ota-precheck warn">Waiting for device state before OTA.</div>
           <div class="text-field-row">
             <label class="text-field-lbl" for="otaFile">Firmware file (.bin)</label>
-            <input type="file" id="otaFile" accept=".bin,application/octet-stream" style="color:#d1d5db;" />
+            <input class="file-input" type="file" id="otaFile" accept=".bin,application/octet-stream" />
           </div>
           <button class="btn" type="button" id="otaUploadBtn">Upload firmware</button>
           <div class="progress-track"><div class="progress-fill" id="otaProgress"></div></div>
@@ -789,19 +922,19 @@ function buildMiniChartSvg(data, key, color) {
 // Chart metadata
 // ─────────────────────────────────────────────
 const CHART_META = {
-  co2:         { label:'CO2',         unit:'ppm',             digits:0, color:'#3dd6c6' },
+  co2:         { label:'CO2',         unit:'ppm',             digits:0, color:'#10b981' },
   temperature: { label:'Temperature', unit:'\u00B0C',        digits:1, color:'#f59e0b' },
-  humidity:    { label:'Humidity',    unit:'%',               digits:0, color:'#60a5fa' },
-  pressure:    { label:'Pressure',    unit:'hPa',             digits:0, color:'#22c55e' },
-  co:          { label:'CO',          unit:'ppm',             digits:1, color:'#fb7185' },
-  voc:         { label:'VOC',         unit:'idx',             digits:0, color:'#f97316' },
+  humidity:    { label:'Humidity',    unit:'%',               digits:0, color:'#3b82f6' },
+  pressure:    { label:'Pressure',    unit:'hPa',             digits:0, color:'#0ea5e9' },
+  co:          { label:'CO',          unit:'ppm',             digits:1, color:'#f97316' },
+  voc:         { label:'VOC',         unit:'idx',             digits:0, color:'#ef4444' },
   nox:         { label:'NOx',         unit:'idx',             digits:0, color:'#f43f5e' },
-  hcho:        { label:'HCHO',        unit:'ppb',             digits:0, color:'#a78bfa' },
-  pm05:        { label:'PM0.5',       unit:'#/cm\u00B3',     digits:0, color:'#fde047' },
-  pm1:         { label:'PM1.0',       unit:'\u00B5g/m\u00B3', digits:1, color:'#38bdf8' },
-  pm25:        { label:'PM2.5',       unit:'\u00B5g/m\u00B3', digits:1, color:'#34d399' },
-  pm4:         { label:'PM4.0',       unit:'\u00B5g/m\u00B3', digits:1, color:'#22d3ee' },
-  pm10:        { label:'PM10',        unit:'\u00B5g/m\u00B3', digits:1, color:'#f87171' },
+  hcho:        { label:'HCHO',        unit:'ppb',             digits:0, color:'#d946ef' },
+  pm05:        { label:'PM0.5',       unit:'#/cm\u00B3',     digits:0, color:'#14b8a6' },
+  pm1:         { label:'PM1.0',       unit:'\u00B5g/m\u00B3', digits:1, color:'#a78bfa' },
+  pm25:        { label:'PM2.5',       unit:'\u00B5g/m\u00B3', digits:1, color:'#8b5cf6' },
+  pm4:         { label:'PM4.0',       unit:'\u00B5g/m\u00B3', digits:1, color:'#0ea5e9' },
+  pm10:        { label:'PM10',        unit:'\u00B5g/m\u00B3', digits:1, color:'#6d28d9' },
 };
 
 // ─────────────────────────────────────────────
@@ -1040,26 +1173,26 @@ function renderPMGrid(sensors) {
 const CHART_LAYOUTS = {
   core: [
     { title:'CO2 Concentration', unit:'ppm', lines:[{ key:'co2', name:'CO2', color:'#10b981', digits:0, unit:'ppm' }] },
-    { title:'Temperature', unit:'\u00B0C', lines:[{ key:'temperature', name:'Temperature', color:'#f59e0b', digits:1, unit:'\u00B0C' }] },
-    { title:'Humidity', unit:'%', lines:[{ key:'humidity', name:'Humidity', color:'#60a5fa', digits:0, unit:'%' }] },
-    { title:'Pressure', unit:'hPa', lines:[{ key:'pressure', name:'Pressure', color:'#22c55e', digits:1, unit:'hPa' }] },
+    { title:'Temperature', unit:'\u00B0C', lines:[{ key:'temperature', name:'Temp', color:'#f59e0b', digits:1, unit:'\u00B0C' }] },
+    { title:'Humidity', unit:'%', lines:[{ key:'humidity', name:'RH', color:'#3b82f6', digits:0, unit:'%' }] },
+    { title:'Pressure', unit:'hPa', lines:[{ key:'pressure', name:'Pressure', color:'#0ea5e9', digits:1, unit:'hPa' }] },
   ],
   gases: [
-    { title:'VOC', unit:'idx', lines:[{ key:'voc', name:'VOC', color:'#f97316', digits:0, unit:'idx' }] },
-    { title:'NOx', unit:'idx', lines:[{ key:'nox', name:'NOx', color:'#f43f5e', digits:0, unit:'idx' }] },
-    { title:'HCHO', unit:'ppb', lines:[{ key:'hcho', name:'HCHO', color:'#a78bfa', digits:0, unit:'ppb' }] },
-    { title:'CO', unit:'ppm', lines:[{ key:'co', name:'CO', color:'#fb7185', digits:1, unit:'ppm' }] },
+    { title:'Carbon Monoxide (CO)', unit:'ppm', lines:[{ key:'co', name:'CO', color:'#f97316', digits:1, unit:'ppm' }] },
+    { title:'VOC Index', unit:'idx', lines:[{ key:'voc', name:'VOC', color:'#ef4444', digits:0, unit:'idx' }] },
+    { title:'NOx Index', unit:'idx', lines:[{ key:'nox', name:'NOx', color:'#f43f5e', digits:0, unit:'idx' }] },
+    { title:'Formaldehyde (HCHO)', unit:'ppb', lines:[{ key:'hcho', name:'HCHO', color:'#d946ef', digits:0, unit:'ppb' }] },
   ],
   pm: [
-    { title:'PM0.5', unit:'#/cm\u00B3', lines:[{ key:'pm05', name:'PM0.5', color:'#fde047', digits:0, unit:'#/cm\u00B3' }] },
-    { title:'PM1.0', unit:'\u00B5g/m\u00B3', lines:[{ key:'pm1', name:'PM1.0', color:'#38bdf8', digits:1, unit:'\u00B5g/m\u00B3' }] },
-    { title:'PM2.5', unit:'\u00B5g/m\u00B3', lines:[{ key:'pm25', name:'PM2.5', color:'#34d399', digits:1, unit:'\u00B5g/m\u00B3' }] },
+    { title:'PM0.5', unit:'#/cm\u00B3', lines:[{ key:'pm05', name:'PM0.5', color:'#14b8a6', digits:0, unit:'#/cm\u00B3' }] },
+    { title:'PM1.0', unit:'\u00B5g/m\u00B3', lines:[{ key:'pm1', name:'PM1.0', color:'#a78bfa', digits:1, unit:'\u00B5g/m\u00B3' }] },
+    { title:'PM2.5', unit:'\u00B5g/m\u00B3', lines:[{ key:'pm25', name:'PM2.5', color:'#8b5cf6', digits:1, unit:'\u00B5g/m\u00B3' }] },
     {
       title:'PM10 + PM4.0',
       unit:'\u00B5g/m\u00B3',
       lines:[
-        { key:'pm10', name:'PM10', color:'#f87171', digits:1, unit:'\u00B5g/m\u00B3' },
-        { key:'pm4',  name:'PM4.0', color:'#22d3ee', digits:1, unit:'\u00B5g/m\u00B3' },
+        { key:'pm10', name:'PM10', color:'#6d28d9', digits:1, unit:'\u00B5g/m\u00B3' },
+        { key:'pm4',  name:'PM4.0', color:'#0ea5e9', digits:1, unit:'\u00B5g/m\u00B3' },
       ],
     },
   ],
@@ -1076,8 +1209,8 @@ function bindChartPointTooltips(root) {
   root.querySelectorAll('.chart-svg-wrap').forEach(wrap => {
     const tooltip = wrap.querySelector('.chart-tooltip');
     const vline = wrap.querySelector('.chart-vline');
-    const focus = wrap.querySelector('.chart-focus');
-    if (!tooltip || !vline || !focus) return;
+    const focusLayer = wrap.querySelector('.chart-focus-layer');
+    if (!tooltip || !vline || !focusLayer) return;
     const pointEls = Array.from(wrap.querySelectorAll('.chart-point'));
     if (!pointEls.length) return;
 
@@ -1102,7 +1235,7 @@ function bindChartPointTooltips(root) {
       tooltip.classList.remove('show');
       tooltip.innerHTML = '';
       vline.classList.remove('show');
-      focus.classList.remove('show');
+      focusLayer.innerHTML = '';
     };
 
     const showAtClientX = clientX => {
@@ -1129,21 +1262,19 @@ function bindChartPointTooltips(root) {
 
       const xPxRaw = (nearest / 100) * rect.width;
       const xPx = clamp(xPxRaw, 12, Math.max(12, rect.width - 12));
-      const tooltipX = clamp(xPxRaw, 96, Math.max(96, rect.width - 96));
-      tooltip.style.left = `${tooltipX}px`;
-      tooltip.style.top = '10px';
+      const tooltipLeftPct = clamp(nearest, 12, 88);
+      tooltip.style.left = `${tooltipLeftPct}%`;
+      tooltip.style.top = '6px';
       tooltip.classList.add('show');
 
       vline.style.left = `${xPx}px`;
       vline.classList.add('show');
 
-      const yPx = clamp((focusEntry.y / 100) * rect.height, 8, Math.max(8, rect.height - 8));
-      focus.style.left = `${xPx}px`;
-      focus.style.top = `${yPx}px`;
-      const color = focusEntry.color || '#22c55e';
-      focus.style.borderColor = color;
-      focus.style.boxShadow = `0 0 0 4px ${rgba(color, 0.28)}`;
-      focus.classList.add('show');
+      focusLayer.innerHTML = entries.map(entry => {
+        const yPx = clamp((entry.y / 100) * rect.height, 8, Math.max(8, rect.height - 8));
+        const color = entry.color || '#22c55e';
+        return `<div class="chart-focus show" style="left:${xPx}px;top:${yPx}px;background:${esc(color)};box-shadow:0 0 0 4px ${rgba(color,0.28)}"></div>`;
+      }).join('');
     };
 
     wrap.addEventListener('mousemove', e => showAtClientX(e.clientX));
@@ -1234,7 +1365,7 @@ function renderCharts(payload) {
           ).join('')}
         </div>
       </div>
-      <div class="chart-svg-wrap">${svgHtml}<div class="chart-vline"></div><div class="chart-focus"></div><div class="chart-tooltip"></div></div>
+      <div class="chart-svg-wrap">${svgHtml}<div class="chart-vline"></div><div class="chart-focus-layer"></div><div class="chart-tooltip"></div></div>
       <div class="chart-minmax">
         <span>min ${fmtMM(mmMin, cardUnit)}</span>
         <span>max ${fmtMM(mmMax, cardUnit)}</span>
