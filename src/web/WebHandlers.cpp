@@ -688,20 +688,13 @@ void dashboard_handle_root() {
         return;
     }
 
-    // In AP mode (usually no internet), serve a CDN-free dashboard variant.
-    if (ap_mode) {
-        send_no_store_headers(*context->server);
-        context->server->send_P(200, "text/html", WebTemplates::kDashboardPageTemplateAp);
-        return;
-    }
-
     if (!ap_mode && context->wifi_is_connected && !context->wifi_is_connected()) {
         context->server->send(404, "text/plain", "Not found");
         return;
     }
 
     send_no_store_headers(*context->server);
-    context->server->send_P(200, "text/html", WebTemplates::kDashboardPageTemplate);
+    context->server->send_P(200, "text/html", WebTemplates::kDashboardPageTemplateAp);
 }
 
 void wifi_handle_save() {

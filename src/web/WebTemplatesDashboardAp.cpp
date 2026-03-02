@@ -115,7 +115,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     .btn-amber:hover { background: rgba(245,158,11,.22); border-color: rgba(245,158,11,.62); color: #fde68a; }
     .link-btn { text-decoration: none; display: inline-flex; align-items: center; }
     .net-status {
-      margin: -4px 0 12px;
+      margin: 16px 0 0;
       padding: 9px 12px;
       border-radius: 10px;
       border: 1px solid #374151;
@@ -128,28 +128,12 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     }
     .net-status-text { font-size: 12px; font-weight: 700; letter-spacing: 0.01em; }
     .net-status-meta { font-size: 11px; color: #9ca3af; }
-    .net-status.ok {
-      margin: -2px 0 10px;
-      padding: 2px 0 4px;
-      border: none;
-      border-radius: 0;
-      background: transparent;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    .net-status.ok .net-status-text {
-      color: #6b7280;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: .01em;
-    }
-    .net-status.ok .net-status-meta { display: none; }
+    .net-status.ok { border-color: rgba(34,197,94,.45); background: rgba(20,83,45,.35); }
+    .net-status.ok .net-status-text { color: #86efac; }
     .net-status.warn { border-color: rgba(245,158,11,.45); background: rgba(120,53,15,.28); }
     .net-status.warn .net-status-text { color: #fcd34d; }
     .net-status.err { border-color: rgba(239,68,68,.45); background: rgba(127,29,29,.32); }
     .net-status.err .net-status-text { color: #fca5a5; }
-    .net-status.warn .net-status-meta,
-    .net-status.err .net-status-meta { display: inline; }
 
     /* ── Tab nav ── */
     .tab-nav { display: flex; flex-wrap: wrap; background: #1f2937; padding: 4px; border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(55,65,81,.5); gap: 4px; }
@@ -497,10 +481,6 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
       </div>
     </div>
   </div>
-  <div id="netStatusBar" class="net-status warn">
-    <span id="netStatusText" class="net-status-text">Connecting to device...</span>
-    <span id="netStatusMeta" class="net-status-meta">No live state yet.</span>
-  </div>
 
   <!-- Tab nav -->
   <div class="tab-nav">
@@ -580,31 +560,6 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
           </div>
         </div>
         <div class="sg">
-          <div class="sg-title">Device</div>
-          <div class="sg-rows">
-            <div class="text-field-row">
-              <label class="text-field-lbl" for="displayNameInput">Display name</label>
-              <input class="text-input" type="text" id="displayNameInput" maxlength="32" placeholder="aura" />
-            </div>
-            <button class="save-btn idle" type="button" id="saveNameBtn">No changes</button>
-          </div>
-        </div>
-      </div>
-      <div class="settings-col">
-        <div class="sg">
-          <div class="sg-title">Connectivity</div>
-          <div class="conn-rows">
-            <div class="info-row"><span class="info-key">Mode</span><span class="info-val" id="cfg-mode">--</span></div>
-            <div class="info-row"><span class="info-key">WiFi SSID</span><span class="info-val" id="cfg-ssid">--</span></div>
-            <div class="info-row"><span class="info-key">Hostname</span><span class="info-val" id="cfg-hostname">--</span></div>
-            <div class="info-row"><span class="info-key">IP Address</span><span class="info-val" id="cfg-ip">--</span></div>
-            <div class="info-row"><span class="info-key">Signal</span><span class="info-val" id="cfg-rssi">--</span></div>
-            <div class="info-row"><span class="info-key">MQTT Broker</span><span class="info-val" id="cfg-mqtt-broker">--</span></div>
-            <div class="info-row"><span class="info-key">MQTT Status</span><span class="info-val" id="cfg-mqtt-status">--</span></div>
-            <div class="info-row"><span class="info-key">Last Sync</span><span class="info-val" id="cfg-last-sync">--</span></div>
-          </div>
-        </div>
-        <div class="sg">
           <div class="sg-title">Measurements</div>
           <div class="sg-rows">
             <div class="seg-row">
@@ -631,6 +586,31 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
               </div>
             </div>
             <button class="save-btn idle" type="button" id="saveSettingsBtn">No changes</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-col">
+        <div class="sg">
+          <div class="sg-title">Connectivity</div>
+          <div class="conn-rows">
+            <div class="info-row"><span class="info-key">Mode</span><span class="info-val" id="cfg-mode">--</span></div>
+            <div class="info-row"><span class="info-key">WiFi SSID</span><span class="info-val" id="cfg-ssid">--</span></div>
+            <div class="info-row"><span class="info-key">Hostname</span><span class="info-val" id="cfg-hostname">--</span></div>
+            <div class="info-row"><span class="info-key">IP Address</span><span class="info-val" id="cfg-ip">--</span></div>
+            <div class="info-row"><span class="info-key">Signal</span><span class="info-val" id="cfg-rssi">--</span></div>
+            <div class="info-row"><span class="info-key">MQTT Broker</span><span class="info-val" id="cfg-mqtt-broker">--</span></div>
+            <div class="info-row"><span class="info-key">MQTT Status</span><span class="info-val" id="cfg-mqtt-status">--</span></div>
+            <div class="info-row"><span class="info-key">Last Sync</span><span class="info-val" id="cfg-last-sync">--</span></div>
+          </div>
+        </div>
+        <div class="sg">
+          <div class="sg-title">Device</div>
+          <div class="sg-rows">
+            <div class="text-field-row">
+              <label class="text-field-lbl" for="displayNameInput">Display name</label>
+              <input class="text-input" type="text" id="displayNameInput" maxlength="32" placeholder="aura" />
+            </div>
+            <button class="save-btn idle" type="button" id="saveNameBtn">No changes</button>
           </div>
         </div>
       </div>
@@ -671,6 +651,11 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
         </div>
       </div>
     </div>
+  </div>
+
+  <div id="netStatusBar" class="net-status warn">
+    <span id="netStatusText" class="net-status-text">Connecting to device...</span>
+    <span id="netStatusMeta" class="net-status-meta">No live state yet.</span>
   </div>
 
 </div><!-- .wrap -->
