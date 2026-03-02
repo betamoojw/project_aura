@@ -94,13 +94,15 @@ look for these specific modules:
 
 | Component | Part / Model |
 | :--- | :--- |
-| Core Board | Waveshare ESP32-S3-Touch-LCD-4.3 (800x480) |
+| Core Board | [Waveshare ESP32-S3-Touch-LCD-4.3 (800x480)](https://www.waveshare.com/esp32-s3-touch-lcd-4.3.htm?&aff_id=144793) |
 | Main Sensor | Sensirion SEN66 (via Adafruit breakout) |
 | Carbon Monoxide (CO) | DFRobot Fermion SEN0466 (optional) |
 | Formaldehyde | Sensirion SFA30 (Grove interface, optional) |
 | Pressure | Adafruit BMP580 or DPS310 |
 | RTC | Adafruit PCF8523 |
 | DAC Output | GP8403 2-channel 0-10V DAC (optional, VOUT0 used) |
+
+Affiliate note: the Waveshare board link above is an affiliate link and helps support Project Aura at no extra cost.
 
 Sensor note: the SFA30 is fully supported and widely available. Support for the successor model (SFA40) is on the roadmap.
 CO note: the SEN0466 is optional. If not detected at boot, CO is marked unavailable and PM1 telemetry remains active.
