@@ -52,6 +52,9 @@ constexpr size_t kEventsApiMaxEntries = 48;
 constexpr size_t kWebDisplayNameMaxLen = 32;
 constexpr size_t kWifiScanMaxItems = 15;
 constexpr size_t kDiagMaxErrorItems = 12;
+constexpr const char kApiErrorOtaBusyJson[] =
+    "{\"success\":false,\"error\":\"OTA upload in progress\","
+    "\"error_code\":\"OTA_BUSY\",\"ota_busy\":true}";
 Logger::RecentEntry g_events_snapshot[kEventsApiMaxEntries];
 bool g_ota_upload_seen = false;
 bool g_ota_upload_active = false;
@@ -104,6 +107,14 @@ constexpr ChartMetricSpec kChartPmMetrics[] = {
 
 WebHandlerContext *ctx() {
     return g_ctx;
+}
+
+bool diag_access_allowed(const WebHandlerContext *context) {
+    return context && context->wifi_is_ap_mode && context->wifi_is_ap_mode();
+}
+
+void send_ota_busy_json(WebServer &server) {
+    server.send(503, "application/json", kApiErrorOtaBusyJson);
 }
 
 bool persist_dac_auto_mode(StorageManager &storage, bool enabled) {
@@ -839,6 +850,10 @@ void diag_handle_root() {
     if (!context || !context->server) {
         return;
     }
+    if (!diag_access_allowed(context)) {
+        context->server->send(404, "text/plain", "Not found");
+        return;
+    }
     send_no_store_headers(*context->server);
     context->server->send_P(200, "text/html", WebTemplates::kDiagPageTemplate);
 }
@@ -846,6 +861,10 @@ void diag_handle_root() {
 void diag_handle_data() {
     WebHandlerContext *context = ctx();
     if (!context || !context->server) {
+        return;
+    }
+    if (!diag_access_allowed(context)) {
+        context->server->send(404, "text/plain", "Not found");
         return;
     }
 
@@ -1219,8 +1238,7 @@ void dac_handle_state() {
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        context->server->send(503, "application/json",
-                              "{\"success\":false,\"error\":\"OTA in progress\"}");
+        send_ota_busy_json(*context->server);
         return;
     }
 
@@ -1283,8 +1301,7 @@ void dac_handle_action() {
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        context->server->send(503, "application/json",
-                              "{\"success\":false,\"error\":\"OTA in progress\"}");
+        send_ota_busy_json(*context->server);
         return;
     }
     WebServer &server = *context->server;
@@ -1348,8 +1365,7 @@ void dac_handle_auto() {
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        context->server->send(503, "application/json",
-                              "{\"success\":false,\"error\":\"OTA in progress\"}");
+        send_ota_busy_json(*context->server);
         return;
     }
     WebServer &server = *context->server;
@@ -1403,8 +1419,7 @@ void charts_handle_data() {
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        context->server->send(503, "application/json",
-                              "{\"success\":false,\"error\":\"OTA upload in progress\"}");
+        send_ota_busy_json(*context->server);
         return;
     }
 
@@ -1489,8 +1504,7 @@ void state_handle_data() {
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        context->server->send(503, "application/json",
-                              "{\"success\":false,\"error\":\"OTA upload in progress\"}");
+        send_ota_busy_json(*context->server);
         return;
     }
 
@@ -1501,6 +1515,7 @@ void state_handle_data() {
 
     ArduinoJson::JsonDocument doc;
     doc["success"] = true;
+    doc["ota_busy"] = false;
     doc["uptime_s"] = uptime_s;
     doc["timestamp_ms"] = millis();
     if (now_epoch > 0) {
@@ -1608,8 +1623,7 @@ void settings_handle_update() {
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        context->server->send(503, "application/json",
-                              "{\"success\":false,\"error\":\"OTA upload in progress\"}");
+        send_ota_busy_json(*context->server);
         return;
     }
 
@@ -2132,8 +2146,7 @@ void events_handle_data() {
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        context->server->send(503, "application/json",
-                              "{\"success\":false,\"error\":\"OTA upload in progress\"}");
+        send_ota_busy_json(*context->server);
         return;
     }
 

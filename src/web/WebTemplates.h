@@ -693,6 +693,18 @@ static const char kDiagPageTemplate[] PROGMEM = R"HTML(
             if (el) el.innerHTML = html;
         }
 
+        var diagPollOkDelayMs = 3000;
+        var diagPollRetryDelayMs = 6000;
+        var diagPollRetryMaxMs = 10000;
+        var diagPollTimer = null;
+
+        function scheduleDiagRefresh(delayMs) {
+            if (diagPollTimer) {
+                clearTimeout(diagPollTimer);
+            }
+            diagPollTimer = setTimeout(refreshDiag, delayMs);
+        }
+
         async function refreshDiag() {
             var stamp = document.getElementById('stamp');
             try {
@@ -732,14 +744,18 @@ static const char kDiagPageTemplate[] PROGMEM = R"HTML(
                 }
 
                 if (stamp) stamp.textContent = 'updated ' + new Date().toLocaleTimeString();
+                diagPollRetryDelayMs = 6000;
+                scheduleDiagRefresh(diagPollOkDelayMs);
             } catch (err) {
                 if (stamp) stamp.textContent = 'diag fetch failed: ' + (err && err.message ? err.message : 'error');
                 setRows('otaRows', row('Status', badge('No data', 'err')));
+                var nextRetryMs = diagPollRetryDelayMs;
+                diagPollRetryDelayMs = Math.min(diagPollRetryMaxMs, diagPollRetryDelayMs + 2000);
+                scheduleDiagRefresh(nextRetryMs);
             }
         }
 
         refreshDiag();
-        setInterval(refreshDiag, 3000);
     </script>
 </body>
 </html>

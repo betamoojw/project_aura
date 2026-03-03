@@ -86,7 +86,7 @@ Useful API routes used by the dashboard:
 - `GET /api/state`
 - `GET /api/charts?group=core|gases|pm&window=1h|3h|24h`
 - `GET /api/events`
-- `GET /api/diag`
+- `GET /api/diag` (AP setup mode only)
 - `POST /api/settings`
 - `POST /api/ota`
 
@@ -102,7 +102,7 @@ Useful API routes used by the dashboard:
 
 Quick diagnostics for support:
 - `GET /api/state` should return live JSON with `network.mode`, `network.ip`, and sensor payload.
-- `GET /api/diag` shows Wi-Fi state, IP/hostname, heap, OTA busy state, and recent warnings/errors.
+- `GET /api/diag` (available in AP setup mode) shows Wi-Fi state, IP/hostname, heap, OTA busy state, and recent warnings/errors.
 
 ## Hardware and BOM
 Project Aura is designed around high-quality components to ensure accuracy. If you are sourcing parts yourself,

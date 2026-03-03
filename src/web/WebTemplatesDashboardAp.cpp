@@ -1520,6 +1520,7 @@ const OTA_UPLOAD_MIN_BYTES_PER_SEC = 20 * 1024;
 let deviceClockRef = null;
 let lastStateOkAtMs = 0;
 let lastStateError = '';
+let lastStateOtaBusy = false;
 
 // Settings state
 const settings = {
@@ -1677,7 +1678,7 @@ function updateNetStatusBanner() {
   const modeText = formatMode(network.mode);
   const ip = typeof network.ip === 'string' && network.ip ? network.ip : '--';
   const ageS = secondsSince(lastStateOkAtMs);
-  const remoteOtaBusy = !!(lastStateError && /ota/i.test(lastStateError));
+  const remoteOtaBusy = !!lastStateOtaBusy;
 
   let cls = 'warn';
   let text = 'Connecting to device...';
@@ -1751,13 +1752,23 @@ async function getJson(url, init) {
   const r = await fetch(url, requestInit);
   if (!r.ok) {
     let errorText = 'HTTP ' + r.status + ' for ' + url;
+    let errorCode = '';
+    let otaBusy = false;
     try {
       const payload = await r.json();
       if (payload && typeof payload.error === 'string' && payload.error) {
         errorText = payload.error;
       }
+      if (payload && typeof payload.error_code === 'string' && payload.error_code) {
+        errorCode = payload.error_code;
+      }
+      otaBusy = !!(payload && payload.ota_busy === true);
     } catch (_) {}
-    throw new Error(errorText);
+    const error = new Error(errorText);
+    error.httpStatus = r.status;
+    if (errorCode) error.code = errorCode;
+    if (otaBusy) error.otaBusy = true;
+    throw error;
   }
   return r.json();
 }
@@ -2267,6 +2278,7 @@ async function refreshState() {
   stateCache = payload;
   lastStateOkAtMs = Date.now();
   lastStateError = '';
+  lastStateOtaBusy = !!(payload && payload.ota_busy === true);
 
   // Header clock
   if (isNum(payload && payload.time_epoch_s)) {
@@ -2350,6 +2362,7 @@ async function refreshActive() {
   if (refreshBusy || otaUploadInFlight || otaRestartPending) return;
   refreshBusy = true;
   try { await refreshState(); } catch (error) {
+    lastStateOtaBusy = !!(error && (error.code === 'OTA_BUSY' || error.otaBusy === true));
     lastStateError = (error && error.message) ? error.message : 'State refresh failed.';
     updateNetStatusBanner();
   }
