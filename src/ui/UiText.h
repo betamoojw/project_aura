@@ -131,6 +131,7 @@ inline const char *LabelThemeCustom() { return UiStrings::text(UiStrings::TextId
 inline const char *LabelThemePresets() { return UiStrings::text(UiStrings::TextId::LabelThemePresets); }
 inline const char *LabelThemeExample() { return UiStrings::text(UiStrings::TextId::LabelThemeExample); }
 inline const char *LabelThemeCustomInfo() { return UiStrings::text(UiStrings::TextId::LabelThemeCustomInfo); }
+inline const char *LabelDacQrTextIpLink() { return UiStrings::text(UiStrings::TextId::LabelDacQrTextIpLink); }
 inline const char *LabelAutoNightTitle() { return UiStrings::text(UiStrings::TextId::LabelAutoNightTitle); }
 inline const char *LabelAutoNightHint() { return UiStrings::text(UiStrings::TextId::LabelAutoNightHint); }
 inline const char *LabelAutoNightStartTitle() { return UiStrings::text(UiStrings::TextId::LabelAutoNightStartTitle); }

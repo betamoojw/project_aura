@@ -834,6 +834,7 @@ typedef struct _objects_t {
     lv_obj_t *label_dac_qr_text;
     lv_obj_t *qrcode_dac_portal;
     lv_obj_t *label_dac_qr_link;
+    lv_obj_t *label_dac_qr_text_ip_link;
     lv_obj_t *container_dac_settings_header;
     lv_obj_t *label_dac_settings_title;
     lv_obj_t *btn_dac_settings_back;

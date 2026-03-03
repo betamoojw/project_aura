@@ -8,11 +8,13 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <WiFi.h>
 
 #include "core/Logger.h"
 #include "modules/FanControl.h"
 #include "modules/NetworkManager.h"
 #include "modules/StorageManager.h"
+#include "ui/UiText.h"
 #include "ui/ui.h"
 
 namespace {
@@ -376,6 +378,20 @@ void UiController::update_dac_ui(uint32_t now_ms) {
         } else {
             safe_label_set_text(objects.label_dac_qr_link, "Enable AP or connect to Wi-Fi");
         }
+    }
+    if (objects.label_dac_qr_text_ip_link) {
+        String ip_url = "http://<device-ip>/dac";
+        if (wifi_connected) {
+            const IPAddress ip = WiFi.localIP();
+            if (ip[0] != 0 || ip[1] != 0 || ip[2] != 0 || ip[3] != 0) {
+                ip_url = "http://";
+                ip_url += ip.toString();
+                ip_url += "/dac";
+            }
+        }
+        String ip_link_text = UiText::LabelDacQrTextIpLink();
+        ip_link_text.replace("{{IP_URL}}", ip_url);
+        safe_label_set_text(objects.label_dac_qr_text_ip_link, ip_link_text.c_str());
     }
     if (objects.qrcode_dac_portal) {
         if (!dac_url.isEmpty()) {

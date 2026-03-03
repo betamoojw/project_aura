@@ -4502,14 +4502,14 @@ void create_screen_page_theme() {
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_text_line_space(obj, 7, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open http://aura.local/theme in \nbrowser or scan QR code.\n- Save by pressing Back");
+                            lv_label_set_text(obj, "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open http://aura.local/theme in \nbrowser or scan QR code.\nIf .local does not work on your network,\n open http://<device-ip>/theme instead.\n- Save by pressing Back");
                         }
                         {
                             // qrcode_theme_custom
-                            lv_obj_t *obj = lv_qrcode_create(parent_obj, 195, lv_color_hex(0xff000000), lv_color_hex(0xffc2c2c2));
+                            lv_obj_t *obj = lv_qrcode_create(parent_obj, 170, lv_color_hex(0xff000000), lv_color_hex(0xffc2c2c2));
                             objects.qrcode_theme_custom = obj;
-                            lv_obj_set_pos(obj, 301, 172);
-                            lv_obj_set_size(obj, 195, 195);
+                            lv_obj_set_pos(obj, 329, 210);
+                            lv_obj_set_size(obj, 170, 170);
                             lv_qrcode_update(obj, "http://aura.local/theme", 23);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_ADV_HITTEST);
                         }
@@ -12207,6 +12207,18 @@ void create_screen_page_dac_settings() {
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_label_set_text(obj, "http://192.168.4.1/dac");
+                        }
+                        {
+                            // label_dac_qr_text_ip_link
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            objects.label_dac_qr_text_ip_link = obj;
+                            lv_obj_set_pos(obj, 15, 190);
+                            lv_obj_set_size(obj, 433, LV_SIZE_CONTENT);
+                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
+                            add_style_style_text_primary(obj);
+                            lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "If .local does not work on your network, open http://<device-ip>/dac instead.");
                         }
                     }
                 }
