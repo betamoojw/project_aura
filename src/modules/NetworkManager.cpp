@@ -21,6 +21,7 @@ AuraNetworkManager *g_network = nullptr;
 const uint32_t kInitialWifiConnectDelayMs = 1000;
 constexpr uint32_t kWifiInternalHeapMinFreeForStart = 32UL * 1024UL;
 constexpr uint32_t kWifiInternalHeapMinLargestForStart = 16UL * 1024UL;
+constexpr uint32_t kWifiScanTimeoutMs = 20000UL;
 
 bool has_internal_heap_for_wifi_start(uint32_t &free_bytes, uint32_t &largest_block_bytes) {
     free_bytes = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -355,6 +356,11 @@ void AuraNetworkManager::startScan() {
         wifi_build_scan_items(ret);
         WiFi.scanDelete();
         wifi_scan_in_progress_ = false;
+        wifi_scan_started_ms_ = 0;
+    } else {
+        wifi_scan_in_progress_ = false;
+        wifi_scan_started_ms_ = 0;
+        LOGW("WiFi", "scan start failed: %d", ret);
     }
 }
 
@@ -438,14 +444,25 @@ void AuraNetworkManager::poll() {
             if (ota_busy) {
                 stopScan();
             } else {
-                int n = WiFi.scanComplete();
-                if (n >= 0) {
-                    wifi_build_scan_items(n);
-                    WiFi.scanDelete();
-                    wifi_scan_in_progress_ = false;
-                } else if (n == WIFI_SCAN_FAILED) {
-                    wifi_scan_options_.clear();
-                    wifi_scan_in_progress_ = false;
+                const uint32_t now_ms = millis();
+                if (wifi_scan_started_ms_ != 0 &&
+                    static_cast<uint32_t>(now_ms - wifi_scan_started_ms_) > kWifiScanTimeoutMs) {
+                    LOGW("WiFi", "scan timeout after %u ms, aborting",
+                         static_cast<unsigned>(kWifiScanTimeoutMs));
+                    stopScan();
+                }
+                if (wifi_scan_in_progress_) {
+                    int n = WiFi.scanComplete();
+                    if (n >= 0) {
+                        wifi_build_scan_items(n);
+                        WiFi.scanDelete();
+                        wifi_scan_in_progress_ = false;
+                        wifi_scan_started_ms_ = 0;
+                    } else if (n == WIFI_SCAN_FAILED) {
+                        wifi_scan_options_.clear();
+                        wifi_scan_in_progress_ = false;
+                        wifi_scan_started_ms_ = 0;
+                    }
                 }
             }
         }

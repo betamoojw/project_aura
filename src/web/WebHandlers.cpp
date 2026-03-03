@@ -52,6 +52,7 @@ constexpr size_t kEventsApiMaxEntries = 48;
 constexpr size_t kWebDisplayNameMaxLen = 32;
 constexpr size_t kWifiScanMaxItems = 15;
 constexpr size_t kDiagMaxErrorItems = 12;
+constexpr uint32_t kDacTimerAllowedValues[] = {0U, 30U, 60U, 300U, 900U, 1800U, 3600U};
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
     "\"error_code\":\"OTA_BUSY\",\"ota_busy\":true}";
@@ -128,6 +129,24 @@ bool persist_dac_auto_mode(StorageManager &storage, bool enabled) {
         return false;
     }
     return true;
+}
+
+bool parse_dac_timer_seconds(const ArduinoJson::JsonVariantConst &value, uint32_t &out_seconds) {
+    if (!value.is<int>() && !value.is<unsigned int>()) {
+        return false;
+    }
+    const int32_t raw_seconds = value.as<int32_t>();
+    if (raw_seconds < 0) {
+        return false;
+    }
+    const uint32_t seconds = static_cast<uint32_t>(raw_seconds);
+    for (size_t i = 0; i < (sizeof(kDacTimerAllowedValues) / sizeof(kDacTimerAllowedValues[0])); ++i) {
+        if (kDacTimerAllowedValues[i] == seconds) {
+            out_seconds = seconds;
+            return true;
+        }
+    }
+    return false;
 }
 
 uint16_t chart_window_points(const String &window_arg, const char *&window_name) {
@@ -1148,6 +1167,10 @@ void theme_handle_apply() {
         return;
     }
     WebServer &server = *context->server;
+    if (WebHandlersIsOtaBusy()) {
+        send_ota_busy_json(server);
+        return;
+    }
     bool wifi_ready = context->wifi_is_connected && context->wifi_is_connected();
     if (!wifi_ready) {
         server.send(403, "text/plain", "WiFi required");
@@ -1340,7 +1363,12 @@ void dac_handle_action() {
     } else if (action == "set_manual_step") {
         fan.setManualStep(doc["step"] | 1);
     } else if (action == "set_timer") {
-        fan.setTimerSeconds(doc["seconds"] | 0);
+        uint32_t timer_seconds = 0;
+        if (!parse_dac_timer_seconds(doc["seconds"], timer_seconds)) {
+            server.send(400, "text/plain", "Invalid timer value");
+            return;
+        }
+        fan.setTimerSeconds(timer_seconds);
     } else if (action == "start") {
         fan.requestStart();
     } else if (action == "stop") {
@@ -1873,6 +1901,10 @@ void ota_handle_upload() {
     HTTPUpload &upload = server.upload();
 
     if (upload.status == UPLOAD_FILE_START) {
+        if (WebHandlersIsOtaBusy()) {
+            LOGW("OTA", "reject upload start while OTA is busy");
+            return;
+        }
         ota_reset_state();
         g_ota_upload_seen = true;
         g_ota_upload_active = true;
@@ -2046,6 +2078,10 @@ void ota_handle_update() {
     }
 
     WebServer &server = *context->server;
+    if (WebHandlersIsOtaBusy() && !g_ota_upload_success) {
+        send_ota_busy_json(server);
+        return;
+    }
     const bool has_upload = g_ota_upload_seen;
     const bool success = has_upload && g_ota_upload_success && g_ota_error.isEmpty();
     const size_t written_size = g_ota_written_size;
