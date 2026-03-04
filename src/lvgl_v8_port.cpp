@@ -48,7 +48,8 @@ static volatile uint32_t lvgl_diag_vsync_count = 0;
 static volatile uint32_t lvgl_diag_vsync_last_ms = 0;
 static volatile uint32_t lvgl_diag_lock_fail_count = 0;
 static volatile uint32_t lvgl_diag_touch_read_error_count = 0;
-static constexpr uint32_t LVGL_TOUCH_POLL_INTERVAL_MS = 8;
+static constexpr uint32_t LVGL_TOUCH_POLL_INTERVAL_MS = 12;
+static constexpr uint32_t LVGL_TOUCH_READ_RETRY_DELAY_MS = 2;
 static constexpr uint32_t LVGL_TOUCH_ERROR_STREAK_WINDOW_MS = 1200;
 static constexpr uint32_t LVGL_TOUCH_BOOT_QUIET_MS = 5000;
 static constexpr uint32_t LVGL_TOUCH_ERROR_BLOCK_MS_BASE = 400;
@@ -114,6 +115,21 @@ static inline void lvgl_touch_fill_from_cache(lv_indev_data_t *data)
         data->point.y = lvgl_touch_cached_point.y;
     }
     data->state = lvgl_touch_cached_state;
+}
+
+static int lvgl_touch_read_points_with_retry(Touch *tp, TouchPoint *point)
+{
+    if (tp == nullptr) {
+        return -1;
+    }
+
+    int result = tp->readPoints(point, 1, 0);
+    if (result >= 0) {
+        return result;
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(LVGL_TOUCH_READ_RETRY_DELAY_MS));
+    return tp->readPoints(point, 1, 0);
 }
 
 static inline void lvgl_touch_note_success()
@@ -900,7 +916,7 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
     }
 
     if (lvgl_touch_wake_probe_enabled) {
-        int wake_probe = tp->readPoints(&point, 1, 0);
+        int wake_probe = lvgl_touch_read_points_with_retry(tp, &point);
         if (wake_probe > 0) {
             lvgl_touch_wake_pending = true;
             lvgl_touch_note_success();
@@ -926,7 +942,7 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
     // After wake block ends, require a clean release first. This avoids
     // turning a wake touch into an accidental click on a UI control.
     if (lvgl_touch_wait_release_after_block) {
-        int release_probe = tp->readPoints(&point, 1, 0);
+        int release_probe = lvgl_touch_read_points_with_retry(tp, &point);
         if (release_probe <= 0) {
             lvgl_touch_wait_release_after_block = false;
             if (release_probe < 0) {
@@ -948,7 +964,7 @@ static void touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 
     /* Read data from touch controller */
     lvgl_touch_last_sample_ms = now_ms;
-    int read_touch_result = tp->readPoints(&point, 1, 0);
+    int read_touch_result = lvgl_touch_read_points_with_retry(tp, &point);
     if (read_touch_result > 0) {
         lvgl_touch_note_success();
         lvgl_touch_cached_point = point;
