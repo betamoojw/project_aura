@@ -1612,6 +1612,11 @@ static const char kThemePageTemplate[] PROGMEM = R"HTML(
       applyBtn: document.getElementById('apply-btn'),
       toast: document.getElementById('toast')
     };
+    const THEME_STATE_MAX_LOAD_RETRIES = 8;
+    const THEME_STATE_RETRY_MS = 1200;
+    let themeStateLoaded = false;
+    let themeStateLoadAttempts = 0;
+    let themeStateLoadRetryTimer = null;
 
     const normalizeHex = (v) => {
       if (!v) return "#000000";
@@ -1690,7 +1695,32 @@ static const char kThemePageTemplate[] PROGMEM = R"HTML(
       setTimeout(() => elements.toast.classList.remove('visible'), 3000);
     };
 
+    const setApplyButtonReady = (ready) => {
+      if (!elements.applyBtn) return;
+      elements.applyBtn.disabled = !ready;
+      elements.applyBtn.innerText = ready ? "Apply & Sync Changes" : "Loading theme...";
+    };
+
+    const scheduleThemeStateRetry = (lastErrorMessage) => {
+      if (themeStateLoaded) return;
+      if (themeStateLoadAttempts >= THEME_STATE_MAX_LOAD_RETRIES) {
+        showToast(lastErrorMessage || "Failed to load current theme. Refresh page and retry.", true);
+        return;
+      }
+      if (themeStateLoadRetryTimer) {
+        clearTimeout(themeStateLoadRetryTimer);
+      }
+      themeStateLoadRetryTimer = setTimeout(() => {
+        themeStateLoadRetryTimer = null;
+        loadThemeState();
+      }, THEME_STATE_RETRY_MS);
+    };
+
     elements.applyBtn.addEventListener('click', async () => {
+      if (!themeStateLoaded) {
+        showToast("Theme state is still loading. Please wait.", true);
+        return;
+      }
       elements.applyBtn.disabled = true;
       const originalText = elements.applyBtn.innerText;
       elements.applyBtn.innerText = "Synchronizing...";
@@ -1733,22 +1763,47 @@ static const char kThemePageTemplate[] PROGMEM = R"HTML(
       } catch (_) {
         showToast("Theme sync failed. Check connection and retry.", true);
       } finally {
-        elements.applyBtn.disabled = false;
+        elements.applyBtn.disabled = !themeStateLoaded;
         elements.applyBtn.innerText = originalText;
       }
     });
 
     const loadThemeState = async () => {
+      if (themeStateLoaded) return;
+      themeStateLoadAttempts += 1;
       try {
         const res = await fetch("/theme/state", { cache: "no-store" });
-        if (!res.ok) return;
+        if (!res.ok) {
+          let message = "Failed to load current theme (HTTP " + res.status + ")";
+          try {
+            const body = await res.json();
+            if (body && typeof body.error === "string" && body.error) {
+              message = body.error;
+            }
+          } catch (_) {}
+          scheduleThemeStateRetry(message);
+          return;
+        }
         const body = await res.json();
-        if (!body || body.success !== true) return;
+        if (!body || body.success !== true) {
+          scheduleThemeStateRetry("Invalid theme state response");
+          return;
+        }
         applyRemoteState(body);
+        themeStateLoaded = true;
+        if (themeStateLoadRetryTimer) {
+          clearTimeout(themeStateLoadRetryTimer);
+          themeStateLoadRetryTimer = null;
+        }
+        setApplyButtonReady(true);
       } catch (_) {}
+      if (!themeStateLoaded) {
+        scheduleThemeStateRetry("Failed to load current theme. Refresh page and retry.");
+      }
       render();
     };
 
+    setApplyButtonReady(false);
     render();
     loadThemeState();
   </script>
