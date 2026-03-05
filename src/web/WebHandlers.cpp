@@ -55,14 +55,14 @@ constexpr size_t kEventsApiMaxEntries = 48;
 constexpr size_t kWebDisplayNameMaxLen = 32;
 constexpr size_t kWifiScanMaxItems = 15;
 constexpr size_t kDiagMaxErrorItems = 12;
-constexpr size_t kHttpStreamChunkSize = 1460;
+constexpr size_t kHttpStreamChunkSize = 512;
 constexpr uint16_t kHttpStreamMaxZeroWrites = 2048;
 constexpr uint8_t kHttpStreamYieldMs = 1;
 constexpr uint8_t kHttpStreamRetryDelayFastMs = 1;
 constexpr uint8_t kHttpStreamRetryDelayMediumMs = 2;
 constexpr uint8_t kHttpStreamRetryDelaySlowMs = 5;
-constexpr uint32_t kHttpStreamMaxDurationMs = 45000;
-constexpr uint32_t kHttpStreamNoProgressTimeoutMs = 10000;
+constexpr uint32_t kHttpStreamMaxDurationMs = 60000;
+constexpr uint32_t kHttpStreamNoProgressTimeoutMs = 20000;
 constexpr uint32_t kHttpStreamSlowWriteWarnMs = 200;
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
