@@ -29,14 +29,14 @@ public:
     bool isConfigLoaded() const { return config_loaded_; }
 
     void loadWiFiSettings(String &ssid, String &pass, bool &enabled);
-    void saveWiFiSettings(const String &ssid, const String &pass, bool enabled);
+    bool saveWiFiSettings(const String &ssid, const String &pass, bool enabled);
     void saveWiFiEnabled(bool enabled);
     void clearWiFiCredentials();
 
     void loadMqttSettings(String &host, uint16_t &port, String &user, String &pass,
                           String &base_topic, String &device_name,
                           bool &user_enabled, bool &discovery, bool &anonymous);
-    void saveMqttSettings(const String &host, uint16_t port, const String &user, const String &pass,
+    bool saveMqttSettings(const String &host, uint16_t port, const String &user, const String &pass,
                           const String &base_topic, const String &device_name, bool discovery,
                           bool anonymous);
     void saveMqttEnabled(bool enabled);
@@ -50,6 +50,10 @@ public:
     bool removeBlob(const char *path);
     bool loadText(const char *path, String &out) const;
     bool saveTextAtomic(const char *path, const String &text);
+
+#ifdef UNIT_TEST
+    static void setTestForceSaveFailure(bool enabled);
+#endif
 
     static constexpr const char *kConfigPath = "/config.json";
     static constexpr const char *kLastGoodPath = "/config.last_good.json";

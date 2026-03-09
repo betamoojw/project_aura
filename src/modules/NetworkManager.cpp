@@ -14,6 +14,7 @@
 #include "core/Logger.h"
 #include "config/AppConfig.h"
 #include "ui/ThemeManager.h"
+#include "web/WebInputValidation.h"
 #include "web/WebTemplates.h"
 
 namespace {
@@ -114,8 +115,9 @@ void AuraNetworkManager::begin(StorageManager &storage) {
 
     storage_->loadWiFiSettings(wifi_ssid_, wifi_pass_, wifi_enabled_);
     wifi_enabled_dirty_ = false;
-    if (!wifi_ssid_.isEmpty() && !wifi_is_ascii_printable(wifi_ssid_, 32)) {
-        LOGW("WiFi", "SSID invalid, clearing saved credentials");
+    if (!wifi_ssid_.isEmpty() &&
+        !WebInputValidation::isWifiSsidValid(wifi_ssid_, WebInputValidation::kWifiSsidMaxBytes)) {
+        LOGW("WiFi", "SSID invalid length, clearing saved credentials");
         storage_->clearWiFiCredentials();
         wifi_ssid_ = "";
         wifi_pass_ = "";

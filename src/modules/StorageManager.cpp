@@ -22,6 +22,7 @@ namespace {
 
 #ifdef UNIT_TEST
 std::map<std::string, std::vector<uint8_t>> g_blob_store;
+bool g_force_save_failure = false;
 #endif
 
 #ifndef UNIT_TEST
@@ -108,6 +109,7 @@ void StorageManager::begin(BootAction action) {
     mounted_ = false;
     config_loaded_ = false;
 #ifdef UNIT_TEST
+    g_force_save_failure = false;
     g_blob_store.clear();
     if (action == BootAction::SafeRollback) {
         restoreLastGood();
@@ -237,14 +239,17 @@ void StorageManager::loadWiFiSettings(String &ssid, String &pass, bool &enabled)
     enabled = config_.wifi_enabled;
 }
 
-void StorageManager::saveWiFiSettings(const String &ssid, const String &pass, bool enabled) {
+bool StorageManager::saveWiFiSettings(const String &ssid, const String &pass, bool enabled) {
+    const Config::StoredConfig previous = config_;
     config_.wifi_ssid = ssid;
     config_.wifi_pass = pass;
     config_.wifi_enabled = enabled;
     if (!saveConfig(true)) {
-        requestSave();
+        config_ = previous;
         LOGE("Storage", "failed to persist WiFi settings");
+        return false;
     }
+    return true;
 }
 
 void StorageManager::saveWiFiEnabled(bool enabled) {
@@ -278,9 +283,10 @@ void StorageManager::loadMqttSettings(String &host, uint16_t &port, String &user
     anonymous = config_.mqtt_anonymous;
 }
 
-void StorageManager::saveMqttSettings(const String &host, uint16_t port, const String &user,
+bool StorageManager::saveMqttSettings(const String &host, uint16_t port, const String &user,
                                       const String &pass, const String &base_topic,
                                       const String &device_name, bool discovery, bool anonymous) {
+    const Config::StoredConfig previous = config_;
     config_.mqtt_host = host;
     config_.mqtt_port = port;
     config_.mqtt_user = user;
@@ -290,9 +296,11 @@ void StorageManager::saveMqttSettings(const String &host, uint16_t port, const S
     config_.mqtt_discovery = discovery;
     config_.mqtt_anonymous = anonymous;
     if (!saveConfig(true)) {
-        requestSave();
+        config_ = previous;
         LOGE("Storage", "failed to persist MQTT settings");
+        return false;
     }
+    return true;
 }
 
 void StorageManager::saveMqttEnabled(bool enabled) {
@@ -657,6 +665,9 @@ bool StorageManager::saveConfigInternal() {
     lkg_start_ms_ = last_save_ms_;
     return true;
 #else
+    if (g_force_save_failure) {
+        return false;
+    }
     last_save_ms_ = millis();
     dirty_ = false;
     lkg_pending_ = true;
@@ -664,6 +675,12 @@ bool StorageManager::saveConfigInternal() {
     return true;
 #endif
 }
+
+#ifdef UNIT_TEST
+void StorageManager::setTestForceSaveFailure(bool enabled) {
+    g_force_save_failure = enabled;
+}
+#endif
 
 void StorageManager::markDirty() {
     dirty_ = true;

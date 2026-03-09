@@ -30,6 +30,7 @@
 #include "modules/FanControl.h"
 #include "modules/SensorManager.h"
 #include "modules/StorageManager.h"
+#include "web/WebInputValidation.h"
 #include "web/OtaDeferredRestart.h"
 #include "web/WebTemplates.h"
 #include "ui/UiController.h"
@@ -428,6 +429,11 @@ void send_no_store_headers(WebServer &server) {
     server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
     server.sendHeader("Pragma", "no-cache");
     server.sendHeader("Expires", "0");
+}
+
+void send_no_store_text(WebServer &server, int status_code, const char *message) {
+    send_no_store_headers(server);
+    server.send(status_code, "text/plain", message);
 }
 
 void send_immutable_headers(WebServer &server) {
@@ -1051,20 +1057,6 @@ void WebHandlersPollDeferred() {
     }
 }
 
-bool wifi_is_ascii_printable(const String &value, size_t max_len) {
-    size_t len = value.length();
-    if (len == 0 || len > max_len) {
-        return false;
-    }
-    for (size_t i = 0; i < len; i++) {
-        uint8_t c = static_cast<uint8_t>(value[i]);
-        if (c < 32 || c > 126) {
-            return false;
-        }
-    }
-    return true;
-}
-
 String wifi_label_safe(const String &value) {
     if (value.isEmpty()) {
         return "---";
@@ -1285,27 +1277,28 @@ void wifi_handle_save() {
     }
     WebServer &server = *context->server;
     if (!context->wifi_is_ap_mode || !context->wifi_is_ap_mode()) {
-        server.send(409, "text/plain", "WiFi save allowed only in AP setup mode");
+        send_no_store_text(server, 409, "WiFi save allowed only in AP setup mode");
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        server.send(503, "text/plain", "OTA in progress");
+        send_no_store_text(server, 503, "OTA in progress");
         return;
     }
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
-    ssid.trim();
-    pass.trim();
     if (ssid.isEmpty()) {
-        server.send(400, "text/plain", "SSID required");
+        send_no_store_text(server, 400, "SSID required");
         return;
     }
-    if (!wifi_is_ascii_printable(ssid, 32)) {
-        server.send(400, "text/plain", "SSID must be ASCII (32 chars max)");
+    if (!WebInputValidation::isWifiSsidValid(ssid, WebInputValidation::kWifiSsidMaxBytes)) {
+        send_no_store_text(server, 400, "SSID must be 1-32 bytes");
         return;
     }
 
-    context->storage->saveWiFiSettings(ssid, pass, true);
+    if (!context->storage->saveWiFiSettings(ssid, pass, true)) {
+        send_no_store_text(server, 500, "Failed to persist WiFi settings");
+        return;
+    }
     if (context->wifi_ssid) *context->wifi_ssid = ssid;
     if (context->wifi_pass) *context->wifi_pass = pass;
     if (context->wifi_enabled) *context->wifi_enabled = true;
@@ -1543,15 +1536,15 @@ void mqtt_handle_save() {
     }
     WebServer &server = *context->server;
     if (!context->wifi_is_connected || !context->wifi_is_connected()) {
-        server.send(404, "text/plain", "Not found");
+        send_no_store_text(server, 404, "Not found");
         return;
     }
     if (!context->mqtt_ui_open || !*context->mqtt_ui_open) {
-        server.send(409, "text/plain", "Open MQTT screen to enable");
+        send_no_store_text(server, 409, "Open MQTT screen to enable");
         return;
     }
     if (WebHandlersIsOtaBusy()) {
-        server.send(503, "text/plain", "OTA in progress");
+        send_no_store_text(server, 503, "OTA in progress");
         return;
     }
 
@@ -1566,46 +1559,45 @@ void mqtt_handle_save() {
 
     host.trim();
     port_str.trim();
-    user.trim();
-    pass.trim();
     name.trim();
     topic.trim();
 
     if (host.isEmpty()) {
-        server.send(400, "text/plain", "Broker address required");
+        send_no_store_text(server, 400, "Broker address required");
         return;
     }
 
     if (name.isEmpty()) {
-        server.send(400, "text/plain", "Device name required");
+        send_no_store_text(server, 400, "Device name required");
         return;
     }
 
     if (topic.isEmpty()) {
-        server.send(400, "text/plain", "Base topic required");
+        send_no_store_text(server, 400, "Base topic required");
         return;
     }
 
     if (has_control_chars(host) || has_control_chars(user) ||
         has_control_chars(pass) || has_control_chars(name) ||
         has_control_chars(topic)) {
-        server.send(400, "text/plain", "Fields contain unsupported control characters");
+        send_no_store_text(server, 400, "Fields contain unsupported control characters");
         return;
     }
 
     if (mqtt_topic_has_wildcards(topic)) {
-        server.send(400, "text/plain", "Base topic must not include MQTT wildcards (+ or #)");
+        send_no_store_text(server, 400, "Base topic must not include MQTT wildcards (+ or #)");
         return;
     }
 
-    uint16_t port = port_str.toInt();
-    if (port == 0 || port > 65535) {
-        port = Config::MQTT_DEFAULT_PORT;
+    uint16_t port = Config::MQTT_DEFAULT_PORT;
+    if (!WebInputValidation::parsePortOrDefault(port_str, Config::MQTT_DEFAULT_PORT, port)) {
+        send_no_store_text(server, 400, "Port must be in range 1-65535");
+        return;
     }
 
     if (!anonymous && (user.isEmpty() || pass.isEmpty())) {
-        server.send(400, "text/plain",
-                    "Username and password are required when anonymous mode is disabled");
+        send_no_store_text(server, 400,
+                           "Username and password are required when anonymous mode is disabled");
         return;
     }
 
@@ -1622,7 +1614,10 @@ void mqtt_handle_save() {
         topic.remove(topic.length() - 1);
     }
 
-    context->storage->saveMqttSettings(host, port, user, pass, topic, name, discovery, anonymous);
+    if (!context->storage->saveMqttSettings(host, port, user, pass, topic, name, discovery, anonymous)) {
+        send_no_store_text(server, 500, "Failed to persist MQTT settings");
+        return;
+    }
 
     if (context->mqtt_host) *context->mqtt_host = host;
     if (context->mqtt_port) *context->mqtt_port = port;
@@ -1747,33 +1742,36 @@ void theme_handle_apply() {
         return;
     }
     WebServer &server = *context->server;
+    auto send_theme_apply_error = [&server](int status_code, const char *message) {
+        send_no_store_text(server, status_code, message);
+    };
     if (WebHandlersIsOtaBusy()) {
         send_ota_busy_json(server);
         return;
     }
     bool wifi_ready = context->wifi_is_connected && context->wifi_is_connected();
     if (!wifi_ready) {
-        server.send(403, "text/plain", "WiFi required");
+        send_theme_apply_error(403, "WiFi required");
         return;
     }
     if (!context->theme_ui_open || !*context->theme_ui_open) {
-        server.send(409, "text/plain", "Open Theme screen to enable");
+        send_theme_apply_error(409, "Open Theme screen to enable");
         return;
     }
     if (!context->theme_manager->isCustomScreenOpen()) {
-        server.send(409, "text/plain", "Open Custom Theme screen to enable");
+        send_theme_apply_error(409, "Open Custom Theme screen to enable");
         return;
     }
     String body = server.arg("plain");
     if (body.isEmpty()) {
-        server.send(400, "text/plain", "Missing body");
+        send_theme_apply_error(400, "Missing body");
         return;
     }
 
     ArduinoJson::JsonDocument doc;
     ArduinoJson::DeserializationError err = ArduinoJson::deserializeJson(doc, body);
     if (err) {
-        server.send(400, "text/plain", "Invalid JSON");
+        send_theme_apply_error(400, "Invalid JSON");
         return;
     }
 
@@ -1814,15 +1812,16 @@ void theme_handle_apply() {
     colors.shadow_enabled = true;
 
     if (!lvgl_port_lock(-1)) {
-        server.send(503, "text/plain", "LVGL unavailable");
+        send_theme_apply_error(503, "LVGL unavailable");
         return;
     }
     context->theme_manager->applyPreviewCustom(colors);
     if (!lvgl_port_unlock()) {
-        server.send(500, "text/plain", "LVGL unlock failed");
+        send_theme_apply_error(500, "LVGL unlock failed");
         return;
     }
 
+    send_no_store_headers(server);
     server.send(200, "text/plain", "OK");
 }
 
@@ -1940,17 +1939,20 @@ void dac_handle_action() {
     }
     WebServer &server = *context->server;
     FanControl &fan = *context->fan_control;
+    auto send_dac_action_error = [&server](int status_code, const char *message) {
+        send_no_store_text(server, status_code, message);
+    };
 
     String body = server.arg("plain");
     if (body.isEmpty()) {
-        server.send(400, "text/plain", "Missing body");
+        send_dac_action_error(400, "Missing body");
         return;
     }
 
     ArduinoJson::JsonDocument doc;
     ArduinoJson::DeserializationError err = ArduinoJson::deserializeJson(doc, body);
     if (err) {
-        server.send(400, "text/plain", "Invalid JSON");
+        send_dac_action_error(400, "Invalid JSON");
         return;
     }
 
@@ -1963,11 +1965,11 @@ void dac_handle_action() {
         } else if (mode == "auto") {
             auto_mode = true;
         } else {
-            server.send(400, "text/plain", "Invalid mode");
+            send_dac_action_error(400, "Invalid mode");
             return;
         }
         if (!persist_dac_auto_mode(*context->storage, auto_mode)) {
-            server.send(500, "text/plain", "Failed to persist DAC mode");
+            send_dac_action_error(500, "Failed to persist DAC mode");
             return;
         }
         fan.setMode(auto_mode ? FanControl::Mode::Auto : FanControl::Mode::Manual);
@@ -1976,7 +1978,7 @@ void dac_handle_action() {
     } else if (action == "set_timer") {
         uint32_t timer_seconds = 0;
         if (!parse_dac_timer_seconds(doc["seconds"], timer_seconds)) {
-            server.send(400, "text/plain", "Invalid timer value");
+            send_dac_action_error(400, "Invalid timer value");
             return;
         }
         fan.setTimerSeconds(timer_seconds);
@@ -1986,12 +1988,12 @@ void dac_handle_action() {
         fan.requestStop();
     } else if (action == "start_auto") {
         if (!persist_dac_auto_mode(*context->storage, true)) {
-            server.send(500, "text/plain", "Failed to persist DAC auto mode");
+            send_dac_action_error(500, "Failed to persist DAC auto mode");
             return;
         }
         fan.requestAutoStart();
     } else {
-        server.send(400, "text/plain", "Unsupported action");
+        send_dac_action_error(400, "Unsupported action");
         return;
     }
 
@@ -2010,17 +2012,20 @@ void dac_handle_auto() {
     }
     WebServer &server = *context->server;
     FanControl &fan = *context->fan_control;
+    auto send_dac_auto_error = [&server](int status_code, const char *message) {
+        send_no_store_text(server, status_code, message);
+    };
 
     String body = server.arg("plain");
     if (body.isEmpty()) {
-        server.send(400, "text/plain", "Missing body");
+        send_dac_auto_error(400, "Missing body");
         return;
     }
 
     ArduinoJson::JsonDocument doc;
     ArduinoJson::DeserializationError err = ArduinoJson::deserializeJson(doc, body);
     if (err) {
-        server.send(400, "text/plain", "Invalid JSON");
+        send_dac_auto_error(400, "Invalid JSON");
         return;
     }
 
@@ -2031,18 +2036,18 @@ void dac_handle_auto() {
         source = root["auto"].as<ArduinoJson::JsonObjectConst>();
     }
     if (!DacAutoConfigJson::readJson(source, config)) {
-        server.send(400, "text/plain", "Invalid auto payload");
+        send_dac_auto_error(400, "Invalid auto payload");
         return;
     }
 
     const bool rearm = root["rearm"] | false;
     String serialized = DacAutoConfigJson::serialize(config);
     if (!context->storage->saveTextAtomic(StorageManager::kDacAutoPath, serialized)) {
-        server.send(500, "text/plain", "Failed to persist auto config");
+        send_dac_auto_error(500, "Failed to persist auto config");
         return;
     }
     if (rearm && !persist_dac_auto_mode(*context->storage, true)) {
-        server.send(500, "text/plain", "Failed to persist DAC auto mode");
+        send_dac_auto_error(500, "Failed to persist DAC auto mode");
         return;
     }
 
@@ -2136,7 +2141,6 @@ void charts_handle_data() {
 
     String json;
     serializeJson(doc, json);
-    send_no_store_headers(server);
     send_no_store_headers(server);
     server.send(200, "application/json", json);
 }
@@ -2272,20 +2276,23 @@ void settings_handle_update() {
     }
 
     WebServer &server = *context->server;
+    auto send_settings_error = [&server](int status_code, const char *message) {
+        send_no_store_text(server, status_code, message);
+    };
     if (!context->ui_controller) {
-        server.send(503, "text/plain", "UI controller unavailable");
+        send_settings_error(503, "UI controller unavailable");
         return;
     }
     String body = server.arg("plain");
     if (body.isEmpty()) {
-        server.send(400, "text/plain", "Missing body");
+        send_settings_error(400, "Missing body");
         return;
     }
 
     ArduinoJson::JsonDocument doc;
     ArduinoJson::DeserializationError err = ArduinoJson::deserializeJson(doc, body);
     if (err) {
-        server.send(400, "text/plain", "Invalid JSON");
+        send_settings_error(400, "Invalid JSON");
         return;
     }
 
@@ -2297,13 +2304,13 @@ void settings_handle_update() {
     ArduinoJson::JsonVariantConst night_mode_var = doc["night_mode"];
     if (!night_mode_var.isNull()) {
         if (!night_mode_var.is<bool>()) {
-            server.send(400, "text/plain", "night_mode must be bool");
+            send_settings_error(400, "night_mode must be bool");
             return;
         }
         has_night_mode = true;
         requested_night_mode = night_mode_var.as<bool>();
         if (ui.webNightModeLocked()) {
-            server.send(409, "text/plain", "night_mode is locked by auto mode");
+            send_settings_error(409, "night_mode is locked by auto mode");
             return;
         }
     }
@@ -2313,7 +2320,7 @@ void settings_handle_update() {
     ArduinoJson::JsonVariantConst backlight_var = doc["backlight_on"];
     if (!backlight_var.isNull()) {
         if (!backlight_var.is<bool>()) {
-            server.send(400, "text/plain", "backlight_on must be bool");
+            send_settings_error(400, "backlight_on must be bool");
             return;
         }
         has_backlight = true;
@@ -2325,7 +2332,7 @@ void settings_handle_update() {
     ArduinoJson::JsonVariantConst units_c_var = doc["units_c"];
     if (!units_c_var.isNull()) {
         if (!units_c_var.is<bool>()) {
-            server.send(400, "text/plain", "units_c must be bool");
+            send_settings_error(400, "units_c must be bool");
             return;
         }
         has_units_c = true;
@@ -2341,14 +2348,14 @@ void settings_handle_update() {
     float requested_hum_offset = ui.webHumOffset();
     if (has_temp_offset) {
         if (!temp_offset_var.is<float>() && !temp_offset_var.is<int>()) {
-            server.send(400, "text/plain", "temp_offset must be number");
+            send_settings_error(400, "temp_offset must be number");
             return;
         }
         requested_temp_offset = temp_offset_var.as<float>();
     }
     if (has_hum_offset) {
         if (!hum_offset_var.is<float>() && !hum_offset_var.is<int>()) {
-            server.send(400, "text/plain", "hum_offset must be number");
+            send_settings_error(400, "hum_offset must be number");
             return;
         }
         requested_hum_offset = hum_offset_var.as<float>();
@@ -2359,22 +2366,22 @@ void settings_handle_update() {
     ArduinoJson::JsonVariantConst display_name_var = doc["display_name"];
     if (!display_name_var.isNull()) {
         if (!display_name_var.is<const char *>()) {
-            server.send(400, "text/plain", "display_name must be string");
+            send_settings_error(400, "display_name must be string");
             return;
         }
         if (!context->storage) {
-            server.send(503, "text/plain", "Storage unavailable");
+            send_settings_error(503, "Storage unavailable");
             return;
         }
 
         requested_display_name = display_name_var.as<String>();
         requested_display_name.trim();
         if (requested_display_name.length() > kWebDisplayNameMaxLen) {
-            server.send(400, "text/plain", "display_name is too long");
+            send_settings_error(400, "display_name is too long");
             return;
         }
         if (has_control_chars(requested_display_name)) {
-            server.send(400, "text/plain", "display_name contains invalid characters");
+            send_settings_error(400, "display_name contains invalid characters");
             return;
         }
         has_display_name = true;
@@ -2384,7 +2391,7 @@ void settings_handle_update() {
     ArduinoJson::JsonVariantConst restart_var = doc["restart"];
     if (!restart_var.isNull()) {
         if (!restart_var.is<bool>()) {
-            server.send(400, "text/plain", "restart must be bool");
+            send_settings_error(400, "restart must be bool");
             return;
         }
         restart_requested = restart_var.as<bool>();
@@ -2444,10 +2451,10 @@ void settings_handle_update() {
     auto respond_apply_failure = [&](int status_code, const char *message) {
         if (!rollback()) {
             LOGE("Web", "/api/settings rollback failed");
-            server.send(500, "text/plain", "Failed to apply settings atomically");
+            send_settings_error(500, "Failed to apply settings atomically");
             return;
         }
-        server.send(status_code, "text/plain", message);
+        send_settings_error(status_code, message);
     };
 
     // Apply only after full validation; on any failure, rollback previous changes.
@@ -2498,6 +2505,7 @@ void settings_handle_update() {
 
     String json;
     serializeJson(response_doc, json);
+    send_no_store_headers(server);
     server.send(200, "application/json", json);
 
     if (restart_requested) {

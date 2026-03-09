@@ -374,8 +374,7 @@ static const char kWifiPageTemplate[] PROGMEM = R"HTML(
 
         function handleManualEntry(element) {
             var ssid = prompt("Enter Network Name (SSID):");
-            if (!ssid || !ssid.trim()) return;
-            ssid = ssid.trim();
+            if (ssid === null || ssid.length === 0) return;
 
             var nameEl = element.querySelector('.network-name');
             var metaEl = element.querySelector('.network-meta');
@@ -1100,8 +1099,8 @@ static const char kMqttPageTemplate[] PROGMEM = R"HTML(
 
         document.getElementById('mqtt-form').addEventListener('submit', function(e) {
             var anonymous = document.getElementById('anonymous').checked;
-            var user = document.getElementById('user').value.trim();
-            var pass = document.getElementById('pass').value.trim();
+            var user = document.getElementById('user').value;
+            var pass = document.getElementById('pass').value;
 
             if (!anonymous && (user === '' || pass === '')) {
                 e.preventDefault();

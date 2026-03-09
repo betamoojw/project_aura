@@ -65,7 +65,6 @@ void WebHandlersPollDeferred();
 bool WebHandlersIsOtaBusy();
 bool WebHandlersConsumeRestartRequest();
 
-bool wifi_is_ascii_printable(const String &value, size_t max_len);
 String wifi_label_safe(const String &value);
 void wifi_build_scan_items(int count);
 
