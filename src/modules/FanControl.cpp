@@ -14,6 +14,8 @@
 
 namespace {
 
+constexpr uint32_t kDacWriteRetryDelayMs = 2;
+
 bool timeReached(uint32_t now_ms, uint32_t deadline_ms) {
     return static_cast<int32_t>(now_ms - deadline_ms) >= 0;
 }
@@ -598,6 +600,7 @@ bool FanControl::applyOutputMillivolts(uint16_t millivolts) {
     LOGW("FanControl",
          "DAC write failed at %u mV, retrying once",
          static_cast<unsigned>(millivolts));
+    vTaskDelay(pdMS_TO_TICKS(kDacWriteRetryDelayMs));
     return dac_.writeChannelMillivolts(Config::DAC_CHANNEL_VOUT0, millivolts);
 }
 
