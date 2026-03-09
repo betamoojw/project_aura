@@ -672,7 +672,8 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
         </div>
         <div class="sys-btn-row">
           <button class="btn btn-danger" type="button" id="rebootBtn">Reboot Device</button>
-          <button class="btn" type="button" id="openDacBtn" disabled>Open DAC Page</button>
+          <button class="btn" type="button" id="openThemeBtn" disabled>Open Theme Studio</button>
+          <button class="btn" type="button" id="openDacBtn" disabled>Open Fan Control Page</button>
           <a class="btn link-btn" href="/dashboard" id="networkActionBtn">Open Dashboard</a>
         </div>
       </div>
@@ -1498,6 +1499,8 @@ function renderSystemMeta(payload) {
   updateLastSyncUi();
   updateOtaPrecheck(network);
 
+  const themeBtn = document.getElementById('openThemeBtn');
+  if (themeBtn) themeBtn.disabled = network.mode !== 'sta';
   const dacBtn = document.getElementById('openDacBtn');
   if (dacBtn) dacBtn.disabled = system.dac_available !== true;
 }
@@ -2467,6 +2470,7 @@ document.querySelectorAll('#crangeSeg .seg-btn').forEach(btn => {
 document.getElementById('rebootBtn').addEventListener('click', async () => {
   try { await postJson('/api/settings', { restart: true }); } catch (_) {}
 });
+document.getElementById('openThemeBtn').addEventListener('click', () => { window.location.href = '/theme'; });
 document.getElementById('openDacBtn').addEventListener('click', () => { window.location.href = '/dac'; });
 
 initSettingsUI();

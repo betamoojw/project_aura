@@ -73,7 +73,10 @@ SYMBOLS = SplitSymbols(
 
 def main() -> None:
     html = extract_template(SOURCE_CPP, START_MARKER, END_MARKER, "Dashboard")
-    version_token = make_version_token(get_app_version(env))
+    version_token = make_version_token(
+        get_app_version(env),
+        "dashboard\n" + html + "\n" + SHELL.shell_boot_html + "\n" + SHELL.shell_critical_css,
+    )
     css_path = f"/assets/dashboard/styles.{version_token}.css"
     js_path = f"/assets/dashboard/app.{version_token}.js"
     shell_html, css_text, js_text = split_assets(html, css_path, js_path, SHELL, "Dashboard")

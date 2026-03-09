@@ -1,4 +1,5 @@
 import gzip
+import hashlib
 import io
 import re
 from dataclasses import dataclass
@@ -59,11 +60,15 @@ def get_app_version(env) -> str:
     return "dev"
 
 
-def make_version_token(version: str) -> str:
+def make_version_token(version: str, fingerprint_source: str = "") -> str:
     filtered = "".join(ch.lower() for ch in version if ch.isalnum())
     if not filtered:
         filtered = "dev"
-    return f"v{filtered}"
+    if not fingerprint_source:
+        return f"v{filtered}"
+
+    digest = hashlib.sha1(fingerprint_source.encode("utf-8")).hexdigest()[:8]
+    return f"v{filtered}-{digest}"
 
 
 def split_assets(html: str, css_path: str, js_path: str, shell: ShellConfig, label: str) -> tuple[str, str, str]:

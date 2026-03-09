@@ -503,9 +503,9 @@ void FanControl::setAutoConfig(const DacAutoConfig &config) {
 }
 
 void FanControl::applyMode(Mode mode) {
-    if (mode == Mode::Auto) {
-        // Treat selecting auto as explicit re-arm, even if already in auto mode.
-        auto_resume_blocked_ = false;
+    if (mode == Mode::Auto && mode_ != Mode::Auto) {
+        // Selecting AUTO only switches mode/UI; START AUTO is the explicit re-arm action.
+        auto_resume_blocked_ = true;
     }
     if (mode_ == mode) {
         return;

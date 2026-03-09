@@ -1929,7 +1929,7 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Project Aura | DAC Control</title>
+  <title>Project Aura | Fan Control Settings</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -2102,6 +2102,22 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       border-color: var(--text-dim);
       color: var(--text);
     }
+    .btn.nav-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+    .btn.nav-link:hover {
+      border-color: var(--text-dim);
+      color: var(--text);
+    }
 
     .disabled {
       opacity: 0.55;
@@ -2119,7 +2135,7 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
   <div class="container">
     <div class="card">
       <div class="header">
-        <h1 class="title">DAC Settings</h1>
+        <h1 class="title">Fan Control Settings</h1>
         <div id="status_chip" class="status status-offline">OFFLINE</div>
       </div>
       <div id="ota_notice" class="notice hidden"></div>
@@ -2153,6 +2169,9 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       <div class="actions-secondary">
         <button id="btn_start_auto" class="btn auto" onclick="sendAction({action:'start_auto'})">START AUTO</button>
       </div>
+      <div class="actions actions-secondary">
+        <a class="btn nav-link" href="/dashboard">BACK TO DASHBOARD</a>
+      </div>
     </div>
 
     <div id="auto_box" class="card hidden">
@@ -2170,6 +2189,9 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       <div class="actions actions-secondary">
         <button id="btn_auto_start" class="btn auto" onclick="sendAction({action:'start_auto'})">START AUTO</button>
         <button id="btn_auto_stop" class="btn stop" onclick="sendAction({action:'stop'})">STOP</button>
+      </div>
+      <div class="actions actions-secondary">
+        <a class="btn nav-link" href="/dashboard">BACK TO DASHBOARD</a>
       </div>
       <div class="auto-note">Manual has priority over Auto while manual run/timer is active.</div>
     </div>
