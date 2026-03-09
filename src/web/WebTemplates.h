@@ -9,8 +9,15 @@
 
 namespace WebTemplates {
 
-extern const uint8_t kDashboardPageTemplateApGzip[] PROGMEM;
-extern const size_t kDashboardPageTemplateApGzipSize;
+extern const char kDashboardAssetVersion[];
+extern const char kDashboardStylesCssPath[];
+extern const char kDashboardAppJsPath[];
+extern const uint8_t kDashboardShellHtmlGzip[] PROGMEM;
+extern const size_t kDashboardShellHtmlGzipSize;
+extern const uint8_t kDashboardStylesCssGzip[] PROGMEM;
+extern const size_t kDashboardStylesCssGzipSize;
+extern const uint8_t kDashboardAppJsGzip[] PROGMEM;
+extern const size_t kDashboardAppJsGzipSize;
 extern const uint8_t kDacPageTemplateGzip[] PROGMEM;
 extern const size_t kDacPageTemplateGzipSize;
 extern const uint8_t kThemePageTemplateGzip[] PROGMEM;
@@ -658,6 +665,10 @@ static const char kDiagPageTemplate[] PROGMEM = R"HTML(
                 <div id="otaRows" class="rows"></div>
             </section>
             <section class="card">
+                <h3>Web Stream</h3>
+                <div id="webRows" class="rows"></div>
+            </section>
+            <section class="card">
                 <h3>Last Errors</h3>
                 <pre id="errors" class="mono">No warnings or errors yet.</pre>
             </section>
@@ -721,6 +732,7 @@ static const char kDiagPageTemplate[] PROGMEM = R"HTML(
                 var net = data.network || {};
                 var heap = data.heap || {};
                 var otaBusy = !!data.ota_busy;
+                var web = data.web_stream || {};
 
                 setRows('networkRows',
                     row('Mode', esc(net.mode || '--').toUpperCase()) +
@@ -743,6 +755,17 @@ static const char kDiagPageTemplate[] PROGMEM = R"HTML(
                     row('Status', otaBusy ? badge('OTA in progress', 'warn') : badge('Idle', 'ok'))
                 );
 
+                setRows('webRows',
+                    row('OK', String(typeof web.ok_count === 'number' ? web.ok_count : 0)) +
+                    row('Aborts', String(typeof web.abort_count === 'number' ? web.abort_count : 0)) +
+                    row('Slow writes', String(typeof web.slow_count === 'number' ? web.slow_count : 0)) +
+                    row('Last reason', '<span class="mono">' + esc(web.last_abort_reason || 'none') + '</span>') +
+                    row('Sent ratio', (typeof web.last_sent_ratio === 'number') ? Math.round(web.last_sent_ratio * 100) + '%' : '--') +
+                    row('Last errno', String(typeof web.last_errno === 'number' ? web.last_errno : '--')) +
+                    row('Max write', (typeof web.last_max_write_ms === 'number') ? (web.last_max_write_ms + ' ms') : '--') +
+                    row('Last URI', '<span class="mono">' + esc(web.last_uri || '--') + '</span>')
+                );
+
                 var errorsEl = document.getElementById('errors');
                 if (errorsEl) {
                     errorsEl.textContent = formatErrors(data.last_errors);
@@ -754,6 +777,7 @@ static const char kDiagPageTemplate[] PROGMEM = R"HTML(
             } catch (err) {
                 if (stamp) stamp.textContent = 'diag fetch failed: ' + (err && err.message ? err.message : 'error');
                 setRows('otaRows', row('Status', badge('No data', 'err')));
+                setRows('webRows', row('Status', badge('No data', 'err')));
                 var nextRetryMs = diagPollRetryDelayMs;
                 diagPollRetryDelayMs = Math.min(diagPollRetryMaxMs, diagPollRetryDelayMs + 2000);
                 scheduleDiagRefresh(nextRetryMs);

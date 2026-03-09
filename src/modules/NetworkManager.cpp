@@ -14,6 +14,7 @@
 #include "core/Logger.h"
 #include "config/AppConfig.h"
 #include "ui/ThemeManager.h"
+#include "web/WebTemplates.h"
 
 namespace {
 
@@ -199,6 +200,8 @@ void AuraNetworkManager::registerServerRoutes() {
 
     server_.on("/", HTTP_GET, dashboard_handle_root);
     server_.on("/dashboard", HTTP_GET, dashboard_handle_root);
+    server_.on(WebTemplates::kDashboardStylesCssPath, HTTP_GET, dashboard_handle_styles);
+    server_.on(WebTemplates::kDashboardAppJsPath, HTTP_GET, dashboard_handle_app);
     server_.on("/wifi", HTTP_GET, wifi_handle_root);
     server_.on("/diag", HTTP_GET, diag_handle_root);
     server_.on("/save", HTTP_POST, wifi_handle_save);

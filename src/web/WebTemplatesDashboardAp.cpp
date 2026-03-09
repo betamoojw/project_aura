@@ -1511,11 +1511,14 @@ let chartRange = '24h';
 let stateCache = null;
 let historyCache = null;
 let refreshBusy = false;
+let refreshTimer = null;
 let otaUploadInFlight = false;
 let otaRestartPending = false;
 let otaRecoveryTimer = null;
 let otaRecoveryActive = false;
 let otaRecoveryProbeController = null;
+const STATE_REFRESH_VISIBLE_MS = 10000;
+const STATE_REFRESH_HIDDEN_MS = 30000;
 const OTA_RECOVERY_PROBE_TIMEOUT_MS = 1500;
 const OTA_STALE_STATE_THRESHOLD_S = 45;
 const OTA_RECONNECT_GRACE_MS = 120000;
@@ -2389,8 +2392,6 @@ async function refreshEvents() {
   lastStateError = '';
 }
 
-let historyRefreshTimer = null;
-
 async function refreshActive() {
   if (refreshBusy || otaUploadInFlight || otaRestartPending) return;
   refreshBusy = true;
@@ -2399,10 +2400,24 @@ async function refreshActive() {
     lastStateError = (error && error.message) ? error.message : 'State refresh failed.';
     updateNetStatusBanner();
   }
-  if (activeTab === 'charts')  { try { await refreshCharts(); } catch (_) {} }
-  if (activeTab === 'events')  { try { await refreshEvents(); } catch (_) {} }
-  if (activeTab === 'sensors') { try { await refreshSensorHistory(); } catch (_) {} }
+  if (!document.hidden) {
+    if (activeTab === 'charts')  { try { await refreshCharts(); } catch (_) {} }
+    if (activeTab === 'events')  { try { await refreshEvents(); } catch (_) {} }
+    if (activeTab === 'sensors') { try { await refreshSensorHistory(); } catch (_) {} }
+  }
   refreshBusy = false;
+}
+
+function scheduleRefreshActive(delayMs) {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(async () => {
+    refreshTimer = null;
+    try {
+      await refreshActive();
+    } finally {
+      scheduleRefreshActive(document.hidden ? STATE_REFRESH_HIDDEN_MS : STATE_REFRESH_VISIBLE_MS);
+    }
+  }, delayMs);
 }
 
 // ─────────────────────────────────────────────
@@ -2458,14 +2473,18 @@ initSettingsUI();
 initOtaUI();
 updateHeaderClock();
 setInterval(updateHeaderClock, 1000);
-setInterval(refreshActive, 10000);
+scheduleRefreshActive(STATE_REFRESH_VISIBLE_MS);
+document.addEventListener('visibilitychange', () => {
+  scheduleRefreshActive(document.hidden ? STATE_REFRESH_HIDDEN_MS : 1500);
+  if (!document.hidden) refreshActive().catch(() => {});
+});
 
 // Initial data load
 refreshState().catch(error => {
   lastStateError = (error && error.message) ? error.message : 'Initial state fetch failed.';
   updateNetStatusBanner();
 });
-refreshSensorHistory().catch(() => {});
+if (!document.hidden) refreshSensorHistory().catch(() => {});
 </script>
 </body>
 </html>

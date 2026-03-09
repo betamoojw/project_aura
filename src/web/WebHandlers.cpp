@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <string.h>
 #include <time.h>
 #include <WiFi.h>
 #include <Update.h>
@@ -128,11 +129,14 @@ WebHandlerContext *ctx() {
     return g_ctx;
 }
 
+void send_no_store_headers(WebServer &server);
+
 bool diag_access_allowed(const WebHandlerContext *context) {
     return context && context->wifi_is_ap_mode && context->wifi_is_ap_mode();
 }
 
 void send_ota_busy_json(WebServer &server) {
+    send_no_store_headers(server);
     server.send(503, "application/json", kApiErrorOtaBusyJson);
 }
 
@@ -421,6 +425,15 @@ void send_no_store_headers(WebServer &server) {
     server.sendHeader("Expires", "0");
 }
 
+void send_immutable_headers(WebServer &server) {
+    server.sendHeader("Cache-Control", "public, max-age=31536000, immutable");
+}
+
+enum class AssetCacheMode : uint8_t {
+    NoStore = 0,
+    Immutable,
+};
+
 enum class StreamAbortReason : uint8_t {
     None = 0,
     Disconnected,
@@ -449,6 +462,58 @@ const char *stream_abort_reason_text(StreamAbortReason reason) {
         default:
             return "none";
     }
+}
+
+struct WebStreamStats {
+    uint32_t ok_count = 0;
+    uint32_t abort_count = 0;
+    uint32_t slow_count = 0;
+    StreamAbortReason last_abort_reason = StreamAbortReason::None;
+    int last_errno = 0;
+    size_t last_sent = 0;
+    size_t last_total = 0;
+    uint32_t last_max_write_ms = 0;
+    char last_uri[96] = {};
+};
+
+WebStreamStats g_web_stream_stats;
+
+void apply_asset_cache_headers(WebServer &server, AssetCacheMode cache_mode) {
+    if (cache_mode == AssetCacheMode::Immutable) {
+        send_immutable_headers(server);
+        return;
+    }
+    send_no_store_headers(server);
+}
+
+void record_web_stream_result(const String &uri,
+                              size_t total_size,
+                              size_t sent,
+                              bool ok,
+                              StreamAbortReason abort_reason,
+                              uint32_t max_write_ms,
+                              int last_socket_errno) {
+    WebStreamStats &stats = g_web_stream_stats;
+    if (ok) {
+        stats.ok_count++;
+    } else {
+        stats.abort_count++;
+    }
+    if (max_write_ms >= kHttpStreamSlowWriteWarnMs) {
+        stats.slow_count++;
+    }
+
+    stats.last_abort_reason = abort_reason;
+    stats.last_errno = last_socket_errno;
+    stats.last_sent = sent;
+    stats.last_total = total_size;
+    stats.last_max_write_ms = max_write_ms;
+
+    const size_t copy_len = uri.length() < (sizeof(stats.last_uri) - 1)
+        ? uri.length()
+        : (sizeof(stats.last_uri) - 1);
+    memcpy(stats.last_uri, uri.c_str(), copy_len);
+    stats.last_uri[copy_len] = '\0';
 }
 
 void ota_disable_wifi_power_save_for_upload() {
@@ -691,9 +756,11 @@ bool stream_client_bytes(NetworkClient &client,
 
 bool send_html_stream(WebServer &server, const String &html) {
     const size_t body_size = html.length();
+    send_no_store_headers(server);
     server.setContentLength(body_size);
-    server.send(200, "text/html", "");
+    server.send(200, "text/html; charset=utf-8", "");
     if (body_size == 0) {
+        record_web_stream_result(server.uri(), body_size, 0, true, StreamAbortReason::None, 0, 0);
         return true;
     }
 
@@ -710,6 +777,7 @@ bool send_html_stream(WebServer &server, const String &html) {
         max_write_ms,
         last_socket_errno
     );
+    record_web_stream_result(server.uri(), body_size, sent, ok, abort_reason, max_write_ms, last_socket_errno);
     if (!ok) {
         Logger::log(Logger::Warn, "Web",
                     "HTML stream interrupted: uri=%s sent=%u/%u reason=%s max_write_ms=%u err=%d",
@@ -729,17 +797,23 @@ bool send_html_stream(WebServer &server, const String &html) {
     return ok;
 }
 
-bool send_html_stream_progmem(WebServer &server, const uint8_t *content, size_t content_size, bool gzip_encoded) {
+bool send_progmem_asset(WebServer &server,
+                        const char *content_type,
+                        const uint8_t *content,
+                        size_t content_size,
+                        bool gzip_encoded,
+                        AssetCacheMode cache_mode) {
+    apply_asset_cache_headers(server, cache_mode);
     server.setContentLength(content_size);
     if (gzip_encoded) {
         server.sendHeader("Content-Encoding", "gzip");
     }
-    server.send(200, "text/html", "");
+    server.send(200, content_type, "");
     if (content_size == 0) {
+        record_web_stream_result(server.uri(), content_size, 0, true, StreamAbortReason::None, 0, 0);
         return true;
     }
 
-    // Use the same non-blocking socket streaming path for both RAM and PROGMEM buffers.
     size_t sent = 0;
     StreamAbortReason abort_reason = StreamAbortReason::None;
     uint32_t max_write_ms = 0;
@@ -751,9 +825,10 @@ bool send_html_stream_progmem(WebServer &server, const uint8_t *content, size_t 
                                         abort_reason,
                                         max_write_ms,
                                         last_socket_errno);
+    record_web_stream_result(server.uri(), content_size, sent, ok, abort_reason, max_write_ms, last_socket_errno);
     if (!ok) {
         Logger::log(Logger::Warn, "Web",
-                    "PROGMEM HTML stream interrupted: uri=%s sent=%u/%u reason=%s max_write_ms=%u err=%d",
+                    "PROGMEM asset stream interrupted: uri=%s sent=%u/%u reason=%s max_write_ms=%u err=%d",
                     server.uri().c_str(),
                     static_cast<unsigned>(sent),
                     static_cast<unsigned>(content_size),
@@ -762,12 +837,21 @@ bool send_html_stream_progmem(WebServer &server, const uint8_t *content, size_t 
                     last_socket_errno);
     } else if (max_write_ms >= kHttpStreamSlowWriteWarnMs) {
         Logger::log(Logger::Warn, "Web",
-                    "PROGMEM HTML stream slow write: uri=%s size=%u max_write_ms=%u",
+                    "PROGMEM asset stream slow write: uri=%s size=%u max_write_ms=%u",
                     server.uri().c_str(),
                     static_cast<unsigned>(content_size),
                     static_cast<unsigned>(max_write_ms));
     }
     return ok;
+}
+
+bool send_html_stream_progmem(WebServer &server, const uint8_t *content, size_t content_size, bool gzip_encoded) {
+    return send_progmem_asset(server,
+                              "text/html; charset=utf-8",
+                              content,
+                              content_size,
+                              gzip_encoded,
+                              AssetCacheMode::NoStore);
 }
 
 const char *dac_status_text(const FanControl &fan) {
@@ -1132,7 +1216,6 @@ void wifi_handle_root() {
     html.replace("{{SSID_ITEMS}}", list_items);
     html.replace("{{SCAN_IN_PROGRESS}}",
                  (context->wifi_scan_in_progress && *context->wifi_scan_in_progress) ? "1" : "0");
-    send_no_store_headers(server);
     send_html_stream(server, html);
 }
 
@@ -1156,13 +1239,38 @@ void dashboard_handle_root() {
         return;
     }
 
-    send_no_store_headers(*context->server);
     send_html_stream_progmem(
         *context->server,
-        WebTemplates::kDashboardPageTemplateApGzip,
-        WebTemplates::kDashboardPageTemplateApGzipSize,
+        WebTemplates::kDashboardShellHtmlGzip,
+        WebTemplates::kDashboardShellHtmlGzipSize,
         true
     );
+}
+
+void dashboard_handle_styles() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server) {
+        return;
+    }
+    send_progmem_asset(*context->server,
+                       "text/css; charset=utf-8",
+                       WebTemplates::kDashboardStylesCssGzip,
+                       WebTemplates::kDashboardStylesCssGzipSize,
+                       true,
+                       AssetCacheMode::Immutable);
+}
+
+void dashboard_handle_app() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server) {
+        return;
+    }
+    send_progmem_asset(*context->server,
+                       "application/javascript; charset=utf-8",
+                       WebTemplates::kDashboardAppJsGzip,
+                       WebTemplates::kDashboardAppJsGzipSize,
+                       true,
+                       AssetCacheMode::Immutable);
 }
 
 void wifi_handle_save() {
@@ -1320,6 +1428,24 @@ void diag_handle_data() {
         added++;
     }
     doc["error_count"] = added;
+
+    ArduinoJson::JsonObject web_stream = doc["web_stream"].to<ArduinoJson::JsonObject>();
+    web_stream["ok_count"] = g_web_stream_stats.ok_count;
+    web_stream["abort_count"] = g_web_stream_stats.abort_count;
+    web_stream["slow_count"] = g_web_stream_stats.slow_count;
+    web_stream["last_abort_reason"] = stream_abort_reason_text(g_web_stream_stats.last_abort_reason);
+    web_stream["last_errno"] = g_web_stream_stats.last_errno;
+    web_stream["last_sent"] = static_cast<uint32_t>(g_web_stream_stats.last_sent);
+    web_stream["last_total"] = static_cast<uint32_t>(g_web_stream_stats.last_total);
+    if (g_web_stream_stats.last_total > 0) {
+        web_stream["last_sent_ratio"] =
+            static_cast<float>(g_web_stream_stats.last_sent) /
+            static_cast<float>(g_web_stream_stats.last_total);
+    } else {
+        web_stream["last_sent_ratio"] = 1.0f;
+    }
+    web_stream["last_max_write_ms"] = g_web_stream_stats.last_max_write_ms;
+    web_stream["last_uri"] = g_web_stream_stats.last_uri;
 
     String json;
     serializeJson(doc, json);
@@ -1549,6 +1675,7 @@ void theme_handle_state() {
         doc["error"] = message;
         String json;
         serializeJson(doc, json);
+        send_no_store_headers(server);
         server.send(status_code, "application/json", json);
     };
 
@@ -1579,6 +1706,7 @@ void theme_handle_state() {
 
     String json;
     serializeJson(doc, json);
+    send_no_store_headers(server);
     server.send(200, "application/json", json);
 }
 
@@ -1740,6 +1868,7 @@ void dac_handle_state() {
 
     String json;
     serializeJson(doc, json);
+    send_no_store_headers(*context->server);
     context->server->send(200, "application/json", json);
 }
 
@@ -1809,6 +1938,7 @@ void dac_handle_action() {
         return;
     }
 
+    send_no_store_headers(server);
     server.send(200, "application/json", "{\"success\":true}");
 }
 
@@ -1863,6 +1993,7 @@ void dac_handle_auto() {
     if (rearm) {
         fan.requestAutoStart();
     }
+    send_no_store_headers(server);
     server.send(200, "application/json", "{\"success\":true}");
 }
 
@@ -1948,6 +2079,8 @@ void charts_handle_data() {
 
     String json;
     serializeJson(doc, json);
+    send_no_store_headers(server);
+    send_no_store_headers(server);
     server.send(200, "application/json", json);
 }
 
@@ -2067,6 +2200,7 @@ void state_handle_data() {
 
     String json;
     serializeJson(doc, json);
+    send_no_store_headers(server);
     server.send(200, "application/json", json);
 }
 
@@ -2564,6 +2698,7 @@ void ota_handle_update() {
 
     String json;
     serializeJson(doc, json);
+    send_no_store_headers(server);
     server.send(status_code, "application/json", json);
 
     if (has_upload) {
@@ -2640,5 +2775,6 @@ void events_handle_data() {
 
     String json;
     serializeJson(doc, json);
+    send_no_store_headers(server);
     server.send(200, "application/json", json);
 }

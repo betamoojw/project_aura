@@ -71,6 +71,8 @@ void wifi_build_scan_items(int count);
 
 void wifi_handle_root();
 void dashboard_handle_root();
+void dashboard_handle_styles();
+void dashboard_handle_app();
 void wifi_handle_save();
 void wifi_handle_not_found();
 void diag_handle_root();
