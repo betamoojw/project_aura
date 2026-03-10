@@ -24,6 +24,7 @@
 #include "config/AppData.h"
 #include "core/MathUtils.h"
 #include "core/Logger.h"
+#include "core/WifiPowerSaveGuard.h"
 #include "core/Watchdog.h"
 #include "modules/ChartsHistory.h"
 #include "modules/DacAutoConfig.h"
@@ -57,17 +58,49 @@ constexpr size_t kEventsApiMaxEntries = 48;
 constexpr size_t kWebDisplayNameMaxLen = 32;
 constexpr size_t kWifiScanMaxItems = 15;
 constexpr size_t kDiagMaxErrorItems = 12;
-constexpr size_t kHttpStreamChunkSize = 1460;
-constexpr uint16_t kHttpStreamMaxZeroWrites = 2048;
-constexpr uint8_t kHttpStreamYieldMs = 1;
-constexpr uint16_t kHttpStreamRetryDelayFastMs = 2;
-constexpr uint16_t kHttpStreamRetryDelayMediumMs = 12;
-constexpr uint16_t kHttpStreamRetryDelaySlowMs = 50;
-constexpr uint16_t kHttpStreamRetryDelayVerySlowMs = 100;
-constexpr uint16_t kHttpStreamRetryDelayMaxMs = 150;
-constexpr uint32_t kHttpStreamMaxDurationMs = 45000;
-constexpr uint32_t kHttpStreamNoProgressTimeoutMs = 10000;
 constexpr uint32_t kHttpStreamSlowWriteWarnMs = 200;
+
+struct StreamProfile {
+    size_t chunk_size;
+    uint16_t max_zero_writes;
+    uint8_t yield_ms;
+    uint16_t retry_delay_fast_ms;
+    uint16_t retry_delay_medium_ms;
+    uint16_t retry_delay_slow_ms;
+    uint16_t retry_delay_very_slow_ms;
+    uint16_t retry_delay_max_ms;
+    uint32_t max_duration_ms;
+    uint32_t no_progress_timeout_ms;
+    bool disable_wifi_power_save;
+};
+
+constexpr StreamProfile kHtmlStreamProfile = {
+    1460,
+    2048,
+    1,
+    2,
+    12,
+    50,
+    100,
+    150,
+    45000,
+    10000,
+    false
+};
+
+constexpr StreamProfile kImmutableAssetStreamProfile = {
+    1024,
+    2048,
+    1,
+    2,
+    12,
+    50,
+    100,
+    150,
+    60000,
+    15000,
+    true
+};
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
     "\"error_code\":\"OTA_BUSY\",\"ota_busy\":true}";
@@ -579,20 +612,20 @@ void ota_restore_wifi_power_save() {
     g_ota_wifi_ps_prev = WIFI_PS_NONE;
 }
 
-uint16_t stream_retry_delay_ms(uint16_t zero_writes) {
+uint16_t stream_retry_delay_ms(const StreamProfile &profile, uint16_t zero_writes) {
     if (zero_writes <= 3) {
-        return kHttpStreamRetryDelayFastMs;
+        return profile.retry_delay_fast_ms;
     }
     if (zero_writes <= 10) {
-        return kHttpStreamRetryDelayMediumMs;
+        return profile.retry_delay_medium_ms;
     }
     if (zero_writes <= 40) {
-        return kHttpStreamRetryDelaySlowMs;
+        return profile.retry_delay_slow_ms;
     }
     if (zero_writes <= 120) {
-        return kHttpStreamRetryDelayVerySlowMs;
+        return profile.retry_delay_very_slow_ms;
     }
-    return kHttpStreamRetryDelayMaxMs;
+    return profile.retry_delay_max_ms;
 }
 
 bool wait_for_socket_writable(int socket_fd, uint16_t wait_ms, int &last_socket_errno) {
@@ -629,6 +662,7 @@ bool wait_for_socket_writable(int socket_fd, uint16_t wait_ms, int &last_socket_
 bool stream_client_bytes(NetworkClient &client,
                          const uint8_t *data,
                          size_t size,
+                         const StreamProfile &profile,
                          size_t &sent,
                          StreamAbortReason &abort_reason,
                          uint32_t &max_write_ms,
@@ -656,8 +690,8 @@ bool stream_client_bytes(NetworkClient &client,
         Watchdog::kick();
 
         size_t to_send = size - sent;
-        if (to_send > kHttpStreamChunkSize) {
-            to_send = kHttpStreamChunkSize;
+        if (to_send > profile.chunk_size) {
+            to_send = profile.chunk_size;
         }
 
         const uint32_t write_start_ms = millis();
@@ -679,13 +713,13 @@ bool stream_client_bytes(NetworkClient &client,
             zero_writes = 0;
             last_progress_ms = now_ms;
             last_socket_errno = 0;
-            if (deadline_reached(now_ms, start_ms + kHttpStreamMaxDurationMs)) {
+            if (deadline_reached(now_ms, start_ms + profile.max_duration_ms)) {
                 abort_reason = StreamAbortReason::TotalTimeout;
                 client.stop();
                 return false;
             }
             if (sent < size) {
-                delay(kHttpStreamYieldMs);
+                delay(profile.yield_ms);
                 Watchdog::kick();
             }
             continue;
@@ -726,22 +760,22 @@ bool stream_client_bytes(NetworkClient &client,
             }
         }
 
-        if (++zero_writes > kHttpStreamMaxZeroWrites) {
+        if (++zero_writes > profile.max_zero_writes) {
             abort_reason = StreamAbortReason::ZeroWriteLimit;
             client.stop();
             return false;
         }
-        if (deadline_reached(now_ms, start_ms + kHttpStreamMaxDurationMs)) {
+        if (deadline_reached(now_ms, start_ms + profile.max_duration_ms)) {
             abort_reason = StreamAbortReason::TotalTimeout;
             client.stop();
             return false;
         }
-        if (deadline_reached(now_ms, last_progress_ms + kHttpStreamNoProgressTimeoutMs)) {
+        if (deadline_reached(now_ms, last_progress_ms + profile.no_progress_timeout_ms)) {
             abort_reason = StreamAbortReason::NoProgressTimeout;
             client.stop();
             return false;
         }
-        const uint16_t retry_wait_ms = stream_retry_delay_ms(zero_writes);
+        const uint16_t retry_wait_ms = stream_retry_delay_ms(profile, zero_writes);
         const bool writable = wait_for_socket_writable(socket_fd, retry_wait_ms, last_socket_errno);
         if (!writable
             && last_socket_errno != 0
@@ -758,7 +792,7 @@ bool stream_client_bytes(NetworkClient &client,
             last_socket_errno = 0;
         }
         if (!writable) {
-            delay(kHttpStreamYieldMs);
+            delay(profile.yield_ms);
         }
         Watchdog::kick();
     }
@@ -783,6 +817,7 @@ bool send_html_stream(WebServer &server, const String &html) {
         server.client(),
         reinterpret_cast<const uint8_t *>(html.c_str()),
         body_size,
+        kHtmlStreamProfile,
         sent,
         abort_reason,
         max_write_ms,
@@ -814,6 +849,12 @@ bool send_progmem_asset(WebServer &server,
                         size_t content_size,
                         bool gzip_encoded,
                         AssetCacheMode cache_mode) {
+    const StreamProfile &profile =
+        (cache_mode == AssetCacheMode::Immutable) ? kImmutableAssetStreamProfile : kHtmlStreamProfile;
+    WifiPowerSaveGuard wifi_ps_guard;
+    if (profile.disable_wifi_power_save) {
+        wifi_ps_guard.suspend();
+    }
     apply_asset_cache_headers(server, cache_mode);
     server.setContentLength(content_size);
     if (gzip_encoded) {
@@ -832,6 +873,7 @@ bool send_progmem_asset(WebServer &server,
     const bool ok = stream_client_bytes(server.client(),
                                         content,
                                         content_size,
+                                        profile,
                                         sent,
                                         abort_reason,
                                         max_write_ms,

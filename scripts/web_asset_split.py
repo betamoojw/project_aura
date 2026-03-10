@@ -19,6 +19,7 @@ class ShellConfig:
     body_original: str = "<body>"
     body_replacement: str = '<body class="shell-loading">'
     load_script_timeout_ms: int = 1500
+    asset_retry_delay_ms: int = 800
 
 
 @dataclass(frozen=True)
@@ -97,23 +98,60 @@ def split_assets(html: str, css_path: str, js_path: str, shell: ShellConfig, lab
 (function() {{
   var cssHref = "{css_path}";
   var jsHref = "{js_path}";
-  var scriptLoaded = false;
+  var scriptRequested = false;
+  var shellBootSub = document.querySelector('.shell-boot-sub');
+  function withRetryToken(url, attempt) {{
+    if (!attempt) return url;
+    return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'retry=' + attempt;
+  }}
+  function retryOnce(makeEl, mount, url, onSuccess, onFinalError) {{
+    var attempt = 0;
+    function start() {{
+      var el = makeEl(withRetryToken(url, attempt));
+      el.onload = function() {{
+        el.onload = null;
+        el.onerror = null;
+        if (onSuccess) onSuccess();
+      }};
+      el.onerror = function() {{
+        el.onload = null;
+        el.onerror = null;
+        if (el.parentNode) {{
+          el.parentNode.removeChild(el);
+        }}
+        if (attempt < 1) {{
+          attempt++;
+          window.setTimeout(start, {shell.asset_retry_delay_ms});
+          return;
+        }}
+        if (onFinalError) onFinalError();
+      }};
+      mount.appendChild(el);
+    }}
+    start();
+  }}
   function loadScript() {{
-    if (scriptLoaded) return;
-    scriptLoaded = true;
-    var script = document.createElement('script');
-    script.src = jsHref;
-    script.defer = true;
-    script.async = false;
-    document.body.appendChild(script);
+    if (scriptRequested) return;
+    scriptRequested = true;
+    retryOnce(function(src) {{
+      var script = document.createElement('script');
+      script.src = src;
+      script.defer = true;
+      script.async = false;
+      return script;
+    }}, document.body, jsHref, null, function() {{
+      if (shellBootSub) {{
+        shellBootSub.textContent = 'Load failed. Reload to retry.';
+      }}
+    }});
   }}
   function loadAssets() {{
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = cssHref;
-    link.onload = loadScript;
-    link.onerror = loadScript;
-    document.head.appendChild(link);
+    retryOnce(function(href) {{
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      return link;
+    }}, document.head, cssHref, loadScript, loadScript);
     window.setTimeout(loadScript, {shell.load_script_timeout_ms});
   }}
   if (window.requestAnimationFrame) {{

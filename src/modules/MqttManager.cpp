@@ -12,6 +12,7 @@
 #include <ESPmDNS.h>
 #include <WiFi.h>
 #include "core/Logger.h"
+#include "core/WifiPowerSaveGuard.h"
 #include "modules/MqttPayloadBuilder.h"
 #include "modules/StorageManager.h"
 #include "modules/NetworkManager.h"
@@ -26,6 +27,8 @@ constexpr uint8_t kMqttRetryMaxAttempts = kMqttRetryStages * kMqttRetryStageAtte
 constexpr size_t kTopicBufferSize = 256;
 constexpr uint32_t kMqttMdnsSuccessCacheMs = 5UL * 60UL * 1000UL;
 constexpr uint32_t kMqttMdnsFailureCacheMs = 60UL * 1000UL;
+constexpr uint16_t kMqttDefaultSocketTimeoutSec = 1;
+constexpr uint16_t kMqttConnectSocketTimeoutSec = 3;
 
 void append_json_escaped(String &out, const char *value) {
     if (!value) {
@@ -205,7 +208,7 @@ void MqttManager::setupClient() {
     client_.setServer(mqtt_host_buf_, mqtt_port_);
     client_.setBufferSize(Config::MQTT_BUFFER_SIZE);
     client_.setKeepAlive(30);
-    client_.setSocketTimeout(1);
+    client_.setSocketTimeout(kMqttDefaultSocketTimeoutSec);
     client_.setCallback(MqttManager::staticCallback);
 }
 
@@ -565,6 +568,9 @@ bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool al
     const char *client_id = mqtt_device_id_.c_str();
     char will_topic[kTopicBufferSize];
     build_availability_topic(will_topic, sizeof(will_topic), mqtt_base_topic_);
+    WifiPowerSaveGuard wifi_ps_guard;
+    wifi_ps_guard.suspend();
+    client_.setSocketTimeout(kMqttConnectSocketTimeoutSec);
     bool ok = false;
     if (mqtt_anonymous_) {
         ok = client_.connect(client_id, nullptr, nullptr,
@@ -576,6 +582,7 @@ bool MqttManager::connectClient(const SensorData &data, bool night_mode, bool al
         ok = client_.connect(client_id, nullptr, nullptr,
                              will_topic, 0, true, Config::MQTT_AVAIL_OFFLINE);
     }
+    client_.setSocketTimeout(kMqttDefaultSocketTimeoutSec);
     if (!ok) {
         note_connect_failure(client_.state(), true);
         return false;
