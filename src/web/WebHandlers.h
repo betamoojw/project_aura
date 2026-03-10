@@ -65,6 +65,9 @@ void WebHandlersPollDeferred();
 bool WebHandlersIsOtaBusy();
 bool WebHandlersConsumeRestartRequest();
 bool WebHandlersShouldPauseMqttConnect();
+bool WebHandlersShouldPauseMqttPublish();
+void WebHandlersNoteMqttConnectDeferred();
+void WebHandlersNoteMqttPublishDeferred();
 
 String wifi_label_safe(const String &value);
 void wifi_build_scan_items(int count);

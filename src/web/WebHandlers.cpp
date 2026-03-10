@@ -529,6 +529,8 @@ struct WebStreamStats {
     uint32_t ok_count = 0;
     uint32_t abort_count = 0;
     uint32_t slow_count = 0;
+    uint32_t mqtt_connect_deferred_count = 0;
+    uint32_t mqtt_publish_deferred_count = 0;
     StreamAbortReason last_abort_reason = StreamAbortReason::None;
     int last_errno = 0;
     size_t last_sent = 0;
@@ -541,6 +543,27 @@ WebStreamStats g_web_stream_stats;
 constexpr uint32_t kWebTransferMqttPauseMs = 2000;
 uint16_t g_web_transfer_active_count = 0;
 uint32_t g_web_transfer_pause_until_ms = 0;
+
+bool should_pause_mqtt_for_web_transfer() {
+    if (g_web_transfer_active_count > 0) {
+        return true;
+    }
+    if (g_web_transfer_pause_until_ms == 0) {
+        return false;
+    }
+    return !deadline_reached(millis(), g_web_transfer_pause_until_ms);
+}
+
+uint32_t web_transfer_pause_remaining_ms() {
+    if (g_web_transfer_pause_until_ms == 0) {
+        return 0;
+    }
+    const uint32_t now_ms = millis();
+    if (deadline_reached(now_ms, g_web_transfer_pause_until_ms)) {
+        return 0;
+    }
+    return g_web_transfer_pause_until_ms - now_ms;
+}
 
 void note_web_transfer_activity() {
     g_web_transfer_pause_until_ms = millis() + kWebTransferMqttPauseMs;
@@ -869,6 +892,7 @@ bool stream_client_bytes(NetworkClient &client,
 
 bool send_html_stream(WebServer &server, const String &html) {
     const size_t body_size = html.length();
+    const StreamProfile &profile = kHtmlStreamProfile;
     send_no_store_headers(server);
     server.setContentLength(body_size);
     server.send(200, "text/html; charset=utf-8", "");
@@ -885,7 +909,54 @@ bool send_html_stream(WebServer &server, const String &html) {
         server.client(),
         reinterpret_cast<const uint8_t *>(html.c_str()),
         body_size,
-        kHtmlStreamProfile,
+        profile,
+        sent,
+        abort_reason,
+        max_write_ms,
+        last_socket_errno
+    );
+    record_web_stream_result(server.uri(), body_size, sent, ok, abort_reason, max_write_ms, last_socket_errno);
+    if (!ok) {
+        Logger::log(Logger::Warn, "Web",
+                    "HTML stream interrupted: uri=%s sent=%u/%u reason=%s max_write_ms=%u err=%d",
+                    server.uri().c_str(),
+                    static_cast<unsigned>(sent),
+                    static_cast<unsigned>(body_size),
+                    stream_abort_reason_text(abort_reason),
+                    static_cast<unsigned>(max_write_ms),
+                    last_socket_errno);
+    } else if (max_write_ms >= kHttpStreamSlowWriteWarnMs) {
+        Logger::log(Logger::Warn, "Web",
+                    "HTML stream slow write: uri=%s size=%u max_write_ms=%u",
+                    server.uri().c_str(),
+                    static_cast<unsigned>(body_size),
+                    static_cast<unsigned>(max_write_ms));
+    }
+    return ok;
+}
+
+bool send_html_stream_resilient(WebServer &server, const String &html) {
+    const size_t body_size = html.length();
+    WebTransferGuard transfer_guard(true);
+    WifiPowerSaveGuard wifi_ps_guard;
+    wifi_ps_guard.suspend();
+    send_no_store_headers(server);
+    server.setContentLength(body_size);
+    server.send(200, "text/html; charset=utf-8", "");
+    if (body_size == 0) {
+        record_web_stream_result(server.uri(), body_size, 0, true, StreamAbortReason::None, 0, 0);
+        return true;
+    }
+
+    size_t sent = 0;
+    StreamAbortReason abort_reason = StreamAbortReason::None;
+    uint32_t max_write_ms = 0;
+    int last_socket_errno = 0;
+    const bool ok = stream_client_bytes(
+        server.client(),
+        reinterpret_cast<const uint8_t *>(html.c_str()),
+        body_size,
+        kShellPageStreamProfile,
         sent,
         abort_reason,
         max_write_ms,
@@ -1144,13 +1215,19 @@ bool WebHandlersConsumeRestartRequest() {
 }
 
 bool WebHandlersShouldPauseMqttConnect() {
-    if (g_web_transfer_active_count > 0) {
-        return true;
-    }
-    if (g_web_transfer_pause_until_ms == 0) {
-        return false;
-    }
-    return !deadline_reached(millis(), g_web_transfer_pause_until_ms);
+    return should_pause_mqtt_for_web_transfer();
+}
+
+bool WebHandlersShouldPauseMqttPublish() {
+    return should_pause_mqtt_for_web_transfer();
+}
+
+void WebHandlersNoteMqttConnectDeferred() {
+    g_web_stream_stats.mqtt_connect_deferred_count++;
+}
+
+void WebHandlersNoteMqttPublishDeferred() {
+    g_web_stream_stats.mqtt_publish_deferred_count++;
 }
 
 void WebHandlersPollDeferred() {
@@ -1482,8 +1559,10 @@ void diag_handle_root() {
         context->server->send(404, "text/plain", "Not found");
         return;
     }
-    send_no_store_headers(*context->server);
-    context->server->send_P(200, "text/html", WebTemplates::kDiagPageTemplate);
+    send_html_stream_progmem(*context->server,
+                             reinterpret_cast<const uint8_t *>(WebTemplates::kDiagPageTemplate),
+                             sizeof(WebTemplates::kDiagPageTemplate) - 1,
+                             false);
 }
 
 void diag_handle_data() {
@@ -1559,6 +1638,10 @@ void diag_handle_data() {
     web_stream["ok_count"] = g_web_stream_stats.ok_count;
     web_stream["abort_count"] = g_web_stream_stats.abort_count;
     web_stream["slow_count"] = g_web_stream_stats.slow_count;
+    web_stream["active_transfers"] = g_web_transfer_active_count;
+    web_stream["mqtt_pause_remaining_ms"] = web_transfer_pause_remaining_ms();
+    web_stream["mqtt_connect_deferred_count"] = g_web_stream_stats.mqtt_connect_deferred_count;
+    web_stream["mqtt_publish_deferred_count"] = g_web_stream_stats.mqtt_publish_deferred_count;
     web_stream["last_abort_reason"] = stream_abort_reason_text(g_web_stream_stats.last_abort_reason);
     web_stream["last_errno"] = g_web_stream_stats.last_errno;
     web_stream["last_sent"] = static_cast<uint32_t>(g_web_stream_stats.last_sent);
@@ -1590,7 +1673,7 @@ void mqtt_handle_root() {
     }
     if (!context->mqtt_ui_open || !*context->mqtt_ui_open) {
         String html = FPSTR(WebTemplates::kMqttLockedPage);
-        send_html_stream(*context->server, html);
+        send_html_stream_resilient(*context->server, html);
         return;
     }
     WebServer &server = *context->server;
@@ -1654,7 +1737,7 @@ void mqtt_handle_root() {
     html.replace("{{ANONYMOUS_CHECKED}}", anonymous_checked);
     html.replace("{{DISCOVERY_CHECKED}}", discovery_checked);
 
-    send_html_stream(server, html);
+    send_html_stream_resilient(server, html);
 }
 
 void mqtt_handle_save() {

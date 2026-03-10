@@ -681,6 +681,8 @@ void MqttManager::staticCallback(char *topic, uint8_t *payload, unsigned int len
 
 void MqttManager::poll(const SensorData &data, bool night_mode, bool alert_blink, bool backlight_on) {
     if (!mqtt_enabled_) {
+        mqtt_connect_deferred_by_web_ = false;
+        mqtt_publish_deferred_by_web_ = false;
         if (client_.connected()) {
             char topic[kTopicBufferSize];
             build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
@@ -700,6 +702,8 @@ void MqttManager::poll(const SensorData &data, bool night_mode, bool alert_blink
         return;
     }
     if (!network_ || !network_->isConnected()) {
+        mqtt_connect_deferred_by_web_ = false;
+        mqtt_publish_deferred_by_web_ = false;
         if (client_.connected()) {
             LOGW("MQTT", "network unavailable, disconnecting gracefully");
             char topic[kTopicBufferSize];
@@ -723,7 +727,9 @@ void MqttManager::poll(const SensorData &data, bool night_mode, bool alert_blink
         ui_dirty_ = true;
     }
     if (!connected) {
+        mqtt_publish_deferred_by_web_ = false;
         if (mqtt_retry_exhausted_) {
+            mqtt_connect_deferred_by_web_ = false;
             return;
         }
         uint32_t now = millis();
@@ -731,31 +737,50 @@ void MqttManager::poll(const SensorData &data, bool night_mode, bool alert_blink
             mqtt_retry_exhausted_ = true;
             mqtt_connect_fail_count_ = Config::MQTT_CONNECT_MAX_FAILS;
             ui_dirty_ = true;
+            mqtt_connect_deferred_by_web_ = false;
             return;
         }
         uint8_t stage = retry_stage_for_attempts(mqtt_connect_attempts_);
         uint32_t retry_delay = retry_delay_for_stage(stage);
         if (now - mqtt_last_attempt_ms_ >= retry_delay) {
             if (WebHandlersShouldPauseMqttConnect()) {
+                if (!mqtt_connect_deferred_by_web_) {
+                    WebHandlersNoteMqttConnectDeferred();
+                    mqtt_connect_deferred_by_web_ = true;
+                }
                 return;
             }
+            mqtt_connect_deferred_by_web_ = false;
             mqtt_last_attempt_ms_ = now;
             connectClient(data, night_mode, alert_blink, backlight_on);
         }
         return;
     }
+    mqtt_connect_deferred_by_web_ = false;
     publishDiscovery();
     uint32_t now = millis();
     if (mqtt_publish_requested_ || (now - mqtt_last_publish_ms_ >= Config::MQTT_PUBLISH_MS)) {
+        if (WebHandlersShouldPauseMqttPublish()) {
+            if (!mqtt_publish_deferred_by_web_) {
+                WebHandlersNoteMqttPublishDeferred();
+                mqtt_publish_deferred_by_web_ = true;
+            }
+            return;
+        }
+        mqtt_publish_deferred_by_web_ = false;
         mqtt_publish_requested_ = false;
         publishState(data, night_mode, alert_blink, backlight_on);
+        return;
     }
+    mqtt_publish_deferred_by_web_ = false;
 }
 
 void MqttManager::syncWithWifi() {
     bool wifi_ready = network_ && network_->isEnabled() && network_->isConnected();
     bool desired = mqtt_user_enabled_ && wifi_ready;
     if (desired != mqtt_enabled_) {
+        mqtt_connect_deferred_by_web_ = false;
+        mqtt_publish_deferred_by_web_ = false;
         mqtt_enabled_ = desired;
         if (mqtt_enabled_) {
             mqtt_fail_count_ = 0;
@@ -789,6 +814,8 @@ void MqttManager::requestReconnect() {
     mqtt_connect_fail_count_ = 0;
     mqtt_connect_attempts_ = 0;
     mqtt_retry_exhausted_ = false;
+    mqtt_connect_deferred_by_web_ = false;
+    mqtt_publish_deferred_by_web_ = false;
     mqtt_last_attempt_ms_ = 0;
     mqtt_mdns_cache_valid_ = false;
     if (client_.connected()) {
@@ -806,6 +833,8 @@ void MqttManager::setUserEnabled(bool enabled) {
         return;
     }
     mqtt_user_enabled_ = enabled;
+    mqtt_connect_deferred_by_web_ = false;
+    mqtt_publish_deferred_by_web_ = false;
     mqtt_connect_fail_count_ = 0;
     mqtt_connect_attempts_ = 0;
     mqtt_retry_exhausted_ = false;

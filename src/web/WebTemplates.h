@@ -772,6 +772,16 @@ static const char kDiagPageTemplate[] PROGMEM = R"HTML(
                     row('OK', String(typeof web.ok_count === 'number' ? web.ok_count : 0)) +
                     row('Aborts', String(typeof web.abort_count === 'number' ? web.abort_count : 0)) +
                     row('Slow writes', String(typeof web.slow_count === 'number' ? web.slow_count : 0)) +
+                    row('Active transfers', String(typeof web.active_transfers === 'number' ? web.active_transfers : 0)) +
+                    row('MQTT pause', (typeof web.mqtt_pause_remaining_ms === 'number' && web.mqtt_pause_remaining_ms > 0)
+                        ? (web.mqtt_pause_remaining_ms + ' ms')
+                        : 'idle') +
+                    row('MQTT connect defers', String(typeof web.mqtt_connect_deferred_count === 'number'
+                        ? web.mqtt_connect_deferred_count
+                        : 0)) +
+                    row('MQTT publish defers', String(typeof web.mqtt_publish_deferred_count === 'number'
+                        ? web.mqtt_publish_deferred_count
+                        : 0)) +
                     row('Last reason', '<span class="mono">' + esc(web.last_abort_reason || 'none') + '</span>') +
                     row('Sent ratio', (typeof web.last_sent_ratio === 'number') ? Math.round(web.last_sent_ratio * 100) + '%' : '--') +
                     row('Last errno', String(typeof web.last_errno === 'number' ? web.last_errno : '--')) +
