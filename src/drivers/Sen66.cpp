@@ -46,8 +46,7 @@ bool Sen66::begin() {
     temp_offset_hw_value_ = 0.0f;
     co2_invalid_logged_ = false;
     co2_invalid_since_ms_ = 0;
-    co2_first_ = true;
-    co2_idx_ = 0;
+    resetCo2Smoother();
     asc_default_known_ = sen66AscDefaultsKnownAfterReset();
     measurement_state_unknown_ = sen66StateUnknownAfterBoot();
     return true;
@@ -249,11 +248,18 @@ bool Sen66::deviceReset() {
     fail_count_ = 0;
     co2_invalid_logged_ = false;
     co2_invalid_since_ms_ = 0;
-    co2_first_ = true;
-    co2_idx_ = 0;
+    resetCo2Smoother();
     asc_default_known_ = true;
     measurement_state_unknown_ = false;
     return true;
+}
+
+void Sen66::resetCo2Smoother() {
+    co2_first_ = true;
+    co2_idx_ = 0;
+    for (int &reading : co2_readings_) {
+        reading = 400;
+    }
 }
 
 bool Sen66::isWarmupActive() const {

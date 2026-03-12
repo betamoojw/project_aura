@@ -49,6 +49,7 @@ private:
     bool applyTempOffsetParams();
     bool startMeasurement();
     bool forceIdle();
+    void resetCo2Smoother();
     bool setAscRaw(bool enabled);
     bool getAsc(bool &enabled);
     bool performFrc(uint16_t ref_ppm, uint16_t &correction);
