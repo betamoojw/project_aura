@@ -25,6 +25,8 @@ constexpr uint32_t kWifiInternalHeapMinFreeForStart = 32UL * 1024UL;
 constexpr uint32_t kWifiInternalHeapMinLargestForStart = 16UL * 1024UL;
 constexpr uint32_t kWifiScanTimeoutMs = 20000UL;
 constexpr uint8_t kStaLinkFailThreshold = 3;
+constexpr uint32_t kWifiStaTransitionTimeoutMs = 1000UL;
+constexpr uint32_t kWifiStaTransitionPollMs = 10UL;
 
 bool has_internal_heap_for_wifi_start(uint32_t &free_bytes, uint32_t &largest_block_bytes) {
     free_bytes = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -69,6 +71,28 @@ void network_wifi_start_sta() {
 
 bool network_wifi_is_connected() {
     return g_network && g_network->isConnected();
+}
+
+bool wait_for_sta_started(uint32_t timeout_ms) {
+    const uint32_t deadline = millis() + timeout_ms;
+    while (!WiFi.STA.started()) {
+        if (static_cast<int32_t>(millis() - deadline) >= 0) {
+            return false;
+        }
+        delay(kWifiStaTransitionPollMs);
+    }
+    return true;
+}
+
+bool wait_for_sta_stopped(uint32_t timeout_ms) {
+    const uint32_t deadline = millis() + timeout_ms;
+    while (WiFi.STA.started()) {
+        if (static_cast<int32_t>(millis() - deadline) >= 0) {
+            return false;
+        }
+        delay(kWifiStaTransitionPollMs);
+    }
+    return true;
 }
 
 uint32_t network_wifi_sta_connected_elapsed_ms() {
@@ -587,7 +611,9 @@ void AuraNetworkManager::startSta() {
     if (force_reset) {
         LOGI("WiFi", "forcing STA reset before retry");
         WiFi.mode(WIFI_OFF);
-        delay(200);
+        if (!wait_for_sta_stopped(kWifiStaTransitionTimeoutMs)) {
+            LOGW("WiFi", "STA stop timeout after forced reset");
+        }
     }
     wifi_mode_t mode = WiFi.getMode();
     if ((mode & WIFI_STA) == 0) {
@@ -598,7 +624,13 @@ void AuraNetworkManager::startSta() {
             wifi_ui_dirty_ = true;
             return;
         }
-        delay(100);
+    }
+    if (!wait_for_sta_started(kWifiStaTransitionTimeoutMs)) {
+        LOGW("WiFi", "STA did not report started before connect, retrying");
+        wifi_state_ = WIFI_STATE_OFF;
+        wifi_retry_at_ms_ = millis() + Config::WIFI_CONNECT_RETRY_DELAY_MS;
+        wifi_ui_dirty_ = true;
+        return;
     }
     if (force_reset) {
         // Keep radio started in STA mode; reconnect should not power WiFi off.
