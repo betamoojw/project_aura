@@ -40,6 +40,7 @@ private:
     };
 
     bool readWords(uint16_t cmd, uint16_t *out, size_t words, uint32_t delay_ms);
+    bool pingAddress();
     bool writeCmd(uint16_t cmd);
     bool readBytes(uint8_t *buf, size_t len);
     bool ensureIdleBeforeStart();

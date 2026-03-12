@@ -38,21 +38,24 @@ void Sfa3x::start() {
     if (measuring_) {
         return;
     }
+    if (!pingAddress()) {
+        ok_ = false;
+        status_ = Status::Absent;
+        last_error_cause_ = ErrorCause::None;
+        return;
+    }
+
+    // The device ACKed on the bus, so any STOP/START failure is a fault, not absence.
+    status_ = Status::Fault;
     if (!ensureIdleBeforeStart()) {
         ok_ = false;
-        if (status_ != Status::Absent) {
-            status_ = Status::Fault;
-            LOGW("SFA30", "start aborted (%s)", errorCauseLabel());
-        }
+        LOGW("SFA30", "start aborted (%s)", errorCauseLabel());
         return;
     }
     if (!writeCmd(Config::SFA3X_CMD_START)) {
         ok_ = false;
         last_error_cause_ = ErrorCause::StartCommand;
-        if (status_ != Status::Absent) {
-            status_ = Status::Fault;
-            LOGW("SFA30", "start failed (%s)", errorCauseLabel());
-        }
+        LOGW("SFA30", "start failed (%s)", errorCauseLabel());
         return;
     }
     delay(Config::SFA3X_START_DELAY_MS);
@@ -156,6 +159,24 @@ bool Sfa3x::readWords(uint16_t cmd, uint16_t *out, size_t words, uint32_t delay_
         out[i] = (static_cast<uint16_t>(p[0]) << 8) | p[1];
     }
     return true;
+}
+
+bool Sfa3x::pingAddress() {
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    if (!cmd) {
+        return false;
+    }
+
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (Config::SFA3X_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_stop(cmd);
+    const esp_err_t err = i2c_master_cmd_begin(
+        Config::I2C_PORT,
+        cmd,
+        pdMS_TO_TICKS(Config::I2C_TIMEOUT_MS)
+    );
+    i2c_cmd_link_delete(cmd);
+    return err == ESP_OK;
 }
 
 bool Sfa3x::writeCmd(uint16_t cmd) {
