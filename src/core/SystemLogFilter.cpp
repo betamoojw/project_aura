@@ -35,8 +35,8 @@ bool isSoftWarning(Logger::Level level, const char *tag, const char *message) {
            strncmp(message, "Temperature outside recommended range:", 38) == 0 ||
            strncmp(message, "Humidity outside recommended range:", 35) == 0 ||
            strcmp(message, "Pressure sensor not found") == 0 ||
-           strcmp(message, "SFA30 not found") == 0 ||
-           strcmp(message, "SEN0466 CO not found, PM1 fallback active") == 0;
+           strcmp(message, "SFA30 not installed") == 0 ||
+           strcmp(message, "SEN0466 CO not installed") == 0;
 }
 
 bool shouldStoreAlert(Logger::Level level, const char *tag, const char *message) {

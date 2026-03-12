@@ -105,6 +105,24 @@ void test_alert_buffer_keeps_sen66_internal_faults() {
     TEST_ASSERT_EQUAL_STRING("PM sensor error", alerts[1].message);
 }
 
+void test_alert_buffer_excludes_optional_absence_but_keeps_faults() {
+    Logger::log(Logger::Info, "Sensors", "SEN0466 CO not installed");
+    advanceMillis(1);
+    Logger::log(Logger::Info, "SEN0466", "not installed after 3 attempts, stop probing until reboot");
+    advanceMillis(1);
+    Logger::log(Logger::Info, "FanControl", "DAC not installed");
+    advanceMillis(1);
+    Logger::log(Logger::Warn, "FanControl", "DAC init failed: range write failed");
+
+    Logger::RecentEntry alerts[4];
+    const size_t alert_count = Logger::copyRecentAlerts(alerts, 4);
+
+    TEST_ASSERT_EQUAL_UINT32(1, alert_count);
+    TEST_ASSERT_EQUAL(Logger::Warn, alerts[0].level);
+    TEST_ASSERT_EQUAL_STRING("FanControl", alerts[0].tag);
+    TEST_ASSERT_EQUAL_STRING("DAC init failed: range write failed", alerts[0].message);
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_alert_buffer_keeps_only_warn_and_error);
@@ -112,5 +130,6 @@ int main(int, char **) {
     RUN_TEST(test_alert_buffer_excludes_soft_sensor_warnings);
     RUN_TEST(test_alert_buffer_preserves_hard_errors_during_soft_sensor_warn_churn);
     RUN_TEST(test_alert_buffer_keeps_sen66_internal_faults);
+    RUN_TEST(test_alert_buffer_excludes_optional_absence_but_keeps_faults);
     return UNITY_END();
 }

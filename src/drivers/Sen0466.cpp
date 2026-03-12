@@ -45,7 +45,7 @@ bool Sen0466::start() {
         }
         if (!start_retry_exhausted_logged_ &&
             start_attempts_ >= Config::SEN0466_MAX_START_ATTEMPTS) {
-            LOGW("SEN0466", "not found after %u attempts, stop probing until reboot",
+            LOGI("SEN0466", "not installed after %u attempts, stop probing until reboot",
                  static_cast<unsigned>(Config::SEN0466_MAX_START_ATTEMPTS));
             start_retry_exhausted_logged_ = true;
         }

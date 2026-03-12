@@ -563,7 +563,7 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
         Logger::log(Logger::Info, "Sensors", "SEN0466 CO OK at 0x%02X",
                     static_cast<unsigned>(Config::SEN0466_ADDR));
     } else {
-        LOGW("Sensors", "SEN0466 CO not found, PM1 fallback active");
+        LOGI("Sensors", "SEN0466 CO not installed");
     }
 
     sen66_.scheduleRetry(Config::SEN66_STARTUP_GRACE_MS);

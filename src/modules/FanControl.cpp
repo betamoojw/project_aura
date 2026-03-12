@@ -239,12 +239,20 @@ void FanControl::begin(bool auto_mode_preference, bool auto_armed_preference) {
     }
 
     const uint32_t now_ms = millis();
-    if (tryInitialize(now_ms)) {
-        LOGI("FanControl", "DAC ready at 0x%02X", Config::DAC_I2C_ADDR_DEFAULT);
-    } else {
-        LOGW("FanControl", "DAC not detected at boot, retry only after reboot");
-        boot_missing_lockout_ = true;
-        output_known_ = false;
+    const char *init_failure_reason = nullptr;
+    switch (tryInitialize(now_ms, init_failure_reason)) {
+        case InitStatus::Ok:
+            LOGI("FanControl", "DAC ready at 0x%02X", Config::DAC_I2C_ADDR_DEFAULT);
+            break;
+        case InitStatus::Absent:
+            LOGI("FanControl", "DAC not installed");
+            boot_missing_lockout_ = true;
+            applyStopState(false);
+            break;
+        case InitStatus::Fault:
+            Logger::log(Logger::Warn, "FanControl", "DAC init failed: %s",
+                        init_failure_reason ? init_failure_reason : "unknown");
+            break;
     }
     publishSnapshot();
 }
@@ -294,7 +302,8 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
         if (!boot_missing_lockout_ &&
             now_ms - last_recover_attempt_ms_ >= Config::DAC_RECOVER_COOLDOWN_MS) {
             last_recover_attempt_ms_ = now_ms;
-            if (tryInitialize(now_ms)) {
+            const char *init_failure_reason = nullptr;
+            if (tryInitialize(now_ms, init_failure_reason) == InitStatus::Ok) {
                 LOGI("FanControl", "DAC recovered");
             }
         }
@@ -594,18 +603,30 @@ void FanControl::applyAutoConfig(const DacAutoConfig &config) {
     DacAutoConfigJson::sanitize(auto_config_);
 }
 
-bool FanControl::tryInitialize(uint32_t now_ms) {
+FanControl::InitStatus FanControl::tryInitialize(uint32_t now_ms, const char *&failure_reason) {
+    failure_reason = nullptr;
     if (!dac_.begin(Config::DAC_I2C_ADDR_DEFAULT)) {
         available_ = false;
-        return false;
+        faulted_ = false;
+        return InitStatus::Absent;
     }
     if (!dac_.setOutputRange10V()) {
         available_ = false;
-        return false;
+        faulted_ = true;
+        applyStopState(false);
+        health_probe_fail_count_ = 0;
+        last_recover_attempt_ms_ = now_ms;
+        failure_reason = "range write failed";
+        return InitStatus::Fault;
     }
     if (!dac_.writeChannelMillivolts(Config::DAC_CHANNEL_VOUT0, Config::DAC_SAFE_DEFAULT_MV)) {
         available_ = false;
-        return false;
+        faulted_ = true;
+        applyStopState(false);
+        health_probe_fail_count_ = 0;
+        last_recover_attempt_ms_ = now_ms;
+        failure_reason = "default output write failed";
+        return InitStatus::Fault;
     }
 
     available_ = true;
@@ -619,7 +640,7 @@ bool FanControl::tryInitialize(uint32_t now_ms) {
     timer_update_pending_ = false;
     last_health_check_ms_ = now_ms;
     health_probe_fail_count_ = 0;
-    return true;
+    return InitStatus::Ok;
 }
 
 bool FanControl::applyOutputMillivolts(uint16_t millivolts) {

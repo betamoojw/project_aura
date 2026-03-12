@@ -22,6 +22,12 @@ public:
         Auto = 1,
     };
 
+    enum class InitStatus : uint8_t {
+        Ok = 0,
+        Absent,
+        Fault,
+    };
+
     void begin(bool auto_mode_preference, bool auto_armed_preference);
     void poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_warmup);
 
@@ -93,7 +99,7 @@ private:
     void applyRequestStop();
     void applyRequestAutoStart();
     void applyAutoConfig(const DacAutoConfig &config);
-    bool tryInitialize(uint32_t now_ms);
+    InitStatus tryInitialize(uint32_t now_ms, const char *&failure_reason);
     bool applyOutputMillivolts(uint16_t millivolts);
     void handleDacFault(const char *reason);
     void applyStopState(bool output_known);
