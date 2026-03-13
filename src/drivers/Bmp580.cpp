@@ -227,7 +227,11 @@ bool Bmp580::start() {
         ok_ = false;
         return false;
     }
-    waitNvmReady(20);
+    if (!waitNvmReady(20)) {
+        LOGW("BMP58x", "%s NVM_RDY timeout", variantLabel());
+        ok_ = false;
+        return false;
+    }
 
     if (!configure()) {
         ok_ = false;

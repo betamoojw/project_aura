@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef USE_REAL_BMP580_HEADER
+#include "../../../src/drivers/Bmp580.h"
+#else
+
 #include "Arduino.h"
 
 struct Bmp580TestState {
@@ -65,3 +69,5 @@ public:
         return instance;
     }
 };
+
+#endif
