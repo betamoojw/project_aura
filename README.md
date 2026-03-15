@@ -5,6 +5,7 @@
 [![LVGL](https://img.shields.io/badge/ui-LVGL-00b0f0)](https://lvgl.io/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![YouTube Demo](https://img.shields.io/badge/YouTube-Demo-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
+[![YouTube Review](https://img.shields.io/badge/YouTube-Review-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=1pzBqcmbWl8)
 
 Support this project: back the crowdfunding to get detailed build instructions, 3D-printable enclosure models, and wiring guides at:
 https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
@@ -41,6 +42,9 @@ This repository contains the firmware source code and configuration needed to fl
 ## Video Demo
 Click the image.
 [![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/maxresdefault.jpg)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
+
+Also watch the new Project Aura review:
+[Project Aura review on YouTube](https://www.youtube.com/watch?v=1pzBqcmbWl8)
 
 ## Highlights
 - Professional telemetry: PM0.5/PM1/PM2.5/PM4/PM10, CO, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO.
