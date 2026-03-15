@@ -27,8 +27,8 @@ constexpr uint32_t kMqttMdnsSuccessCacheMs = 5UL * 60UL * 1000UL;
 constexpr uint32_t kMqttMdnsFailureCacheMs = 60UL * 1000UL;
 constexpr uint16_t kMqttDefaultSocketTimeoutSec = 1;
 constexpr uint16_t kMqttConnectSocketTimeoutShortSec = 3;
-constexpr uint16_t kMqttConnectSocketTimeoutSlowSec = 5;
-constexpr uint8_t kMqttConnectAttemptsPerWindow = 2;
+constexpr uint16_t kMqttConnectSocketTimeoutSlowSec = 3;
+constexpr uint8_t kMqttConnectAttemptsPerWindow = 1;
 constexpr uint16_t kMqttConnectRetryDelayMs = 250;
 constexpr uint8_t kMqttLongRetryLogEveryAttempts = 6;
 
