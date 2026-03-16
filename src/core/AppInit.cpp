@@ -7,6 +7,7 @@
 #include "core/AppInit.h"
 
 #include <esp_display_panel.hpp>
+#include <esp_log.h>
 #include <esp_system.h>
 
 #include "config/AppConfig.h"
@@ -204,6 +205,8 @@ bool AppInit::initLvglAndUi(Context &ctx, esp_panel::board::Board *board) {
     ctx.uiController.setLvglReady(lvgl_ready);
     if (lvgl_ready) {
         ctx.uiController.begin();
+        // Keep startup diagnostics, but mute low-level runtime touch/I2C spam.
+        esp_log_level_set("lcd_panel.io.i2c", ESP_LOG_NONE);
     }
     return lvgl_ready;
 }
