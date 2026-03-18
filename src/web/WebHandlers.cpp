@@ -742,6 +742,43 @@ void ota_restore_wifi_power_save() {
     g_ota_wifi_ps_prev = WIFI_PS_NONE;
 }
 
+void ota_log_abort_summary(WebServer &server) {
+    const uint32_t now_ms = millis();
+    const uint32_t total_ms =
+        g_ota_upload_start_ms == 0 ? 0 : (now_ms - g_ota_upload_start_ms);
+    const uint32_t first_chunk_delay_ms =
+        g_ota_first_chunk_seen ? (g_ota_first_chunk_ms - g_ota_upload_start_ms) : 0;
+    const uint32_t last_chunk_age_ms =
+        g_ota_last_chunk_ms == 0 ? 0 : (now_ms - g_ota_last_chunk_ms);
+    const size_t avg_chunk_size =
+        g_ota_chunk_count > 0 ? (g_ota_chunk_sum_size / g_ota_chunk_count) : 0;
+    const wl_status_t wifi_status = WiFi.status();
+    const bool current_rssi_valid = wifi_status == WL_CONNECTED;
+    const int current_rssi = current_rssi_valid ? WiFi.RSSI() : 0;
+    const bool client_connected = server.client().connected();
+
+    LOGW("OTA",
+         "upload aborted (written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms last_chunk_age=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes client_connected=%s wifi_status=%d start_rssi_valid=%s start_rssi=%d current_rssi_valid=%s current_rssi=%d)",
+         static_cast<unsigned>(g_ota_written_size),
+         static_cast<unsigned>(g_ota_slot_size),
+         static_cast<unsigned>(g_ota_expected_size),
+         g_ota_size_known ? "YES" : "NO",
+         static_cast<unsigned>(total_ms),
+         g_ota_first_chunk_seen ? "YES" : "NO",
+         static_cast<unsigned>(first_chunk_delay_ms),
+         static_cast<unsigned>(last_chunk_age_ms),
+         static_cast<unsigned>(g_ota_chunk_count),
+         static_cast<unsigned>(g_ota_chunk_min_size),
+         static_cast<unsigned>(avg_chunk_size),
+         static_cast<unsigned>(g_ota_chunk_max_size),
+         client_connected ? "YES" : "NO",
+         static_cast<int>(wifi_status),
+         g_ota_start_rssi_valid ? "YES" : "NO",
+         g_ota_start_rssi,
+         current_rssi_valid ? "YES" : "NO",
+         current_rssi);
+}
+
 uint16_t stream_retry_delay_ms(const StreamProfile &profile, uint16_t zero_writes) {
     if (zero_writes <= 3) {
         return profile.retry_delay_fast_ms;
@@ -2965,8 +3002,8 @@ void ota_handle_upload() {
         if (Update.isRunning()) {
             Update.abort();
         }
+        ota_log_abort_summary(server);
         ota_set_error("Upload aborted");
-        LOGW("OTA", "upload aborted");
     }
 }
 
