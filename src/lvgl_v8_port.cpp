@@ -11,6 +11,7 @@
 #undef ESP_UTILS_LOG_TAG
 #define ESP_UTILS_LOG_TAG "LvPort"
 #include "esp_lib_utils.h"
+#include "core/BootState.h"
 #include "lvgl_v8_port.h"
 
 using namespace esp_panel::drivers;
@@ -52,6 +53,7 @@ static constexpr uint32_t LVGL_TOUCH_POLL_INTERVAL_MS = 12;
 static constexpr uint32_t LVGL_TOUCH_READ_RETRY_DELAY_MS = 2;
 static constexpr uint32_t LVGL_TOUCH_ERROR_STREAK_WINDOW_MS = 1200;
 static constexpr uint32_t LVGL_TOUCH_BOOT_QUIET_MS = 5000;
+static constexpr uint32_t LVGL_TOUCH_BOOT_QUIET_WARM_MS = 10000;
 static constexpr uint32_t LVGL_TOUCH_ERROR_BLOCK_MS_BASE = 400;
 static constexpr uint32_t LVGL_TOUCH_ERROR_BLOCK_MS_STREAK = 1800;
 static constexpr uint8_t LVGL_TOUCH_RECOVER_ERROR_STREAK = 3;
@@ -106,6 +108,13 @@ static inline uint32_t get_monotonic_ms()
 static inline bool is_before_deadline(uint32_t now_ms, uint32_t deadline_ms)
 {
     return static_cast<int32_t>(deadline_ms - now_ms) > 0;
+}
+
+static inline uint32_t lvgl_touch_boot_quiet_window_ms()
+{
+    return (boot_reset_reason == ESP_RST_POWERON)
+               ? LVGL_TOUCH_BOOT_QUIET_MS
+               : LVGL_TOUCH_BOOT_QUIET_WARM_MS;
 }
 
 static inline void lvgl_touch_fill_from_cache(lv_indev_data_t *data)
@@ -1080,7 +1089,7 @@ bool lvgl_port_init(LCD *lcd, Touch *tp)
     lvgl_touch_recover_successes = 0;
     lvgl_touch_recover_fail_streak = 0;
     lvgl_touch_offline = false;
-    lvgl_touch_boot_quiet_until_ms = get_monotonic_ms() + LVGL_TOUCH_BOOT_QUIET_MS;
+    lvgl_touch_boot_quiet_until_ms = get_monotonic_ms() + lvgl_touch_boot_quiet_window_ms();
     lvgl_touch_read_block_until_ms = lvgl_touch_boot_quiet_until_ms;
 
     auto bus_type = lcd->getBus()->getBasicAttributes().type;
