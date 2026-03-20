@@ -468,6 +468,7 @@ void UiEventBinder::applyCheckedStatesForAvailableObjects(UiController &owner, i
     if (!screen_root) {
         return;
     }
+    owner.refreshConnectivitySnapshot();
 
     auto set_checked = [screen_root](lv_obj_t *btn, bool checked) {
         if (!btn) {
@@ -487,8 +488,8 @@ void UiEventBinder::applyCheckedStatesForAvailableObjects(UiController &owner, i
     set_checked(objects.btn_head_status_1, owner.backlightManager.isScheduleEnabled());
     set_checked(objects.btn_backlight_alarm_wake, owner.backlightManager.isAlarmWakeEnabled());
     set_checked(objects.btn_wifi_start_ap,
-                owner.networkManager.isEnabled() &&
-                owner.networkManager.state() == AuraNetworkManager::WIFI_STATE_AP_CONFIG);
+                owner.connectivity_.wifi_enabled &&
+                owner.connectivity_.wifi_state == static_cast<int>(AuraNetworkManager::WIFI_STATE_AP_CONFIG));
     set_checked(objects.btn_night_mode, owner.night_mode);
     set_checked(objects.btn_units, owner.temp_units_c);
     set_checked(objects.btn_led_indicators, owner.led_indicators_enabled);
