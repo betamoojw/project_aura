@@ -6,6 +6,7 @@
 
 #include "web/WebShellAssetHandlers.h"
 
+#include "core/ConnectivityRuntime.h"
 #include "web/WebTemplates.h"
 #include "web/WebThemePage.h"
 #include "web/WebUiBridge.h"
@@ -14,12 +15,13 @@ namespace WebShellAssetHandlers {
 
 void handleThemeRoot(WebHandlerContext &context,
                      const WebResponseUtils::StreamContext &stream_context) {
-    if (!context.server || !context.web_ui_bridge) {
+    if (!context.server || !context.web_ui_bridge || !context.connectivity_runtime) {
         return;
     }
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
     const WebUiBridge::Snapshot web_ui_snapshot =
         context.web_ui_bridge ? context.web_ui_bridge->snapshot() : WebUiBridge::Snapshot{};
-    switch (WebThemePage::rootAccess(context.wifi_is_connected && context.wifi_is_connected(),
+    switch (WebThemePage::rootAccess(connectivity.wifi_connected,
                                      web_ui_snapshot.theme_screen_open,
                                      web_ui_snapshot.theme_custom_screen_open)) {
     case WebThemePage::RootAccess::WifiRequired:

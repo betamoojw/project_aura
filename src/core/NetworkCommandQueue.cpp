@@ -50,6 +50,18 @@ bool NetworkCommandQueue::publishSavedMqttSettings(const MqttSettingsUpdate &upd
     return true;
 }
 
+bool NetworkCommandQueue::publishWifiScanRequest(Type type) {
+    if (!mutex_ ||
+        (type != Type::RequestWifiScanStart && type != Type::RequestWifiScanStop)) {
+        return false;
+    }
+    lock();
+    pending_wifi_scan_request_ = type;
+    pending_wifi_scan_request_valid_ = true;
+    unlock();
+    return true;
+}
+
 bool NetworkCommandQueue::tryDequeue(Command &out) {
     if (!queue_) {
         return false;
@@ -118,6 +130,16 @@ void NetworkCommandQueue::processAll(AuraNetworkManager &networkManager,
         }
     }
 
+    Type wifi_scan_request = Type::RequestWifiScanStart;
+    if (takePendingWifiScanRequest(wifi_scan_request)) {
+        processed = true;
+        if (wifi_scan_request == Type::RequestWifiScanStart) {
+            networkManager.startScan();
+        } else {
+            networkManager.stopScan();
+        }
+    }
+
     WifiSettingsUpdate wifi_settings_update;
     if (takePendingWifiSettingsUpdate(wifi_settings_update)) {
         processed = true;
@@ -154,6 +176,18 @@ void NetworkCommandQueue::unlock() const {
     if (mutex_) {
         xSemaphoreGive(mutex_);
     }
+}
+
+bool NetworkCommandQueue::takePendingWifiScanRequest(Type &out) {
+    lock();
+    if (!pending_wifi_scan_request_valid_) {
+        unlock();
+        return false;
+    }
+    out = pending_wifi_scan_request_;
+    pending_wifi_scan_request_valid_ = false;
+    unlock();
+    return true;
 }
 
 bool NetworkCommandQueue::takePendingWifiSettingsUpdate(WifiSettingsUpdate &out) {

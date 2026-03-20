@@ -6,10 +6,8 @@
 
 #include "web/WebMqttHandlers.h"
 
-#include <WiFi.h>
-
 #include "config/AppConfig.h"
-#include "modules/MqttRuntime.h"
+#include "core/ConnectivityRuntime.h"
 #include "web/WebMqttPage.h"
 #include "web/WebMqttSaveUtils.h"
 #include "web/WebTemplates.h"
@@ -20,12 +18,13 @@ namespace WebMqttHandlers {
 
 void handleRoot(WebHandlerContext &context,
                 const WebResponseUtils::StreamContext &stream_context) {
-    if (!context.server || !context.mqtt_runtime) {
+    if (!context.server || !context.connectivity_runtime) {
         return;
     }
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
     const WebUiBridge::Snapshot web_ui_snapshot =
         context.web_ui_bridge ? context.web_ui_bridge->snapshot() : WebUiBridge::Snapshot{};
-    switch (WebMqttPage::rootAccess(context.wifi_is_connected && context.wifi_is_connected(),
+    switch (WebMqttPage::rootAccess(connectivity.wifi_connected,
                                     web_ui_snapshot.mqtt_screen_open)) {
         case WebMqttPage::RootAccess::NotFound:
             context.server->send(404, "text/plain", "Not found");
@@ -39,27 +38,22 @@ void handleRoot(WebHandlerContext &context,
             break;
     }
 
-    const bool wifi_connected = context.wifi_is_connected ? context.wifi_is_connected() : false;
-    const String mqtt_user = context.mqtt_user ? *context.mqtt_user : String();
-    const String mqtt_pass = context.mqtt_pass ? *context.mqtt_pass : String();
-
     WebMqttPage::PageData page_data;
-    page_data.wifi_connected = wifi_connected;
-    page_data.wifi_enabled = context.wifi_enabled ? *context.wifi_enabled : false;
-    page_data.mqtt_enabled = context.mqtt_user_enabled ? *context.mqtt_user_enabled : false;
-    page_data.mqtt_connected = context.mqtt_runtime->isConnected();
-    page_data.mqtt_retry_stage = context.mqtt_runtime->retryStage();
-    page_data.device_id = context.mqtt_device_id ? *context.mqtt_device_id : String();
-    page_data.device_ip = wifi_connected ? WiFi.localIP().toString() : String("---");
-    page_data.host = context.mqtt_host ? *context.mqtt_host : String();
-    page_data.port = context.mqtt_port ? *context.mqtt_port : Config::MQTT_DEFAULT_PORT;
-    page_data.user = mqtt_user;
-    page_data.pass = mqtt_pass;
-    page_data.device_name = context.mqtt_device_name ? *context.mqtt_device_name : String();
-    page_data.base_topic = context.mqtt_base_topic ? *context.mqtt_base_topic : String();
-    page_data.anonymous = context.mqtt_anonymous ? *context.mqtt_anonymous
-                                                 : (mqtt_user.isEmpty() && mqtt_pass.isEmpty());
-    page_data.discovery = context.mqtt_discovery ? *context.mqtt_discovery : false;
+    page_data.wifi_connected = connectivity.wifi_connected;
+    page_data.wifi_enabled = connectivity.wifi_enabled;
+    page_data.mqtt_enabled = connectivity.mqtt_user_enabled;
+    page_data.mqtt_connected = connectivity.mqtt_connected;
+    page_data.mqtt_retry_stage = connectivity.mqtt_retry_stage;
+    page_data.device_id = connectivity.mqtt_device_id;
+    page_data.device_ip = connectivity.wifi_connected ? connectivity.sta_ip : String("---");
+    page_data.host = connectivity.mqtt_host;
+    page_data.port = connectivity.mqtt_port == 0 ? Config::MQTT_DEFAULT_PORT : connectivity.mqtt_port;
+    page_data.user = connectivity.mqtt_user;
+    page_data.pass = connectivity.mqtt_pass;
+    page_data.device_name = connectivity.mqtt_device_name;
+    page_data.base_topic = connectivity.mqtt_base_topic;
+    page_data.anonymous = connectivity.mqtt_anonymous;
+    page_data.discovery = connectivity.mqtt_discovery;
 
     const String html = WebMqttPage::renderHtml(FPSTR(WebTemplates::kMqttPageTemplate), page_data);
     WebResponseUtils::sendHtmlStreamResilient(*context.server, html, stream_context);
@@ -70,12 +64,13 @@ void handleSave(WebHandlerContext &context,
                 uint32_t deferred_action_delay_ms,
                 WebDeferredActionsState &deferred_actions,
                 const WebResponseUtils::StreamContext &stream_context) {
-    if (!context.server || !context.web_ui_bridge || !context.mqtt_runtime) {
+    if (!context.server || !context.web_ui_bridge || !context.connectivity_runtime) {
         return;
     }
 
     WebRequest &server = *context.server;
-    if (!context.wifi_is_connected || !context.wifi_is_connected()) {
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    if (!connectivity.wifi_connected) {
         WebResponseUtils::sendNoStoreText(server, 404, "Not found");
         return;
     }
@@ -101,8 +96,8 @@ void handleSave(WebHandlerContext &context,
     save_input.discovery = server.hasArg("discovery");
 
     WebMqttSaveUtils::CurrentCredentials current_credentials{};
-    current_credentials.user = context.mqtt_user ? *context.mqtt_user : String();
-    current_credentials.pass = context.mqtt_pass ? *context.mqtt_pass : String();
+    current_credentials.user = connectivity.mqtt_user;
+    current_credentials.pass = connectivity.mqtt_pass;
 
     const WebMqttSaveUtils::ParseResult parse_result =
         WebMqttSaveUtils::parseSaveInput(save_input, current_credentials);

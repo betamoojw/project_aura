@@ -6,6 +6,7 @@
 
 #include "web/WebWifiHandlers.h"
 
+#include "core/ConnectivityRuntime.h"
 #include "web/WebTemplates.h"
 #include "web/WebUiBridge.h"
 #include "web/WebUiBridgeAdapters.h"
@@ -19,12 +20,13 @@ void handleSave(WebHandlerContext &context,
                 uint32_t deferred_action_delay_ms,
                 WebDeferredActionsState &deferred_actions,
                 const WebResponseUtils::StreamContext &stream_context) {
-    if (!context.server || !context.web_ui_bridge) {
+    if (!context.server || !context.web_ui_bridge || !context.connectivity_runtime) {
         return;
     }
 
     WebRequest &server = *context.server;
-    if (!context.wifi_is_ap_mode || !context.wifi_is_ap_mode()) {
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    if (!connectivity.wifi_ap_mode) {
         WebResponseUtils::sendNoStoreText(server, 409, "WiFi save allowed only in AP setup mode");
         return;
     }
@@ -55,9 +57,7 @@ void handleSave(WebHandlerContext &context,
     }
 
     WebWifiPage::SavePageData page_data{};
-    page_data.hostname = (context.hostname && !context.hostname->isEmpty())
-                             ? *context.hostname
-                             : String("aura");
+    page_data.hostname = connectivity.hostname.isEmpty() ? String("aura") : connectivity.hostname;
     page_data.wait_seconds = 15;
     const String html = WebWifiPage::renderSaveHtml(FPSTR(WebTemplates::kWifiSavePage), page_data);
     WebResponseUtils::sendHtmlStream(server, html, stream_context);

@@ -8,6 +8,7 @@
 
 #include <ArduinoJson.h>
 
+#include "core/ConnectivityRuntime.h"
 #include "web/WebResponseUtils.h"
 #include "web/WebThemeApiUtils.h"
 #include "web/WebUiBridge.h"
@@ -29,12 +30,13 @@ void send_theme_error_json(WebRequest &server, int status_code, const char *mess
 namespace WebThemeApiHandlers {
 
 void handleState(WebHandlerContext &context) {
-    if (!context.server || !context.web_ui_bridge) {
+    if (!context.server || !context.web_ui_bridge || !context.connectivity_runtime) {
         return;
     }
 
     WebRequest &server = *context.server;
-    const bool wifi_ready = context.wifi_is_connected && context.wifi_is_connected();
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    const bool wifi_ready = connectivity.wifi_connected;
     const WebUiBridge::Snapshot web_ui_snapshot =
         context.web_ui_bridge ? context.web_ui_bridge->snapshot() : WebUiBridge::Snapshot{};
     const WebThemeApiUtils::ApiAccessResult access_result =
@@ -56,7 +58,7 @@ void handleState(WebHandlerContext &context) {
 }
 
 void handleApply(WebHandlerContext &context, bool ota_busy, const char *ota_busy_json) {
-    if (!context.server || !context.web_ui_bridge) {
+    if (!context.server || !context.web_ui_bridge || !context.connectivity_runtime) {
         return;
     }
 
@@ -67,7 +69,8 @@ void handleApply(WebHandlerContext &context, bool ota_busy, const char *ota_busy
         return;
     }
 
-    const bool wifi_ready = context.wifi_is_connected && context.wifi_is_connected();
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    const bool wifi_ready = connectivity.wifi_connected;
     const WebUiBridge::Snapshot web_ui_snapshot =
         context.web_ui_bridge ? context.web_ui_bridge->snapshot() : WebUiBridge::Snapshot{};
     const WebThemeApiUtils::ApiAccessResult access_result =

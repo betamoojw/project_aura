@@ -9,9 +9,9 @@
 #include <time.h>
 
 #include <ArduinoJson.h>
-#include <WiFi.h>
 
 #include "core/AppVersion.h"
+#include "core/ConnectivityRuntime.h"
 #include "core/Logger.h"
 #include "core/WebRuntimeState.h"
 #include "web/WebDiagApiUtils.h"
@@ -43,11 +43,11 @@ namespace WebSystemApiHandlers {
 
 void handleDiagRoot(WebHandlerContext &context,
                     const WebResponseUtils::StreamContext &stream_context) {
-    if (!context.server) {
+    if (!context.server || !context.connectivity_runtime) {
         return;
     }
-    if (!WebDiagApiUtils::accessAllowed(context.wifi_is_ap_mode && context.wifi_is_ap_mode(),
-                                        context.wifi_is_connected && context.wifi_is_connected())) {
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    if (!WebDiagApiUtils::accessAllowed(connectivity.wifi_ap_mode, connectivity.wifi_connected)) {
         context.server->send(404, "text/plain", "Not found");
         return;
     }
@@ -62,11 +62,11 @@ void handleDiagRoot(WebHandlerContext &context,
 void handleDiagData(WebHandlerContext &context,
                     bool ota_busy,
                     const WebTransferSnapshot &web_stream_snapshot) {
-    if (!context.server) {
+    if (!context.server || !context.connectivity_runtime) {
         return;
     }
-    if (!WebDiagApiUtils::accessAllowed(context.wifi_is_ap_mode && context.wifi_is_ap_mode(),
-                                        context.wifi_is_connected && context.wifi_is_connected())) {
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    if (!WebDiagApiUtils::accessAllowed(connectivity.wifi_ap_mode, connectivity.wifi_connected)) {
         context.server->send(404, "text/plain", "Not found");
         return;
     }

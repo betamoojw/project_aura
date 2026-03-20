@@ -14,7 +14,6 @@
 #include "core/SafeRestart.h"
 #include "core/Watchdog.h"
 #include "lvgl_v8_port.h"
-#include "modules/MqttRuntime.h"
 #include "web/WebOtaState.h"
 #include "web/WebUiBridge.h"
 
@@ -23,7 +22,6 @@ namespace {
 constexpr uint32_t kDeferredRestartDelayMs = 1500;
 constexpr uint32_t kTaskWdtDefaultMs = 180000;
 constexpr uint32_t kTaskWdtOtaMs = 10UL * 60UL * 1000UL;
-constexpr uint32_t kWebStreamMqttServiceIntervalMs = 250;
 constexpr uint32_t kHttpStreamSlowWriteWarnMs = 200;
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
@@ -50,20 +48,14 @@ void web_stream_kick_watchdog(void *) {
     Watchdog::kick();
 }
 
-void web_stream_service_connected_mqtt(void *, uint32_t) {
-    if (g_ctx && g_ctx->mqtt_runtime) {
-        g_ctx->mqtt_runtime->serviceConnectedLoop();
-    }
-}
-
 const WebStreamRuntime &default_web_stream_runtime() {
     static const WebStreamRuntime runtime = {
         nullptr,
         web_stream_now_ms,
         web_stream_delay_ms,
         web_stream_kick_watchdog,
-        web_stream_service_connected_mqtt,
-        kWebStreamMqttServiceIntervalMs,
+        nullptr,
+        0,
     };
     return runtime;
 }
@@ -259,12 +251,7 @@ void pollDeferred() {
         g_ctx->mqtt_sync_with_wifi();
     }
 
-    if (g_restart_controller.poll(now_ms)) {
-        LOGI("OTA", "deferred reboot: restarting now");
-        lvgl_port_prepare_restart();
-        delay(50);
-        safe_restart_via_core0();
-    }
+    g_restart_controller.poll(now_ms);
 }
 
 WebTransferSnapshot streamSnapshot(uint32_t now_ms) {

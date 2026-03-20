@@ -18,6 +18,7 @@ class MqttRuntime;
 class NetworkCommandQueue;
 class ThemeManager;
 class ChartsRuntimeState;
+class ConnectivityRuntime;
 class WebUiBridge;
 class WebRuntimeState;
 
@@ -42,6 +43,7 @@ public:
                            void (*mqtt_sync_with_wifi)());
     void attachThemeContext(ThemeManager &themeManager);
     void attachChartsRuntime(ChartsRuntimeState &chartsRuntime);
+    void attachConnectivityRuntime(ConnectivityRuntime &connectivityRuntime);
     void attachWebRuntime(WebRuntimeState &webRuntime);
     void attachWebUiBridge(WebUiBridge &webUiBridge);
     void attachCommandQueue(NetworkCommandQueue &commandQueue);

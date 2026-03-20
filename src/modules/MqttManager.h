@@ -10,6 +10,8 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include <mqtt_client.h>
 #include "config/AppConfig.h"
 #include "config/AppData.h"
@@ -39,7 +41,6 @@ public:
                            const String &device_name,
                            bool discovery,
                            bool anonymous);
-    void serviceConnectedLoop() override;
 
     bool isUserEnabled() const { return mqtt_user_enabled_; }
     bool isEnabled() const { return mqtt_enabled_; }
@@ -55,9 +56,13 @@ public:
 
     const String &host() const { return mqtt_host_; }
     uint16_t port() const { return mqtt_port_; }
+    const String &user() const { return mqtt_user_; }
+    const String &pass() const { return mqtt_pass_; }
     const String &baseTopic() const { return mqtt_base_topic_; }
     const String &deviceName() const { return mqtt_device_name_; }
     const String &deviceId() const { return mqtt_device_id_; }
+    bool discoveryEnabled() const { return mqtt_discovery_; }
+    bool isAnonymous() const { return mqtt_anonymous_; }
 
     bool &userEnabledRef() { return mqtt_user_enabled_; }
     String &hostRef() { return mqtt_host_; }
@@ -102,6 +107,8 @@ private:
                                 const char *payload_press, const char *icon);
     void publishNightModeAvailability();
     void publishState(const MqttRuntimeSnapshot &runtime);
+    void lockCommandContext() const;
+    void unlockCommandContext() const;
 
     void handleIncomingMessage(const char *topic, const uint8_t *payload, size_t length);
     static void staticEventHandler(void *handler_args, esp_event_base_t base, int32_t event_id,
@@ -109,11 +116,22 @@ private:
     static bool payloadIsOn(const char *payload);
     static bool payloadIsOff(const char *payload);
 
+    enum class ConnectionSignal : uint8_t {
+        None = 0,
+        Connected,
+        Disconnected,
+    };
+
     StorageManager *storage_ = nullptr;
     AuraNetworkManager *network_ = nullptr;
     MqttRuntimeState *runtime_state_ = nullptr;
     esp_mqtt_client_handle_t client_ = nullptr;
     std::atomic<bool> ui_dirty_{false};
+    std::atomic<esp_mqtt_client_handle_t> mqtt_active_client_{nullptr};
+    std::atomic<uint8_t> mqtt_connection_signal_{static_cast<uint8_t>(ConnectionSignal::None)};
+    std::atomic<int> mqtt_last_error_rc_{0};
+    mutable StaticSemaphore_t command_context_mutex_buffer_{};
+    mutable SemaphoreHandle_t command_context_mutex_ = nullptr;
 
     static constexpr size_t kMqttHostBufferSize = 256;
     static constexpr size_t kMqttStatePayloadBufferSize = Config::MQTT_BUFFER_SIZE;
@@ -145,9 +163,7 @@ private:
     bool mqtt_publish_deferred_by_web_ = false;
     bool mqtt_manual_stop_ = false;
     bool mqtt_client_needs_destroy_ = false;
-    bool mqtt_pending_connect_failure_ = false;
-    int mqtt_pending_connect_failure_rc_ = 0;
-    int mqtt_last_error_rc_ = 0;
+    // MQTT_EVENT_DATA may arrive in chunks; these buffers belong only to the esp-mqtt event task.
     String mqtt_event_topic_;
     String mqtt_event_payload_;
     String mqtt_mdns_cache_host_;

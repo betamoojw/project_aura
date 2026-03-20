@@ -8,6 +8,7 @@
 
 #include <WiFi.h>
 
+#include "core/ConnectivityRuntime.h"
 #include "web/WebDashboardPage.h"
 #include "web/WebTemplates.h"
 #include "web/WebWifiPage.h"
@@ -46,10 +47,11 @@ void buildWifiScanItems(WebHandlerContext &context, int count) {
 
 void handleWifiRoot(WebHandlerContext &context,
                     const WebResponseUtils::StreamContext &stream_context) {
-    if (!context.server) {
+    if (!context.server || !context.connectivity_runtime) {
         return;
     }
-    if (!context.wifi_is_ap_mode || !context.wifi_is_ap_mode()) {
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    if (!connectivity.wifi_ap_mode) {
         WebResponseUtils::sendNoStoreHeaders(*context.server);
         context.server->send(404, "text/plain", "Not found");
         return;
@@ -57,8 +59,7 @@ void handleWifiRoot(WebHandlerContext &context,
     WebRequest &server = *context.server;
 
     if (server.hasArg("scan_status")) {
-        const String json = WebWifiPage::renderScanStatusJson(
-            context.wifi_scan_in_progress && *context.wifi_scan_in_progress);
+        const String json = WebWifiPage::renderScanStatusJson(connectivity.wifi_scan_in_progress);
         WebResponseUtils::sendNoStoreHeaders(server);
         server.send(200, "application/json", json);
         return;
@@ -68,17 +69,16 @@ void handleWifiRoot(WebHandlerContext &context,
         context.wifi_start_scan();
     }
     String list_items;
-    if (context.wifi_scan_in_progress && *context.wifi_scan_in_progress) {
+    if (connectivity.wifi_scan_in_progress) {
         list_items = FPSTR(WebTemplates::kWifiListScanning);
-    } else if (context.wifi_scan_options && !context.wifi_scan_options->isEmpty()) {
-        list_items = *context.wifi_scan_options;
+    } else if (!connectivity.wifi_scan_options.isEmpty()) {
+        list_items = connectivity.wifi_scan_options;
     } else {
         list_items = FPSTR(WebTemplates::kWifiListEmpty);
     }
     WebWifiPage::RootPageData page_data{};
     page_data.ssid_items = list_items;
-    page_data.scan_in_progress =
-        context.wifi_scan_in_progress && *context.wifi_scan_in_progress;
+    page_data.scan_in_progress = connectivity.wifi_scan_in_progress;
     const String html =
         WebWifiPage::renderRootHtml(FPSTR(WebTemplates::kWifiPageTemplate), page_data);
     WebResponseUtils::sendHtmlStream(server, html, stream_context);
@@ -86,13 +86,13 @@ void handleWifiRoot(WebHandlerContext &context,
 
 void handleDashboardRoot(WebHandlerContext &context,
                          const WebResponseUtils::StreamContext &stream_context) {
-    if (!context.server) {
+    if (!context.server || !context.connectivity_runtime) {
         return;
     }
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
 
-    switch (WebDashboardPage::decideRootAction(context.wifi_is_ap_mode && context.wifi_is_ap_mode(),
-                                               context.wifi_is_connected &&
-                                                   context.wifi_is_connected(),
+    switch (WebDashboardPage::decideRootAction(connectivity.wifi_ap_mode,
+                                               connectivity.wifi_connected,
                                                context.server->uri())) {
     case WebDashboardPage::RootAction::WifiPortal:
         handleWifiRoot(context, stream_context);
@@ -140,11 +140,12 @@ void handleDashboardApp(WebHandlerContext &context,
 }
 
 void handleWifiNotFound(WebHandlerContext &context) {
-    if (!context.server) {
+    if (!context.server || !context.connectivity_runtime) {
         return;
     }
-    if (context.wifi_is_ap_mode && context.wifi_is_ap_mode()) {
-        const String portal_url = WebWifiPage::captivePortalRedirectUrl(WiFi.softAPIP().toString());
+    const ConnectivityRuntimeSnapshot connectivity = context.connectivity_runtime->snapshot();
+    if (connectivity.wifi_ap_mode) {
+        const String portal_url = WebWifiPage::captivePortalRedirectUrl(connectivity.ap_ip);
         WebResponseUtils::sendNoStoreHeaders(*context.server);
         context.server->sendHeader("Location", portal_url, true);
         context.server->send(302, "text/plain", "Redirecting to captive portal");

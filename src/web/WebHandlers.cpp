@@ -135,7 +135,7 @@ void diag_handle_data() {
 void mqtt_handle_root() {
     with_response_context([](WebHandlerContext &context,
                              const WebResponseUtils::StreamContext &stream_context) {
-        if (!context.server || !context.mqtt_runtime) {
+        if (!context.server || !context.connectivity_runtime) {
             return;
         }
         WebMqttHandlers::handleRoot(context, stream_context);
@@ -144,7 +144,7 @@ void mqtt_handle_root() {
 
 void mqtt_handle_save() {
     with_context([](WebHandlerContext &context) {
-        if (!context.server || !context.web_ui_bridge || !context.mqtt_runtime) {
+        if (!context.server || !context.web_ui_bridge || !context.connectivity_runtime) {
             return;
         }
         WebMqttHandlers::handleSave(

@@ -57,6 +57,7 @@ public:
     bool enqueue(Type type, bool bool_value = false);
     bool publishSavedWifiSettings(const WifiSettingsUpdate &update);
     bool publishSavedMqttSettings(const MqttSettingsUpdate &update);
+    bool publishWifiScanRequest(Type type);
     bool tryDequeue(Command &out);
     void processAll(AuraNetworkManager &networkManager,
                     MqttManager &mqttManager,
@@ -65,6 +66,7 @@ public:
 private:
     void lock() const;
     void unlock() const;
+    bool takePendingWifiScanRequest(Type &out);
     bool takePendingWifiSettingsUpdate(WifiSettingsUpdate &out);
     bool takePendingMqttSettingsUpdate(MqttSettingsUpdate &out);
 
@@ -75,6 +77,8 @@ private:
     QueueHandle_t queue_ = nullptr;
     mutable StaticSemaphore_t mutex_buffer_{};
     mutable SemaphoreHandle_t mutex_ = nullptr;
+    Type pending_wifi_scan_request_ = Type::RequestWifiScanStart;
+    bool pending_wifi_scan_request_valid_ = false;
     WifiSettingsUpdate pending_wifi_settings_update_{};
     bool pending_wifi_settings_valid_ = false;
     MqttSettingsUpdate pending_mqtt_settings_update_{};

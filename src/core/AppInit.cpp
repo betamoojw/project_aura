@@ -142,6 +142,7 @@ void AppInit::initManagersAndConfig(Context &ctx, StorageManager::BootAction boo
         mqtt_sync_with_wifi_cb);
     ctx.networkManager.attachThemeContext(ctx.themeManager);
     ctx.networkManager.attachChartsRuntime(ctx.chartsRuntimeState);
+    ctx.networkManager.attachConnectivityRuntime(ctx.connectivityRuntime);
     ctx.networkManager.attachWebRuntime(ctx.webRuntimeState);
     ctx.networkManager.attachWebUiBridge(ctx.webUiBridge);
     ctx.networkManager.attachCommandQueue(ctx.networkCommandQueue);

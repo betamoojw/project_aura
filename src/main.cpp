@@ -179,6 +179,7 @@ void setup()
     if (!safe_restart_init()) {
         LOGW("Restart", "Core0 restart task init failed; controlled restart requests will abort");
     }
+    webUiBridge.setDispatchMode(WebUiBridge::DispatchMode::DeferredReply);
     network_plane_running = NetworkPlane::start(network_plane_context);
     if (!network_plane_running) {
         LOGW("Main", "network task unavailable, falling back to main-loop networking");

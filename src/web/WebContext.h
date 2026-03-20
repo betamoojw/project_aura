@@ -15,6 +15,7 @@ class MqttRuntime;
 class StorageManager;
 class ThemeManager;
 class ChartsRuntimeState;
+class ConnectivityRuntime;
 class WebUiBridge;
 class WebRuntimeState;
 
@@ -51,6 +52,7 @@ struct WebHandlerContext {
     bool *mqtt_anonymous = nullptr;
     void (*mqtt_sync_with_wifi)() = nullptr;
     ChartsRuntimeState *charts_runtime = nullptr;
+    ConnectivityRuntime *connectivity_runtime = nullptr;
     WebRuntimeState *web_runtime = nullptr;
     WebUiBridge *web_ui_bridge = nullptr;
 };

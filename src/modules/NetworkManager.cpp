@@ -136,24 +136,24 @@ void network_wifi_event(arduino_event_id_t event, arduino_event_info_t info) {
 
 void network_wifi_start_scan() {
     if (g_network_command_queue) {
-        if (g_network_command_queue->enqueue(NetworkCommandQueue::Type::RequestWifiScanStart)) {
+        if (g_network_command_queue->enqueue(NetworkCommandQueue::Type::RequestWifiScanStart) ||
+            g_network_command_queue->publishWifiScanRequest(
+                NetworkCommandQueue::Type::RequestWifiScanStart)) {
             return;
         }
     }
-    if (g_network) {
-        g_network->startScan();
-    }
+    LOGW("WiFi", "scan start request dropped: command queue unavailable");
 }
 
 void network_wifi_stop_scan() {
     if (g_network_command_queue) {
-        if (g_network_command_queue->enqueue(NetworkCommandQueue::Type::RequestWifiScanStop)) {
+        if (g_network_command_queue->enqueue(NetworkCommandQueue::Type::RequestWifiScanStop) ||
+            g_network_command_queue->publishWifiScanRequest(
+                NetworkCommandQueue::Type::RequestWifiScanStop)) {
             return;
         }
     }
-    if (g_network) {
-        g_network->stopScan();
-    }
+    LOGW("WiFi", "scan stop request dropped: command queue unavailable");
 }
 
 void network_wifi_start_sta() {
@@ -234,17 +234,7 @@ void AuraNetworkManager::begin(StorageManager &storage) {
 
     web_ctx_.server = &serverBackend().request();
     web_ctx_.storage = storage_;
-    web_ctx_.hostname = &hostname_;
-    web_ctx_.wifi_ssid = &wifi_ssid_;
-    web_ctx_.wifi_pass = &wifi_pass_;
-    web_ctx_.wifi_enabled = &wifi_enabled_;
-    web_ctx_.wifi_enabled_dirty = &wifi_enabled_dirty_;
-    web_ctx_.wifi_ui_dirty = &wifi_ui_dirty_;
-    web_ctx_.wifi_scan_in_progress = &wifi_scan_in_progress_;
     web_ctx_.wifi_scan_options = &wifi_scan_options_;
-    web_ctx_.wifi_is_connected = network_wifi_is_connected;
-    web_ctx_.wifi_sta_connected_elapsed_ms = network_wifi_sta_connected_elapsed_ms;
-    web_ctx_.wifi_is_ap_mode = network_wifi_is_ap_mode;
     web_ctx_.wifi_start_scan = network_wifi_start_scan;
     web_ctx_.wifi_stop_scan = network_wifi_stop_scan;
     web_ctx_.wifi_start_sta = network_wifi_start_sta;
@@ -321,6 +311,10 @@ void AuraNetworkManager::attachThemeContext(ThemeManager &themeManager) {
 
 void AuraNetworkManager::attachChartsRuntime(ChartsRuntimeState &chartsRuntime) {
     web_ctx_.charts_runtime = &chartsRuntime;
+}
+
+void AuraNetworkManager::attachConnectivityRuntime(ConnectivityRuntime &connectivityRuntime) {
+    web_ctx_.connectivity_runtime = &connectivityRuntime;
 }
 
 void AuraNetworkManager::attachWebRuntime(WebRuntimeState &webRuntime) {
@@ -903,6 +897,7 @@ void AuraNetworkManager::startSta() {
 
     bool targeted_connect = false;
     if (wifi_cold_boot_targeted_connect_active_) {
+        wifi_cold_boot_targeted_connect_active_ = false;
         int32_t target_channel = 0;
         int32_t target_rssi = -128;
         uint8_t target_bssid[6] = {};

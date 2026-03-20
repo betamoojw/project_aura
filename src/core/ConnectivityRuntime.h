@@ -18,12 +18,19 @@ class MqttManager;
 struct ConnectivityRuntimeSnapshot {
     bool wifi_enabled = false;
     bool wifi_connected = false;
+    bool wifi_ap_mode = false;
+    bool wifi_scan_in_progress = false;
     int wifi_state = 0;
+    int wifi_sta_status = 0;
     uint8_t wifi_retry_count = 0;
     String wifi_ssid;
     String ap_ssid;
+    String wifi_scan_options;
+    String hostname;
     String sta_ip;
     String ap_ip;
+    bool has_rssi = false;
+    int rssi = 0;
     String dashboard_local_url;
     String dashboard_sta_url;
     String mqtt_local_url;
@@ -38,7 +45,13 @@ struct ConnectivityRuntimeSnapshot {
     uint8_t mqtt_retry_stage = 0;
     String mqtt_host;
     uint16_t mqtt_port = Config::MQTT_DEFAULT_PORT;
+    String mqtt_user;
+    String mqtt_pass;
+    String mqtt_device_name;
+    String mqtt_device_id;
     String mqtt_base_topic;
+    bool mqtt_discovery = false;
+    bool mqtt_anonymous = false;
 };
 
 class ConnectivityRuntime {

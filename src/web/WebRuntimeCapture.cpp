@@ -6,47 +6,46 @@
 
 #include "web/WebRuntimeCapture.h"
 
-#include <WiFi.h>
-
-#include "modules/MqttRuntime.h"
+#include "core/ConnectivityRuntime.h"
 
 namespace WebRuntimeCapture {
 
 WebNetworkUtils::Snapshot captureNetworkSnapshot(const WebHandlerContext &context) {
     WebNetworkUtils::Snapshot snapshot{};
-    snapshot.wifi_enabled = context.wifi_enabled ? *context.wifi_enabled : false;
-    snapshot.ap_mode = context.wifi_is_ap_mode && context.wifi_is_ap_mode();
-    snapshot.sta_connected = context.wifi_is_connected && context.wifi_is_connected();
-    snapshot.scan_in_progress = context.wifi_scan_in_progress && *context.wifi_scan_in_progress;
-    snapshot.sta_status = static_cast<int>(WiFi.status());
+    const ConnectivityRuntimeSnapshot connectivity =
+        context.connectivity_runtime ? context.connectivity_runtime->snapshot()
+                                     : ConnectivityRuntimeSnapshot{};
+
+    snapshot.wifi_enabled = connectivity.wifi_enabled;
+    snapshot.ap_mode = connectivity.wifi_ap_mode;
+    snapshot.sta_connected = connectivity.wifi_connected;
+    snapshot.scan_in_progress = connectivity.wifi_scan_in_progress;
+    snapshot.sta_status = connectivity.wifi_sta_status;
 
     if (snapshot.ap_mode) {
-        snapshot.wifi_ssid = WiFi.softAPSSID();
-    } else if (snapshot.sta_connected) {
-        snapshot.wifi_ssid = WiFi.SSID();
-    } else if (context.wifi_ssid) {
-        snapshot.wifi_ssid = *context.wifi_ssid;
+        snapshot.wifi_ssid = connectivity.ap_ssid;
+    } else {
+        snapshot.wifi_ssid = connectivity.wifi_ssid;
     }
 
-    snapshot.ip = snapshot.ap_mode ? WiFi.softAPIP().toString() : WiFi.localIP().toString();
+    snapshot.ip = snapshot.ap_mode ? connectivity.ap_ip : connectivity.sta_ip;
 
-    if (context.hostname) {
+    if (!connectivity.hostname.isEmpty()) {
         snapshot.has_hostname = true;
-        snapshot.hostname = *context.hostname;
+        snapshot.hostname = connectivity.hostname;
     }
 
-    const int rssi = snapshot.sta_connected ? WiFi.RSSI() : 0;
-    if (snapshot.sta_connected && rssi < 0) {
+    if (connectivity.has_rssi) {
         snapshot.has_rssi = true;
-        snapshot.rssi = rssi;
+        snapshot.rssi = connectivity.rssi;
     }
 
-    if (context.mqtt_host) {
+    if (!connectivity.mqtt_host.isEmpty()) {
         snapshot.has_mqtt_broker = true;
-        snapshot.mqtt_broker = *context.mqtt_host;
+        snapshot.mqtt_broker = connectivity.mqtt_host;
     }
-    snapshot.mqtt_enabled = context.mqtt_user_enabled ? *context.mqtt_user_enabled : false;
-    snapshot.mqtt_connected = context.mqtt_runtime && context.mqtt_runtime->isConnected();
+    snapshot.mqtt_enabled = connectivity.mqtt_enabled;
+    snapshot.mqtt_connected = connectivity.mqtt_connected;
 
     return snapshot;
 }

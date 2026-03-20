@@ -14,5 +14,4 @@ public:
 
     virtual bool isConnected() = 0;
     virtual uint8_t retryStage() const = 0;
-    virtual void serviceConnectedLoop() = 0;
 };
