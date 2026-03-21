@@ -1525,9 +1525,9 @@ const STATE_REFRESH_HIDDEN_MS = 30000;
 const OTA_RECOVERY_PROBE_TIMEOUT_MS = 1500;
 const OTA_STALE_STATE_THRESHOLD_S = 45;
 const OTA_RECONNECT_GRACE_MS = 120000;
-const OTA_UPLOAD_MIN_TIMEOUT_MS = 180000;
-const OTA_UPLOAD_MAX_TIMEOUT_MS = 900000;
-const OTA_UPLOAD_MIN_BYTES_PER_SEC = 20 * 1024;
+const OTA_UPLOAD_FIRST_PROGRESS_TIMEOUT_MS = 30000;
+const OTA_UPLOAD_NO_PROGRESS_TIMEOUT_MS = 90000;
+const OTA_UPLOAD_RESPONSE_TIMEOUT_MS = 60000;
 let deviceClockRef = null;
 let lastStateOkAtMs = 0;
 let lastStateError = '';
@@ -1860,19 +1860,78 @@ function scheduleOtaRecoveryProbe(delayMs) {
   }, delayMs);
 }
 
-function computeOtaTimeoutMs(sizeBytes) {
-  if (!isNum(sizeBytes) || sizeBytes <= 0) {
-    return OTA_UPLOAD_MIN_TIMEOUT_MS;
-  }
-  const transferMs = Math.ceil((sizeBytes * 1000) / OTA_UPLOAD_MIN_BYTES_PER_SEC);
-  const timeoutMs = transferMs + 120000;
-  return Math.min(OTA_UPLOAD_MAX_TIMEOUT_MS, Math.max(OTA_UPLOAD_MIN_TIMEOUT_MS, timeoutMs));
-}
-
 function startOtaRecoveryWatcher() {
   if (otaRecoveryActive) return;
   otaRecoveryActive = true;
   scheduleOtaRecoveryProbe(1200);
+}
+
+function createOtaUploadTimeoutController(xhr) {
+  let phaseTimer = null;
+  let abortMessage = '';
+  let settled = false;
+  let lastLoaded = 0;
+  let responseWaitStarted = false;
+
+  function clearPhaseTimer() {
+    if (phaseTimer) {
+      clearTimeout(phaseTimer);
+      phaseTimer = null;
+    }
+  }
+
+  function scheduleAbort(timeoutMs, message) {
+    clearPhaseTimer();
+    phaseTimer = setTimeout(() => {
+      if (settled) return;
+      abortMessage = message || '';
+      try { xhr.abort(); } catch (_) {}
+    }, timeoutMs);
+  }
+
+  function noteProgress(loaded) {
+    if (!isNum(loaded) || loaded <= lastLoaded) return;
+    lastLoaded = loaded;
+    if (!responseWaitStarted) {
+      scheduleAbort(
+        OTA_UPLOAD_NO_PROGRESS_TIMEOUT_MS,
+        'Upload stalled. Retry closer to device or with stronger WiFi.'
+      );
+    }
+  }
+
+  function noteUploadComplete() {
+    if (responseWaitStarted) return;
+    responseWaitStarted = true;
+    scheduleAbort(
+      OTA_UPLOAD_RESPONSE_TIMEOUT_MS,
+      'Device response timed out after upload. Wait for reconnect before retrying.'
+    );
+  }
+
+  function consumeAbortMessage() {
+    const message = abortMessage;
+    abortMessage = '';
+    return message;
+  }
+
+  function markSettled() {
+    if (settled) return;
+    settled = true;
+    clearPhaseTimer();
+  }
+
+  scheduleAbort(
+    OTA_UPLOAD_FIRST_PROGRESS_TIMEOUT_MS,
+    'Upload did not start in time. Retry closer to device or with stronger WiFi.'
+  );
+
+  return {
+    noteProgress,
+    noteUploadComplete,
+    consumeAbortMessage,
+    markSettled,
+  };
 }
 
 // ─────────────────────────────────────────────
@@ -2265,11 +2324,40 @@ function initOtaUI() {
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/ota', true);
-    xhr.timeout = computeOtaTimeoutMs(file.size);
+    xhr.timeout = 0;
+    const uploadTimeouts = createOtaUploadTimeoutController(xhr);
+    let uploadSettled = false;
+    let responseWaitAnnounced = false;
+
+    const markUploadSettled = () => {
+      if (uploadSettled) return false;
+      uploadSettled = true;
+      uploadTimeouts.markSettled();
+      return true;
+    };
+
+    const announceResponseWait = () => {
+      if (responseWaitAnnounced) return;
+      responseWaitAnnounced = true;
+      progressEl.style.width = '100%';
+      statusEl.textContent = 'Firmware sent. Waiting for device response...';
+      statusEl.className = 'ota-status';
+    };
+
     xhr.upload.onprogress = ev => {
-      if (!ev.lengthComputable || ev.total <= 0) return;
-      const pct = Math.min(100, Math.round((ev.loaded / ev.total) * 100));
-      progressEl.style.width = pct + '%';
+      if (ev.lengthComputable && ev.total > 0) {
+        const pct = Math.min(100, Math.round((ev.loaded / ev.total) * 100));
+        progressEl.style.width = pct + '%';
+      }
+      uploadTimeouts.noteProgress(ev.loaded);
+      if (ev.lengthComputable && ev.total > 0 && ev.loaded >= ev.total) {
+        uploadTimeouts.noteUploadComplete();
+        announceResponseWait();
+      }
+    };
+    xhr.upload.onload = () => {
+      uploadTimeouts.noteUploadComplete();
+      announceResponseWait();
     };
     const finishUploadFailure = message => {
       otaUploadInFlight = false;
@@ -2280,8 +2368,8 @@ function initOtaUI() {
       statusEl.textContent = message;
       statusEl.className = 'ota-status err';
     };
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState !== XMLHttpRequest.DONE) return;
+    xhr.onload = () => {
+      if (!markUploadSettled()) return;
       otaUploadInFlight = false;
       let pl = null;
       try { pl = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
@@ -2299,17 +2387,26 @@ function initOtaUI() {
       finishUploadFailure((pl && pl.error) || 'Upload failed (HTTP ' + (xhr.status || 0) + ')');
     };
     xhr.onerror = () => {
+      if (!markUploadSettled()) return;
       finishUploadFailure('Upload failed. Check device connection and retry.');
     };
     xhr.onabort = () => {
-      finishUploadFailure('Upload was interrupted. Check device connection and retry.');
+      if (!markUploadSettled()) return;
+      finishUploadFailure(
+        uploadTimeouts.consumeAbortMessage() ||
+        'Upload was interrupted. Check device connection and retry.'
+      );
     };
     xhr.ontimeout = () => {
+      if (!markUploadSettled()) return;
       finishUploadFailure('Upload timed out. Retry closer to device or with stronger WiFi.');
     };
     xhr.onloadend = () => {
-      if (!otaUploadInFlight) return;
-      finishUploadFailure('Upload ended unexpectedly. Check device connection and retry.');
+      if (!markUploadSettled()) return;
+      finishUploadFailure(
+        uploadTimeouts.consumeAbortMessage() ||
+        'Upload ended unexpectedly. Check device connection and retry.'
+      );
     };
     xhr.send(form);
   });

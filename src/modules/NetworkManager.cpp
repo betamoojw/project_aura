@@ -40,6 +40,7 @@ constexpr uint32_t kWifiStaTransitionPollMs = 10UL;
 constexpr uint32_t kWifiStaStartSettleMs = 150UL;
 constexpr uint32_t kWifiColdBootWarmupMs = 2500UL;
 constexpr uint8_t kWifiColdBootSoftConnectAttempts = 3;
+constexpr wifi_ps_type_t kWifiStaDefaultPowerSaveMode = WIFI_PS_NONE;
 
 bool is_retryable_connect_reason(wifi_err_reason_t reason) {
     return reason == WIFI_REASON_AUTH_EXPIRE ||
@@ -194,6 +195,42 @@ uint32_t network_wifi_sta_connected_elapsed_ms() {
 
 bool network_wifi_is_ap_mode() {
     return g_network && g_network->state() == AuraNetworkManager::WIFI_STATE_AP_CONFIG;
+}
+
+void apply_sta_default_power_save(const char *context) {
+    const wifi_mode_t mode = WiFi.getMode();
+    if ((mode & WIFI_MODE_STA) == 0) {
+        return;
+    }
+
+    wifi_ps_type_t current_mode = WIFI_PS_NONE;
+    const esp_err_t get_err = esp_wifi_get_ps(&current_mode);
+    if (get_err != ESP_OK) {
+        Logger::log(Logger::Warn, "WiFi",
+                    "failed to read STA power-save mode during %s: err=%d",
+                    context ? context : "unknown",
+                    static_cast<int>(get_err));
+        return;
+    }
+
+    if (current_mode == kWifiStaDefaultPowerSaveMode) {
+        return;
+    }
+
+    const esp_err_t set_err = esp_wifi_set_ps(kWifiStaDefaultPowerSaveMode);
+    if (set_err == ESP_OK) {
+        Logger::log(Logger::Info, "WiFi",
+                    "STA power-save disabled (%s, prev=%d)",
+                    context ? context : "unknown",
+                    static_cast<int>(current_mode));
+        return;
+    }
+
+    Logger::log(Logger::Warn, "WiFi",
+                "failed to disable STA power-save during %s (current=%d, err=%d)",
+                context ? context : "unknown",
+                static_cast<int>(current_mode),
+                static_cast<int>(set_err));
 }
 
 } // namespace
@@ -673,6 +710,7 @@ void AuraNetworkManager::poll() {
 
         wl_status_t st = WiFi.status();
         if (st == WL_CONNECTED) {
+            apply_sta_default_power_save("sta connected");
             wifi_state_ = WIFI_STATE_STA_CONNECTED;
             sta_link_fail_streak_ = 0;
             wifi_retry_count_ = 0;
@@ -888,6 +926,7 @@ void AuraNetworkManager::startSta() {
     WiFi.setAutoReconnect(false);
     // Give the STA interface a brief settle window after mode transition.
     delay(kWifiStaStartSettleMs);
+    apply_sta_default_power_save("sta start");
     // Clear any previous association state before a fresh begin(), but keep config intact.
     WiFi.disconnect(false, false);
     delay(50);
