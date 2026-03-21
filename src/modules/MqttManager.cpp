@@ -917,6 +917,39 @@ void MqttManager::staticEventHandler(void *handler_args, esp_event_base_t base, 
     }
 }
 
+void MqttManager::updateOtaQuiesceState() {
+    const bool ota_busy = WebHandlersIsOtaBusy();
+    if (ota_busy) {
+        if (!mqtt_ota_suspended_) {
+            mqtt_ota_suspended_ = true;
+            mqtt_connect_deferred_by_web_ = false;
+            mqtt_publish_deferred_by_web_ = false;
+            mqtt_publish_requested_ = true;
+            ui_dirty_ = true;
+            LOGI("MQTT", "suspending for OTA");
+            if (client_) {
+                stopClient();
+            }
+        }
+        return;
+    }
+
+    if (!mqtt_ota_suspended_) {
+        return;
+    }
+
+    mqtt_ota_suspended_ = false;
+    mqtt_connect_deferred_by_web_ = false;
+    mqtt_publish_deferred_by_web_ = false;
+    mqtt_fail_count_ = 0;
+    mqtt_connect_attempts_ = 0;
+    mqtt_last_attempt_ms_ = 0;
+    mqtt_publish_requested_ = true;
+    mqtt_last_error_rc_.store(0, std::memory_order_release);
+    ui_dirty_ = true;
+    LOGI("MQTT", "resuming after OTA");
+}
+
 void MqttManager::poll(MqttRuntimeState &runtime_state) {
     auto note_connect_failure = [&](int rc) {
         if (mqtt_connect_attempts_ < UINT32_MAX) {
@@ -992,6 +1025,8 @@ void MqttManager::poll(MqttRuntimeState &runtime_state) {
         mqtt_publish_requested_ = true;
     }
 
+    updateOtaQuiesceState();
+
     if (!mqtt_enabled_) {
         mqtt_connect_deferred_by_web_ = false;
         mqtt_publish_deferred_by_web_ = false;
@@ -1037,6 +1072,11 @@ void MqttManager::poll(MqttRuntimeState &runtime_state) {
     if (mqtt_connected_ != mqtt_connected_last_) {
         mqtt_connected_last_ = mqtt_connected_;
         ui_dirty_ = true;
+    }
+    if (mqtt_ota_suspended_) {
+        mqtt_connect_deferred_by_web_ = false;
+        mqtt_publish_deferred_by_web_ = false;
+        return;
     }
     if (!mqtt_connected_) {
         mqtt_publish_deferred_by_web_ = false;

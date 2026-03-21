@@ -107,6 +107,7 @@ private:
                                 const char *payload_press, const char *icon);
     void publishNightModeAvailability();
     void publishState(const MqttRuntimeSnapshot &runtime);
+    void updateOtaQuiesceState();
     void lockCommandContext() const;
     void unlockCommandContext() const;
 
@@ -161,6 +162,7 @@ private:
     uint32_t mqtt_connect_attempts_ = 0;
     bool mqtt_connect_deferred_by_web_ = false;
     bool mqtt_publish_deferred_by_web_ = false;
+    bool mqtt_ota_suspended_ = false;
     bool mqtt_manual_stop_ = false;
     bool mqtt_client_needs_destroy_ = false;
     // MQTT_EVENT_DATA may arrive in chunks; these buffers belong only to the esp-mqtt event task.
