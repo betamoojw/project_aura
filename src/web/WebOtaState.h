@@ -47,6 +47,8 @@ public:
     void beginUpload(uint32_t now_ms);
     bool isActive() const;
     bool isBusy() const;
+    void setTotalTimeoutMs(uint32_t timeout_ms);
+    bool totalTimeoutExceeded(uint32_t now_ms) const;
     void setStartRssi(int rssi);
     void setSlotSize(size_t slot_size);
     void setExpectedSize(bool known, size_t expected_size);
@@ -65,6 +67,7 @@ private:
     bool upload_seen_ = false;
     bool success_ = false;
     bool size_known_ = false;
+    uint32_t total_timeout_ms_ = 0;
     size_t expected_size_ = 0;
     size_t slot_size_ = 0;
     size_t written_size_ = 0;

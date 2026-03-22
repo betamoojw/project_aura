@@ -82,6 +82,26 @@ void test_web_ota_api_utils_build_update_result_reports_interrupt_with_specific_
     TEST_ASSERT_EQUAL_STRING("UPLOAD_ABORTED", result.error_code.c_str());
 }
 
+void test_web_ota_api_utils_build_update_result_reports_client_disconnect_separately() {
+    const WebOtaApiUtils::Result result = WebOtaApiUtils::buildUpdateResult(
+        true, false, 154048, 6553600, true, 3717792, "Upload interrupted: client disconnected");
+
+    TEST_ASSERT_FALSE(result.success);
+    TEST_ASSERT_FALSE(result.rebooting);
+    TEST_ASSERT_EQUAL_INT(499, result.status_code);
+    TEST_ASSERT_EQUAL_STRING("CLIENT_DISCONNECTED", result.error_code.c_str());
+}
+
+void test_web_ota_api_utils_build_update_result_reports_total_deadline_as_timeout() {
+    const WebOtaApiUtils::Result result = WebOtaApiUtils::buildUpdateResult(
+        true, false, 154048, 6553600, true, 3717792, "Upload timed out after total deadline of 300000 ms");
+
+    TEST_ASSERT_FALSE(result.success);
+    TEST_ASSERT_FALSE(result.rebooting);
+    TEST_ASSERT_EQUAL_INT(408, result.status_code);
+    TEST_ASSERT_EQUAL_STRING("UPLOAD_TIMEOUT", result.error_code.c_str());
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_success_payload);
@@ -89,5 +109,7 @@ int main(int, char **) {
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_oversized_image_as_payload_too_large);
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_timeout_with_specific_code);
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_interrupt_with_specific_code);
+    RUN_TEST(test_web_ota_api_utils_build_update_result_reports_client_disconnect_separately);
+    RUN_TEST(test_web_ota_api_utils_build_update_result_reports_total_deadline_as_timeout);
     return UNITY_END();
 }

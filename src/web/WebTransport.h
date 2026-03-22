@@ -19,8 +19,18 @@ enum class WebUploadStatus : uint8_t {
     Unknown,
 };
 
+enum class WebUploadAbortReason : uint8_t {
+    None = 0,
+    IdleTimeout,
+    TotalTimeout,
+    ClientDisconnected,
+    SocketError,
+    Unknown,
+};
+
 struct WebUpload {
     WebUploadStatus status = WebUploadStatus::Unknown;
+    WebUploadAbortReason abort_reason = WebUploadAbortReason::None;
     String filename;
     size_t totalSize = 0;
     size_t currentSize = 0;
@@ -38,6 +48,8 @@ public:
     virtual void send(int status_code, const char *content_type, const String &content) = 0;
     virtual void send(int status_code, const char *content_type, const char *content) = 0;
     virtual bool clientConnected() const = 0;
+    virtual void setUploadDeadlineMs(uint32_t timeout_ms) = 0;
+    virtual void clearUploadDeadline() = 0;
     virtual size_t pendingRequestBodyBytes() const = 0;
     virtual size_t drainPendingRequestBody(size_t max_bytes, uint32_t max_time_ms) = 0;
     virtual void stopClient() = 0;

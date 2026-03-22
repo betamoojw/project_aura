@@ -35,8 +35,7 @@ WebStreamState g_web_stream_state;
 std::atomic<bool> g_restart_in_progress{false};
 bool g_ota_wifi_ps_saved = false;
 wifi_ps_type_t g_ota_wifi_ps_prev = WIFI_PS_NONE;
-bool g_ota_preflight_ui_active = false;
-uint32_t g_ota_preflight_ui_due_ms = 0;
+std::atomic<uint32_t> g_ota_preflight_ui_due_ms{0};
 
 uint32_t web_stream_now_ms(void *) {
     return millis();
@@ -108,13 +107,11 @@ void ota_set_ui_screen(bool active) {
 
 void ota_arm_preflight_ui() {
     ota_set_ui_screen(true);
-    g_ota_preflight_ui_active = true;
-    g_ota_preflight_ui_due_ms = millis() + kOtaPreflightUiLeaseMs;
+    g_ota_preflight_ui_due_ms.store(millis() + kOtaPreflightUiLeaseMs, std::memory_order_release);
 }
 
 void ota_cancel_preflight_ui() {
-    g_ota_preflight_ui_active = false;
-    g_ota_preflight_ui_due_ms = 0;
+    g_ota_preflight_ui_due_ms.store(0, std::memory_order_release);
 }
 
 void ota_restore_wifi_power_save();
@@ -232,8 +229,10 @@ void pollDeferred() {
     }
 
     const uint32_t now_ms = millis();
-    if (g_ota_preflight_ui_active &&
-        static_cast<int32_t>(now_ms - g_ota_preflight_ui_due_ms) >= 0 &&
+    const uint32_t ota_preflight_ui_due_ms =
+        g_ota_preflight_ui_due_ms.load(std::memory_order_acquire);
+    if (ota_preflight_ui_due_ms != 0 &&
+        static_cast<int32_t>(now_ms - ota_preflight_ui_due_ms) >= 0 &&
         !isOtaBusy()) {
         ota_set_ui_screen(false);
         ota_cancel_preflight_ui();

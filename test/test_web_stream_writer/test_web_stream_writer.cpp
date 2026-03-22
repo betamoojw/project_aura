@@ -61,6 +61,8 @@ public:
     void send(int, const char *, const String &) override {}
     void send(int, const char *, const char *) override {}
     bool clientConnected() const override { return connected_; }
+    void setUploadDeadlineMs(uint32_t) override {}
+    void clearUploadDeadline() override {}
     size_t pendingRequestBodyBytes() const override { return 0; }
     size_t drainPendingRequestBody(size_t, uint32_t) override { return 0; }
     void stopClient() override {

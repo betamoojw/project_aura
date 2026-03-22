@@ -42,8 +42,31 @@ String ota_error_prefixed(const char *prefix) {
 }
 
 String ota_abort_error_message(const WebOtaSnapshot &ota,
+                               WebUploadAbortReason abort_reason,
                                uint32_t now_ms,
                                bool client_connected) {
+    if (abort_reason == WebUploadAbortReason::TotalTimeout) {
+        String error = "Upload timed out after total deadline of ";
+        error += String(ota.totalDurationMs(now_ms));
+        error += " ms";
+        return error;
+    }
+
+    if (abort_reason == WebUploadAbortReason::IdleTimeout) {
+        String error = "Upload timed out after ";
+        error += String(ota.lastChunkAgeMs(now_ms));
+        error += " ms without data";
+        return error;
+    }
+
+    if (abort_reason == WebUploadAbortReason::ClientDisconnected) {
+        return "Upload interrupted: client disconnected";
+    }
+
+    if (abort_reason == WebUploadAbortReason::SocketError) {
+        return "Upload interrupted by socket error";
+    }
+
     if (!ota.first_chunk_seen) {
         return client_connected ? "Upload timed out before first chunk"
                                 : "Upload interrupted before first chunk";
@@ -58,6 +81,23 @@ String ota_abort_error_message(const WebOtaSnapshot &ota,
     }
 
     return client_connected ? "Upload aborted" : "Upload interrupted";
+}
+
+const char *ota_abort_reason_text(WebUploadAbortReason reason) {
+    switch (reason) {
+        case WebUploadAbortReason::IdleTimeout:
+            return "idle_timeout";
+        case WebUploadAbortReason::TotalTimeout:
+            return "total_timeout";
+        case WebUploadAbortReason::ClientDisconnected:
+            return "client_disconnected";
+        case WebUploadAbortReason::SocketError:
+            return "socket_error";
+        case WebUploadAbortReason::None:
+            return "none";
+        default:
+            return "unknown";
+    }
 }
 
 void abort_update_if_running() {
@@ -83,7 +123,9 @@ void cleanup_after_update_response(WebOtaHandlers::Runtime &runtime, bool succes
     runtime.ota_state.reset();
 }
 
-void ota_log_abort_summary(WebRequest &server, const WebOtaSnapshot &ota) {
+void ota_log_abort_summary(WebRequest &server,
+                           const WebOtaSnapshot &ota,
+                           WebUploadAbortReason abort_reason) {
     const uint32_t now_ms = millis();
     const wl_status_t wifi_status = WiFi.status();
     const bool current_rssi_valid = wifi_status == WL_CONNECTED;
@@ -91,7 +133,8 @@ void ota_log_abort_summary(WebRequest &server, const WebOtaSnapshot &ota) {
     const bool client_connected = server.clientConnected();
 
     LOGW("OTA",
-         "upload aborted (written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms last_chunk_age=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes client_connected=%s wifi_status=%d start_rssi_valid=%s start_rssi=%d current_rssi_valid=%s current_rssi=%d)",
+         "upload aborted (reason=%s written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms last_chunk_age=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes client_connected=%s wifi_status=%d start_rssi_valid=%s start_rssi=%d current_rssi_valid=%s current_rssi=%d)",
+         ota_abort_reason_text(abort_reason),
          static_cast<unsigned>(ota.written_size),
          static_cast<unsigned>(ota.slot_size),
          static_cast<unsigned>(ota.expected_size),
@@ -154,7 +197,6 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
             runtime.cancel_preflight_ui();
         }
         const uint32_t start_ms = millis();
-        runtime.ota_state.reset();
         runtime.ota_state.beginUpload(start_ms);
         if (runtime.disable_wifi_power_save_for_upload) {
             runtime.disable_wifi_power_save_for_upload();
@@ -167,6 +209,8 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
         const uint32_t client_timeout_ms = runtime.upload_timeout_ms
                                                ? runtime.upload_timeout_ms(size_known ? expected_size : 0)
                                                : 0;
+        server.setUploadDeadlineMs(client_timeout_ms);
+        runtime.ota_state.setTotalTimeoutMs(client_timeout_ms);
         if (runtime.context.wifi_stop_scan) {
             runtime.context.wifi_stop_scan();
         }
@@ -229,6 +273,15 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
             return;
         }
         const uint32_t now_ms = millis();
+        if (runtime.ota_state.totalTimeoutExceeded(now_ms)) {
+            fail_upload(runtime,
+                        ota_abort_error_message(ota,
+                                                WebUploadAbortReason::TotalTimeout,
+                                                now_ms,
+                                                server.clientConnected()));
+            LOGW("OTA", "upload exceeded total timeout during transfer");
+            return;
+        }
         if (runtime.ota_state.noteChunk(upload.currentSize, now_ms)) {
             const WebOtaSnapshot chunk_ota = runtime.ota_state.snapshot();
             LOGI("OTA", "first chunk received after %u ms (size=%u bytes)",
@@ -257,6 +310,16 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
         const WebOtaSnapshot ota = runtime.ota_state.snapshot();
         if (!ota.active || ota.hasError()) {
             abort_update_if_running();
+            return;
+        }
+        if (runtime.ota_state.totalTimeoutExceeded(millis())) {
+            const uint32_t now_ms = millis();
+            fail_upload(runtime,
+                        ota_abort_error_message(ota,
+                                                WebUploadAbortReason::TotalTimeout,
+                                                now_ms,
+                                                server.clientConnected()));
+            LOGW("OTA", "upload exceeded total timeout before finalize");
             return;
         }
         if (!runtime.ota_state.writtenMatchesExpected()) {
@@ -294,8 +357,8 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
         const WebOtaSnapshot ota = runtime.ota_state.snapshot();
         const uint32_t now_ms = millis();
         const bool client_connected = server.clientConnected();
-        ota_log_abort_summary(server, ota);
-        fail_upload(runtime, ota_abort_error_message(ota, now_ms, client_connected));
+        ota_log_abort_summary(server, ota, upload.abort_reason);
+        fail_upload(runtime, ota_abort_error_message(ota, upload.abort_reason, now_ms, client_connected));
     }
 }
 

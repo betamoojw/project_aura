@@ -17,12 +17,34 @@
 #include <esp_http_server.h>
 #include <lwip/sockets.h>
 
+#include "core/Watchdog.h"
+
 namespace {
 
 constexpr uint16_t kHttpServerRecvWaitTimeoutS = 10;
 constexpr uint16_t kHttpServerSendWaitTimeoutS = 30;
 constexpr uint32_t kMultipartReadIdleTimeoutMs = 90UL * 1000UL;
 constexpr uint32_t kDrainRecvTimeoutMs = 200;
+
+bool socket_likely_connected(int sockfd) {
+    if (sockfd < 0) {
+        return false;
+    }
+
+    uint8_t probe = 0;
+    const int received = recv(sockfd,
+                              reinterpret_cast<char *>(&probe),
+                              1,
+                              MSG_PEEK | MSG_DONTWAIT);
+    if (received > 0) {
+        return true;
+    }
+    if (received == 0) {
+        return false;
+    }
+
+    return errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR;
+}
 
 } // namespace
 
@@ -76,6 +98,7 @@ String status_line_for_code(int status_code) {
         case 405: return "405 Method Not Allowed";
         case 409: return "409 Conflict";
         case 413: return "413 Payload Too Large";
+        case 499: return "499 Client Closed Request";
         case 500: return "500 Internal Server Error";
         case 501: return "501 Not Implemented";
         case 503: return "503 Service Unavailable";
@@ -144,8 +167,10 @@ class EspHttpServerBackend::EspHttpRequest final : public WebRequest {
 public:
     class BufferedBodyReader {
     public:
-        explicit BufferedBodyReader(httpd_req_t *req)
-            : req_(req), remaining_(req && req->content_len > 0 ? static_cast<size_t>(req->content_len) : 0) {
+        explicit BufferedBodyReader(EspHttpRequest *request)
+            : request_(request),
+              req_(request ? request->req_ : nullptr),
+              remaining_(req_ && req_->content_len > 0 ? static_cast<size_t>(req_->content_len) : 0) {
             buffer_.reserve(2048);
         }
 
@@ -218,6 +243,12 @@ public:
 
             char chunk[2048];
             while (remaining_ > 0) {
+                const uint32_t now_ms = millis();
+                if (request_ && request_->uploadDeadlineExceeded(now_ms)) {
+                    request_->setUploadAbortReason(WebUploadAbortReason::TotalTimeout);
+                    return false;
+                }
+
                 const size_t to_read = remaining_ < sizeof(chunk) ? remaining_ : sizeof(chunk);
                 const int received = httpd_req_recv(req_, chunk, to_read);
                 if (received > 0) {
@@ -228,17 +259,29 @@ public:
                     return true;
                 }
                 if (received == HTTPD_SOCK_ERR_TIMEOUT) {
-                    const uint32_t now_ms = millis();
                     if (!timeout_window_active_) {
                         timeout_window_active_ = true;
                         timeout_window_start_ms_ = now_ms;
                     }
-                    if (static_cast<uint32_t>(now_ms - timeout_window_start_ms_) >=
-                        kMultipartReadIdleTimeoutMs) {
+                    if (request_ && request_->uploadDeadlineExceeded(now_ms)) {
+                        request_->setUploadAbortReason(WebUploadAbortReason::TotalTimeout);
                         return false;
                     }
+                    if (static_cast<uint32_t>(now_ms - timeout_window_start_ms_) >=
+                        kMultipartReadIdleTimeoutMs) {
+                        if (request_) {
+                            request_->setUploadAbortReason(WebUploadAbortReason::IdleTimeout);
+                        }
+                        return false;
+                    }
+                    Watchdog::kick();
                     delay(1);
                     continue;
+                }
+                if (request_) {
+                    request_->setUploadAbortReason(request_->socketLikelyConnected()
+                                                       ? WebUploadAbortReason::SocketError
+                                                       : WebUploadAbortReason::ClientDisconnected);
                 }
                 return false;
             }
@@ -280,6 +323,7 @@ public:
             return false;
         }
 
+        EspHttpRequest *request_ = nullptr;
         httpd_req_t *req_ = nullptr;
         size_t remaining_ = 0;
         std::vector<uint8_t> buffer_{};
@@ -295,6 +339,8 @@ public:
         upload_ = {};
         stream_open_ = false;
         pending_body_bytes_ = 0;
+        upload_deadline_ms_ = 0;
+        upload_abort_reason_ = WebUploadAbortReason::None;
     }
 
     void reset() {
@@ -304,6 +350,8 @@ public:
         upload_ = {};
         stream_open_ = false;
         pending_body_bytes_ = 0;
+        upload_deadline_ms_ = 0;
+        upload_abort_reason_ = WebUploadAbortReason::None;
     }
 
     void appendArgsFromQuery() {
@@ -407,7 +455,19 @@ public:
     }
 
     bool clientConnected() const override {
-        return req_ != nullptr;
+        return socketLikelyConnected();
+    }
+
+    void setUploadDeadlineMs(uint32_t timeout_ms) override {
+        if (timeout_ms == 0) {
+            upload_deadline_ms_ = 0;
+            return;
+        }
+        upload_deadline_ms_ = millis() + timeout_ms;
+    }
+
+    void clearUploadDeadline() override {
+        upload_deadline_ms_ = 0;
     }
 
     size_t pendingRequestBodyBytes() const override {
@@ -527,6 +587,26 @@ public:
         return upload_;
     }
 
+    bool uploadDeadlineExceeded(uint32_t now_ms) const {
+        return upload_deadline_ms_ != 0 &&
+               static_cast<int32_t>(now_ms - upload_deadline_ms_) >= 0;
+    }
+
+    bool socketLikelyConnected() const {
+        if (!req_) {
+            return false;
+        }
+        return socket_likely_connected(httpd_req_to_sockfd(req_));
+    }
+
+    void setUploadAbortReason(WebUploadAbortReason reason) {
+        upload_abort_reason_ = reason;
+    }
+
+    WebUploadAbortReason uploadAbortReason() const {
+        return upload_abort_reason_;
+    }
+
 private:
     httpd_req_t *req_ = nullptr;
     std::vector<WebQueryArg> args_{};
@@ -534,6 +614,8 @@ private:
     WebUpload upload_{};
     bool stream_open_ = false;
     size_t pending_body_bytes_ = 0;
+    uint32_t upload_deadline_ms_ = 0;
+    WebUploadAbortReason upload_abort_reason_ = WebUploadAbortReason::None;
 };
 
 EspHttpServerBackend::EspHttpServerBackend(uint16_t port) : port_(port) {
@@ -638,7 +720,7 @@ bool EspHttpServerBackend::prepareRequest(RouteRegistration &route, void *raw_re
             return false;
         }
 
-        EspHttpRequest::BufferedBodyReader reader(req);
+        EspHttpRequest::BufferedBodyReader reader(request_);
         String line;
         const String expected_first_boundary = String("--") + boundary;
         if (!reader.readLine(line) || line != expected_first_boundary) {
@@ -659,6 +741,7 @@ bool EspHttpServerBackend::prepareRequest(RouteRegistration &route, void *raw_re
                         request_->setPendingBodyBytes(reader.remainingBytesOnSocket());
                         WebUpload aborted{};
                         aborted.status = WebUploadStatus::Aborted;
+                        aborted.abort_reason = request_->uploadAbortReason();
                         request_->setUpload(aborted);
                         route.upload_handler();
                         return true;
@@ -686,6 +769,7 @@ bool EspHttpServerBackend::prepareRequest(RouteRegistration &route, void *raw_re
                 start.status = WebUploadStatus::Start;
                 start.filename = filename;
                 start.totalSize = 0;
+                start.abort_reason = WebUploadAbortReason::None;
                 request_->setUpload(start);
                 route.upload_handler();
 
@@ -713,6 +797,7 @@ bool EspHttpServerBackend::prepareRequest(RouteRegistration &route, void *raw_re
                     request_->setPendingBodyBytes(reader.remainingBytesOnSocket());
                     WebUpload aborted{};
                     aborted.status = WebUploadStatus::Aborted;
+                    aborted.abort_reason = request_->uploadAbortReason();
                     aborted.filename = filename;
                     aborted.totalSize = uploaded_size;
                     request_->setUpload(aborted);
@@ -724,6 +809,7 @@ bool EspHttpServerBackend::prepareRequest(RouteRegistration &route, void *raw_re
                 end.status = WebUploadStatus::End;
                 end.filename = filename;
                 end.totalSize = uploaded_size;
+                end.abort_reason = WebUploadAbortReason::None;
                 request_->setUpload(end);
                 route.upload_handler();
                 continue;
@@ -746,6 +832,7 @@ bool EspHttpServerBackend::prepareRequest(RouteRegistration &route, void *raw_re
                     request_->setPendingBodyBytes(reader.remainingBytesOnSocket());
                     WebUpload aborted{};
                     aborted.status = WebUploadStatus::Aborted;
+                    aborted.abort_reason = request_->uploadAbortReason();
                     request_->setUpload(aborted);
                     route.upload_handler();
                     return true;

@@ -36,6 +36,7 @@ void WebOtaState::reset() {
     busy_.store(false, std::memory_order_release);
     success_ = false;
     size_known_ = false;
+    total_timeout_ms_ = 0;
     expected_size_ = 0;
     slot_size_ = 0;
     written_size_ = 0;
@@ -67,6 +68,16 @@ bool WebOtaState::isActive() const {
 
 bool WebOtaState::isBusy() const {
     return busy_.load(std::memory_order_acquire);
+}
+
+void WebOtaState::setTotalTimeoutMs(uint32_t timeout_ms) {
+    total_timeout_ms_ = timeout_ms;
+}
+
+bool WebOtaState::totalTimeoutExceeded(uint32_t now_ms) const {
+    return total_timeout_ms_ > 0 &&
+           upload_start_ms_ > 0 &&
+           static_cast<uint32_t>(now_ms - upload_start_ms_) >= total_timeout_ms_;
 }
 
 void WebOtaState::setStartRssi(int rssi) {

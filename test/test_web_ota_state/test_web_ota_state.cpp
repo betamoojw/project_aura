@@ -84,11 +84,21 @@ void test_web_ota_state_success_and_expected_size_match() {
     TEST_ASSERT_FALSE(state.isBusy());
 }
 
+void test_web_ota_state_total_timeout_expires_from_upload_start() {
+    WebOtaState state;
+    state.beginUpload(100);
+    state.setTotalTimeoutMs(250);
+
+    TEST_ASSERT_FALSE(state.totalTimeoutExceeded(349));
+    TEST_ASSERT_TRUE(state.totalTimeoutExceeded(350));
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_web_ota_state_begin_upload_resets_previous_state);
     RUN_TEST(test_web_ota_state_tracks_chunks_and_sizes);
     RUN_TEST(test_web_ota_state_error_is_sticky_and_clears_active);
     RUN_TEST(test_web_ota_state_success_and_expected_size_match);
+    RUN_TEST(test_web_ota_state_total_timeout_expires_from_upload_start);
     return UNITY_END();
 }

@@ -43,6 +43,12 @@ void classify_failure(Result &result, bool has_upload) {
         return;
     }
 
+    if (error_contains(result.error, "client disconnected")) {
+        result.status_code = 499;
+        result.error_code = "CLIENT_DISCONNECTED";
+        return;
+    }
+
     if (error_contains(result.error, "aborted") || error_contains(result.error, "interrupted")) {
         result.status_code = 400;
         result.error_code = "UPLOAD_ABORTED";
