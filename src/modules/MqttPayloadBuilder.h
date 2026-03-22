@@ -9,13 +9,18 @@
 #include <Arduino.h>
 
 #include "config/AppData.h"
+#include "modules/FanStateSnapshot.h"
 
 namespace MqttPayloadBuilder {
+
+String buildDiscoveryEntityObjectId(const String &base_topic,
+                                    const char *object_id);
 
 String buildDiscoverySensorPayload(const String &device_id,
                                    const String &device_name,
                                    const String &base_topic,
                                    const char *object_id,
+                                   const char *entity_object_id,
                                    const char *name,
                                    const char *unit,
                                    const char *device_class,
@@ -26,6 +31,22 @@ String buildDiscoverySensorPayload(const String &device_id,
 size_t buildStatePayload(char *out,
                          size_t out_size,
                          const SensorData &data,
+                         const FanStateSnapshot &fan,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on);
+
+size_t buildStatePayload(char *out,
+                         size_t out_size,
+                         const SensorData &data,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on);
+
+String buildStatePayload(const SensorData &data,
+                         const FanStateSnapshot &fan,
                          bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,

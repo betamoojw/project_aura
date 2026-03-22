@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "core/MathUtils.h"
 #include "core/AirQualityEngine.h"
@@ -94,6 +95,52 @@ void build_availability_topic(char *out, size_t out_size, const String &base) {
     snprintf(out, out_size, "%s/status", base.c_str());
 }
 
+bool string_is_empty(const String &text) {
+    return text.length() == 0;
+}
+
+bool string_ends_with_underscore(const String &text) {
+    return text.length() > 0 && text[text.length() - 1] == '_';
+}
+
+void string_pop_back(String &text) {
+    if (text.length() == 0) {
+        return;
+    }
+#ifdef UNIT_TEST
+    text.pop_back();
+#else
+    text.remove(text.length() - 1);
+#endif
+}
+
+void append_slug_component(String &out, const char *text) {
+    if (!text || text[0] == '\0') {
+        return;
+    }
+
+    bool previous_was_separator = string_is_empty(out) || string_ends_with_underscore(out);
+    const uint8_t *p = reinterpret_cast<const uint8_t *>(text);
+    while (*p) {
+        const char c = static_cast<char>(*p);
+        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+            out += c;
+            previous_was_separator = false;
+        } else if (c >= 'A' && c <= 'Z') {
+            out += static_cast<char>(c - 'A' + 'a');
+            previous_was_separator = false;
+        } else if (!previous_was_separator) {
+            out += '_';
+            previous_was_separator = true;
+        }
+        ++p;
+    }
+
+    while (string_ends_with_underscore(out)) {
+        string_pop_back(out);
+    }
+}
+
 float compute_dew_point_c(float temp_c, float rh) {
     if (!isfinite(temp_c) || !isfinite(rh) || rh <= 0.0f) {
         return NAN;
@@ -105,12 +152,162 @@ float compute_dew_point_c(float temp_c, float rh) {
     return (kB * gamma) / (kA - gamma);
 }
 
+uint8_t compute_fan_output_percent(const FanStateSnapshot &fan) {
+    if (!fan.output_known || Config::DAC_VOUT_FULL_SCALE_MV == 0) {
+        return 0;
+    }
+    uint32_t percent = static_cast<uint32_t>(fan.output_mv) * 100u;
+    percent = (percent + (Config::DAC_VOUT_FULL_SCALE_MV / 2u)) / Config::DAC_VOUT_FULL_SCALE_MV;
+    if (percent > 100u) {
+        percent = 100u;
+    }
+    return static_cast<uint8_t>(percent);
+}
+
+uint8_t compute_fan_manual_speed(const FanStateSnapshot &fan) {
+    uint8_t step = fan.manual_step;
+    if (step < 1u) {
+        step = 1u;
+    } else if (step > 10u) {
+        step = 10u;
+    }
+    return step;
+}
+
+uint8_t compute_fan_manual_percent(const FanStateSnapshot &fan) {
+    return static_cast<uint8_t>(compute_fan_manual_speed(fan) * 10u);
+}
+
+const char *fan_mode_text(FanMode mode) {
+    return mode == FanMode::Auto ? "auto" : "manual";
+}
+
+bool fan_manual_running(const FanStateSnapshot &fan) {
+    return fan.running && fan.manual_override_active;
+}
+
+bool fan_auto_enabled(const FanStateSnapshot &fan) {
+    return fan.mode == FanMode::Auto && !fan.auto_resume_blocked;
+}
+
+bool fan_stopped(const FanStateSnapshot &fan) {
+    return !fan_auto_enabled(fan) && !fan_manual_running(fan);
+}
+
+const char *fan_control_mode_text(const FanStateSnapshot &fan) {
+    if (fan_auto_enabled(fan)) {
+        return "Auto";
+    }
+    if (fan_manual_running(fan)) {
+        return "Manual";
+    }
+    return "Stopped";
+}
+
+const char *fan_timer_text(uint32_t seconds) {
+    if (seconds == Config::DAC_TIMER_NONE_S) {
+        return "Off";
+    }
+    if (seconds == 600U) {
+        return "10 min";
+    }
+    if (seconds == 1800U) {
+        return "30 min";
+    }
+    if (seconds == 3600U) {
+        return "1 h";
+    }
+    if (seconds == 7200U) {
+        return "2 h";
+    }
+    if (seconds == 14400U) {
+        return "4 h";
+    }
+    if (seconds == 28800U) {
+        return "8 h";
+    }
+    return "Off";
+}
+
+bool fan_timer_running(const FanStateSnapshot &fan, uint32_t now_ms) {
+    return fan.running &&
+           fan.manual_override_active &&
+           fan.stop_at_ms != 0 &&
+           static_cast<int32_t>(now_ms - fan.stop_at_ms) < 0;
+}
+
+uint32_t fan_timer_remaining_seconds(const FanStateSnapshot &fan, uint32_t now_ms) {
+    if (!fan_timer_running(fan, now_ms)) {
+        return 0;
+    }
+    return (fan.stop_at_ms - now_ms + 999UL) / 1000UL;
+}
+
+void format_fan_timer_remaining(char *out, size_t out_size, uint32_t seconds) {
+    if (!out || out_size == 0) {
+        return;
+    }
+    if (seconds == 0) {
+        snprintf(out, out_size, "Off");
+        return;
+    }
+    const uint32_t hours = seconds / 3600UL;
+    const uint32_t minutes = (seconds % 3600UL) / 60UL;
+    const uint32_t secs = seconds % 60UL;
+    if (hours > 0) {
+        if (minutes > 0) {
+            snprintf(out, out_size, "%lu h %02lu min",
+                     static_cast<unsigned long>(hours),
+                     static_cast<unsigned long>(minutes));
+        } else {
+            snprintf(out, out_size, "%lu h", static_cast<unsigned long>(hours));
+        }
+        return;
+    }
+    if (minutes > 0) {
+        snprintf(out, out_size, "%lu min", static_cast<unsigned long>(minutes));
+        return;
+    }
+    snprintf(out, out_size, "%lu s", static_cast<unsigned long>(secs));
+}
+
+const char *fan_status_text(const FanStateSnapshot &fan) {
+    if (fan.faulted) {
+        return "FAULT";
+    }
+    if (!fan.present) {
+        return "OFFLINE";
+    }
+    if (!fan.available) {
+        return "OFFLINE";
+    }
+    return fan.running ? "RUNNING" : "STOPPED";
+}
+
 } // namespace
+
+String buildDiscoveryEntityObjectId(const String &base_topic,
+                                    const char *object_id) {
+    String entity_object_id;
+    entity_object_id.reserve(base_topic.length() + (object_id ? strlen(object_id) : 0) + 4);
+    append_slug_component(entity_object_id, base_topic.c_str());
+    if (object_id && object_id[0] != '\0') {
+        if (!string_is_empty(entity_object_id) && !string_ends_with_underscore(entity_object_id)) {
+            entity_object_id += "_";
+        }
+        append_slug_component(entity_object_id, object_id);
+    }
+    if (string_is_empty(entity_object_id)) {
+        entity_object_id = "project_aura";
+    }
+    return entity_object_id;
+}
 
 String buildDiscoverySensorPayload(const String &device_id,
                                    const String &device_name,
                                    const String &base_topic,
                                    const char *object_id,
+                                   const char *entity_object_id,
                                    const char *name,
                                    const char *unit,
                                    const char *device_class,
@@ -130,6 +327,10 @@ String buildDiscoverySensorPayload(const String &device_id,
     char topic[256];
     build_state_topic(topic, sizeof(topic), base_topic);
     append_json_escaped(payload, topic);
+    if (entity_object_id && entity_object_id[0] != '\0') {
+        payload += "\",\"object_id\":\"";
+        append_json_escaped(payload, entity_object_id);
+    }
     payload += "\",\"availability_topic\":\"";
     build_availability_topic(topic, sizeof(topic), base_topic);
     append_json_escaped(payload, topic);
@@ -173,6 +374,7 @@ String buildDiscoverySensorPayload(const String &device_id,
 }
 
 String buildStatePayload(const SensorData &data,
+                         const FanStateSnapshot &fan,
                          bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,
@@ -181,6 +383,7 @@ String buildStatePayload(const SensorData &data,
     if (buildStatePayload(payload,
                           sizeof(payload),
                           data,
+                          fan,
                           gas_warmup,
                           night_mode,
                           alert_blink,
@@ -190,9 +393,23 @@ String buildStatePayload(const SensorData &data,
     return String(payload);
 }
 
+String buildStatePayload(const SensorData &data,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on) {
+    return buildStatePayload(data,
+                             FanStateSnapshot{},
+                             gas_warmup,
+                             night_mode,
+                             alert_blink,
+                             backlight_on);
+}
+
 size_t buildStatePayload(char *out,
                          size_t out_size,
                          const SensorData &data,
+                         const FanStateSnapshot &fan,
                          bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,
@@ -234,6 +451,16 @@ size_t buildStatePayload(char *out,
         first = false;
         return true;
     };
+    auto add_cstr = [&](const char *key, const char *value) {
+        if (!payload.appendf("%s\"%s\":\"%s\"",
+                             first ? "" : ",",
+                             key,
+                             value ? value : "")) {
+            return false;
+        }
+        first = false;
+        return true;
+    };
 
     float dew_c = NAN;
     bool dew_valid = data.temp_valid && data.hum_valid;
@@ -263,6 +490,16 @@ size_t buildStatePayload(char *out,
                           data.co_ppm >= 0.0f;
     const bool voc_publish_valid = !gas_warmup && data.voc_valid;
     const bool nox_publish_valid = !gas_warmup && data.nox_valid;
+    const bool fan_output_valid = fan.present && fan.output_known;
+    const bool fan_manual_speed_valid = fan.present;
+    const uint8_t fan_manual_speed = compute_fan_manual_speed(fan);
+    const uint8_t fan_manual_percent = compute_fan_manual_percent(fan);
+    const uint8_t fan_output_percent = compute_fan_output_percent(fan);
+    const uint32_t fan_timer_remaining = fan_timer_remaining_seconds(fan, millis());
+    char fan_timer_remaining_text[24];
+    format_fan_timer_remaining(fan_timer_remaining_text,
+                               sizeof(fan_timer_remaining_text),
+                               fan_timer_remaining);
     if (!add_float("co", co_valid, data.co_ppm, 1) ||
         !add_int("voc_index", voc_publish_valid, data.voc_index) ||
         !add_int("nox_index", nox_publish_valid, data.nox_index) ||
@@ -275,6 +512,22 @@ size_t buildStatePayload(char *out,
         !add_float("pressure", data.pressure_valid, data.pressure, 1) ||
         !add_float("pressure_delta_3h", data.pressure_delta_3h_valid, data.pressure_delta_3h, 1) ||
         !add_float("pressure_delta_24h", data.pressure_delta_24h_valid, data.pressure_delta_24h, 1) ||
+        !add_bool("fan_present", fan.present) ||
+        !add_bool("fan_available", fan.available) ||
+        !add_bool("fan_running", fan.running) ||
+        !add_bool("fan_manual_running", fan_manual_running(fan)) ||
+        !add_bool("fan_fault", fan.faulted) ||
+        !add_bool("fan_auto", fan_auto_enabled(fan)) ||
+        !add_bool("fan_stopped", fan_stopped(fan)) ||
+        !add_cstr("fan_mode", fan_mode_text(fan.mode)) ||
+        !add_cstr("fan_control_mode", fan_control_mode_text(fan)) ||
+        !add_cstr("fan_timer", fan_timer_text(fan.selected_timer_s)) ||
+        !add_cstr("fan_timer_remaining", fan_timer_remaining_text) ||
+        !add_int("fan_manual_speed", fan_manual_speed_valid, fan_manual_speed) ||
+        !add_int("fan_manual_percent", fan_manual_speed_valid, fan_manual_percent) ||
+        !add_cstr("fan_status", fan_status_text(fan)) ||
+        !add_int("fan_output_percent", fan_output_valid, fan_output_percent) ||
+        !add_int("fan_output_mv", fan_output_valid, fan.output_mv) ||
         !add_bool("night_mode", night_mode) ||
         !add_bool("alert_blink", alert_blink) ||
         !add_bool("backlight", backlight_on) ||
@@ -283,6 +536,23 @@ size_t buildStatePayload(char *out,
     }
 
     return payload.size();
+}
+
+size_t buildStatePayload(char *out,
+                         size_t out_size,
+                         const SensorData &data,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on) {
+    return buildStatePayload(out,
+                             out_size,
+                             data,
+                             FanStateSnapshot{},
+                             gas_warmup,
+                             night_mode,
+                             alert_blink,
+                             backlight_on);
 }
 
 } // namespace MqttPayloadBuilder

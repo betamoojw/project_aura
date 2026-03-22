@@ -96,16 +96,26 @@ private:
     bool subscribeTopic(const char *topic);
     bool connectClient();
     void handleEvent(esp_mqtt_event_handle_t event);
-    void publishDiscovery();
     void publishDiscoverySensor(const char *object_id, const char *name,
                                 const char *unit, const char *device_class,
                                 const char *state_class, const char *value_template,
                                 const char *icon);
+    void publishDiscoveryBinarySensor(const char *object_id, const char *name,
+                                      const char *value_template, const char *device_class,
+                                      const char *icon);
     void publishDiscoverySwitch(const char *object_id, const char *name,
                                 const char *value_template, const char *icon);
+    void publishDiscoverySelect(const char *object_id, const char *name,
+                                const char *value_template, const char *const *options,
+                                size_t option_count, const char *icon);
+    void publishDiscoveryNumber(const char *object_id, const char *name,
+                                const char *value_template,
+                                int min_value, int max_value, int step_value,
+                                const char *mode, const char *icon);
     void publishDiscoveryButton(const char *object_id, const char *name,
                                 const char *payload_press, const char *icon);
     void publishNightModeAvailability();
+    void publishDiscovery(const MqttRuntimeSnapshot &runtime);
     void publishState(const MqttRuntimeSnapshot &runtime);
     void updateOtaQuiesceState();
     void lockCommandContext() const;

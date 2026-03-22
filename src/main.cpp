@@ -313,8 +313,10 @@ void loop()
     TimeManager::PollResult time_poll = timeManager.poll(now);
     uiController.onTimePoll(time_poll);
     fanControl.poll(now, &currentData, sensorManager.isWarmupActive());
+    const FanControl::Snapshot fan_snapshot = fanControl.snapshot();
     webRuntimeState.update(currentData, sensorManager.isWarmupActive(), fanControl);
     mqttRuntimeState.update(currentData,
+                            fan_snapshot,
                             sensorManager.isWarmupActive(),
                             night_mode,
                             alert_blink_enabled,

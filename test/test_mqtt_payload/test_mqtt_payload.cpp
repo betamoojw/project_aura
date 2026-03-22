@@ -3,7 +3,9 @@
 
 #include "config/AppConfig.h"
 #include "config/AppData.h"
+#include "modules/FanStateSnapshot.h"
 #include "modules/MqttPayloadBuilder.h"
+#include "ArduinoMock.h"
 
 namespace {
 
@@ -77,7 +79,7 @@ void test_state_payload_buffer_builder_matches_string_payload() {
     data.pressure_valid = true;
     data.pressure = 1009.4f;
 
-    char payload[512] = {};
+    char payload[768] = {};
     size_t written = MqttPayloadBuilder::buildStatePayload(
         payload, sizeof(payload), data, false, true, true, false);
     TEST_ASSERT_GREATER_THAN_UINT32(0, static_cast<uint32_t>(written));
@@ -124,16 +126,70 @@ void test_state_payload_keeps_aqi_available_during_warmup_when_pm_is_ready() {
     assert_contains(payload, "\"aqi\":50");
 }
 
+void test_state_payload_includes_fan_fields_when_present() {
+    setMillis(0);
+    SensorData data{};
+    FanStateSnapshot fan{};
+    fan.present = true;
+    fan.available = true;
+    fan.running = true;
+    fan.faulted = false;
+    fan.output_known = true;
+    fan.mode = FanMode::Auto;
+    fan.auto_resume_blocked = false;
+    fan.selected_timer_s = 3600U;
+    fan.output_mv = 5000;
+
+    String payload = MqttPayloadBuilder::buildStatePayload(data, fan, false, false, false, false);
+
+    assert_contains(payload, "\"fan_present\":\"ON\"");
+    assert_contains(payload, "\"fan_available\":\"ON\"");
+    assert_contains(payload, "\"fan_running\":\"ON\"");
+    assert_contains(payload, "\"fan_manual_running\":\"OFF\"");
+    assert_contains(payload, "\"fan_fault\":\"OFF\"");
+    assert_contains(payload, "\"fan_auto\":\"ON\"");
+    assert_contains(payload, "\"fan_stopped\":\"OFF\"");
+    assert_contains(payload, "\"fan_mode\":\"auto\"");
+    assert_contains(payload, "\"fan_control_mode\":\"Auto\"");
+    assert_contains(payload, "\"fan_timer\":\"1 h\"");
+    assert_contains(payload, "\"fan_timer_remaining\":\"Off\"");
+    assert_contains(payload, "\"fan_manual_speed\":1");
+    assert_contains(payload, "\"fan_manual_percent\":10");
+    assert_contains(payload, "\"fan_status\":\"RUNNING\"");
+    assert_contains(payload, "\"fan_output_percent\":50");
+    assert_contains(payload, "\"fan_output_mv\":5000");
+}
+
+void test_state_payload_reports_fan_timer_remaining_when_manual_timer_is_active() {
+    setMillis(1000);
+    SensorData data{};
+    FanStateSnapshot fan{};
+    fan.present = true;
+    fan.available = true;
+    fan.running = true;
+    fan.manual_override_active = true;
+    fan.mode = FanMode::Manual;
+    fan.selected_timer_s = 1800U;
+    fan.stop_at_ms = 31UL * 60UL * 1000UL;
+
+    String payload = MqttPayloadBuilder::buildStatePayload(data, fan, false, false, false, false);
+
+    assert_contains(payload, "\"fan_timer_remaining\":\"30 min\"");
+}
+
 void test_discovery_sensor_payload_contains_pm05_template_and_topics() {
     const String device_id = "aura_test";
     const String device_name = "Aura \"Kitchen\"";
     const String base_topic = "project_aura/room1";
+    const String entity_object_id =
+        MqttPayloadBuilder::buildDiscoveryEntityObjectId(base_topic, "pm05");
 
     String payload = MqttPayloadBuilder::buildDiscoverySensorPayload(
         device_id,
         device_name,
         base_topic,
         "pm05",
+        entity_object_id.c_str(),
         "PM0.5",
         "#/cm\\u00b3",
         "",
@@ -143,6 +199,7 @@ void test_discovery_sensor_payload_contains_pm05_template_and_topics() {
 
     assert_contains(payload, "\"name\":\"PM0.5\"");
     assert_contains(payload, "\"unique_id\":\"aura_test_pm05\"");
+    assert_contains(payload, "\"object_id\":\"project_aura_room1_pm05\"");
     assert_contains(payload, "\"state_topic\":\"project_aura/room1/state\"");
     assert_contains(payload, "\"availability_topic\":\"project_aura/room1/status\"");
     assert_contains(payload, "\"value_template\":\"{{ value_json.pm05 }}\"");
@@ -150,6 +207,12 @@ void test_discovery_sensor_payload_contains_pm05_template_and_topics() {
     assert_contains(payload, "\"state_class\":\"measurement\"");
     assert_contains(payload, "\"icon\":\"mdi:dots-hexagon\"");
     assert_contains(payload, "\"device\":{\"identifiers\":[\"aura_test\"],\"name\":\"Aura \\\"Kitchen\\\"\"");
+}
+
+void test_discovery_entity_object_id_sanitizes_base_topic() {
+    String object_id = MqttPayloadBuilder::buildDiscoveryEntityObjectId(
+        "Project Aura/Kitchen-1", "fan_auto");
+    TEST_ASSERT_EQUAL_STRING("project_aura_kitchen_1_fan_auto", object_id.c_str());
 }
 
 int main(int, char **) {
@@ -160,6 +223,9 @@ int main(int, char **) {
     RUN_TEST(test_state_payload_includes_aqi_when_computable);
     RUN_TEST(test_state_payload_excludes_aqi_when_only_warmup_gas_metrics_exist);
     RUN_TEST(test_state_payload_keeps_aqi_available_during_warmup_when_pm_is_ready);
+    RUN_TEST(test_state_payload_includes_fan_fields_when_present);
+    RUN_TEST(test_state_payload_reports_fan_timer_remaining_when_manual_timer_is_active);
     RUN_TEST(test_discovery_sensor_payload_contains_pm05_template_and_topics);
+    RUN_TEST(test_discovery_entity_object_id_sanitizes_base_topic);
     return UNITY_END();
 }

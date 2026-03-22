@@ -168,7 +168,9 @@ void AppInit::initManagersAndConfig(Context &ctx, StorageManager::BootAction boo
 
     ctx.timeManager.updateWifiState(ctx.networkManager.isEnabled(), ctx.networkManager.isConnected());
     ctx.mqttManager.syncWithWifi();
+    const FanControl::Snapshot fan_snapshot = ctx.fanControl.snapshot();
     ctx.mqttRuntimeState.update(ctx.currentData,
+                                fan_snapshot,
                                 ctx.sensorManager.isWarmupActive(),
                                 ctx.night_mode,
                                 ctx.alert_blink_enabled,

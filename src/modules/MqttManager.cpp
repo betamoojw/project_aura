@@ -8,6 +8,7 @@
 
 #include <ctype.h>
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ESPmDNS.h>
 #include <WiFi.h>
@@ -29,6 +30,20 @@ constexpr uint32_t kMqttMdnsFailureCacheMs = 60UL * 1000UL;
 constexpr int kMqttConnectTimeoutShortMs = 3000;
 constexpr int kMqttConnectTimeoutSlowMs = 3000;
 constexpr uint8_t kMqttLongRetryLogEveryAttempts = 6;
+constexpr const char *kFanTimerOptions[] = {
+    "Off",
+    "10 min",
+    "30 min",
+    "1 h",
+    "2 h",
+    "4 h",
+    "8 h",
+};
+constexpr const char *kFanModeOptions[] = {
+    "Auto",
+    "Stopped",
+    "Manual",
+};
 
 void append_json_escaped(String &out, const char *value) {
     if (!value) {
@@ -122,6 +137,32 @@ void build_discovery_topic(char *out, size_t out_size, const char *component,
              component, device_id.c_str(), object_id);
 }
 
+void append_discovery_object_id(String &payload,
+                                const String &base_topic,
+                                const char *object_id) {
+    const String entity_object_id =
+        MqttPayloadBuilder::buildDiscoveryEntityObjectId(base_topic, object_id);
+    payload += ",\"object_id\":\"";
+    append_json_escaped(payload, entity_object_id);
+    payload += "\"";
+}
+
+bool parse_uint8_in_range(const char *text, uint8_t min_value, uint8_t max_value, uint8_t &out) {
+    if (!text || text[0] == '\0') {
+        return false;
+    }
+    char *end = nullptr;
+    const long parsed = strtol(text, &end, 10);
+    if (end == text || *end != '\0') {
+        return false;
+    }
+    if (parsed < static_cast<long>(min_value) || parsed > static_cast<long>(max_value)) {
+        return false;
+    }
+    out = static_cast<uint8_t>(parsed);
+    return true;
+}
+
 bool equals_ignore_case(const char *a, const char *b) {
     if (!a || !b) {
         return false;
@@ -134,6 +175,42 @@ bool equals_ignore_case(const char *a, const char *b) {
         ++b;
     }
     return (*a == '\0' && *b == '\0');
+}
+
+bool parse_fan_timer_seconds(const char *text, uint32_t &out_seconds) {
+    if (!text || text[0] == '\0') {
+        return false;
+    }
+    for (size_t i = 0; i < sizeof(kFanTimerOptions) / sizeof(kFanTimerOptions[0]); ++i) {
+        if (equals_ignore_case(text, kFanTimerOptions[i])) {
+            out_seconds = (i == 0) ? Config::DAC_TIMER_NONE_S : Config::DAC_TIMER_PRESETS_S[i - 1];
+            return true;
+        }
+    }
+    return false;
+}
+
+bool parse_fan_mode_option(const char *text, FanHaMode &out_mode) {
+    if (!text || text[0] == '\0') {
+        return false;
+    }
+    if (equals_ignore_case(text, kFanModeOptions[0])) {
+        out_mode = FanHaMode::Auto;
+        return true;
+    }
+    if (equals_ignore_case(text, kFanModeOptions[1])) {
+        out_mode = FanHaMode::Stopped;
+        return true;
+    }
+    if (equals_ignore_case(text, kFanModeOptions[2])) {
+        out_mode = FanHaMode::Manual;
+        return true;
+    }
+    return false;
+}
+
+bool payload_is_exact(const char *payload, const char *expected) {
+    return payload && expected && strcmp(payload, expected) == 0;
 }
 
 void trim_ascii(char *text) {
@@ -445,11 +522,14 @@ void MqttManager::publishDiscoverySensor(const char *object_id, const char *name
     if (!mqtt_connected_) {
         return;
     }
+    const String entity_object_id =
+        MqttPayloadBuilder::buildDiscoveryEntityObjectId(mqtt_base_topic_, object_id);
     String payload = MqttPayloadBuilder::buildDiscoverySensorPayload(
         mqtt_device_id_,
         mqtt_device_name_,
         mqtt_base_topic_,
         object_id,
+        entity_object_id.c_str(),
         name,
         unit,
         device_class,
@@ -459,6 +539,62 @@ void MqttManager::publishDiscoverySensor(const char *object_id, const char *name
 
     char topic[kTopicBufferSize];
     build_discovery_topic(topic, sizeof(topic), "sensor", mqtt_device_id_, object_id);
+    publishMessage(topic, payload.c_str(), true);
+}
+
+void MqttManager::publishDiscoveryBinarySensor(const char *object_id,
+                                               const char *name,
+                                               const char *value_template,
+                                               const char *device_class,
+                                               const char *icon) {
+    if (!mqtt_connected_) {
+        return;
+    }
+    String payload;
+    payload.reserve(520);
+    payload = "{";
+    payload += "\"name\":\"";
+    append_json_escaped(payload, name);
+    payload += "\",\"unique_id\":\"";
+    append_json_escaped(payload, mqtt_device_id_);
+    payload += "_";
+    append_json_escaped(payload, object_id);
+    payload += "\",\"state_topic\":\"";
+    char topic[kTopicBufferSize];
+    build_state_topic(topic, sizeof(topic), mqtt_base_topic_);
+    append_json_escaped(payload, topic);
+    payload += "\",\"availability_topic\":\"";
+    build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+    append_json_escaped(payload, topic);
+    payload += "\",\"payload_available\":\"";
+    payload += Config::MQTT_AVAIL_ONLINE;
+    payload += "\",\"payload_not_available\":\"";
+    payload += Config::MQTT_AVAIL_OFFLINE;
+    payload += "\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\"";
+    append_discovery_object_id(payload, mqtt_base_topic_, object_id);
+    if (value_template && value_template[0] != '\0') {
+        payload += ",\"value_template\":\"";
+        append_json_escaped(payload, value_template);
+        payload += "\"";
+    }
+    if (device_class && device_class[0] != '\0') {
+        payload += ",\"device_class\":\"";
+        append_json_escaped(payload, device_class);
+        payload += "\"";
+    }
+    if (icon && icon[0] != '\0') {
+        payload += ",\"icon\":\"";
+        append_json_escaped(payload, icon);
+        payload += "\"";
+    }
+    payload += ",\"device\":{\"identifiers\":[\"";
+    append_json_escaped(payload, mqtt_device_id_);
+    payload += "\"],\"name\":\"";
+    append_json_escaped(payload, mqtt_device_name_);
+    payload += "\",\"manufacturer\":\"21CNCStudio\",\"model\":\"Project Aura\"}";
+    payload += "}";
+
+    build_discovery_topic(topic, sizeof(topic), "binary_sensor", mqtt_device_id_, object_id);
     publishMessage(topic, payload.c_str(), true);
 }
 
@@ -512,6 +648,7 @@ void MqttManager::publishDiscoverySwitch(const char *object_id, const char *name
     }
     payload += ",\"payload_on\":\"ON\",\"payload_off\":\"OFF\"";
     payload += ",\"state_on\":\"ON\",\"state_off\":\"OFF\"";
+    append_discovery_object_id(payload, mqtt_base_topic_, object_id);
     if (value_template && value_template[0] != '\0') {
         payload += ",\"value_template\":\"";
         append_json_escaped(payload, value_template);
@@ -530,6 +667,134 @@ void MqttManager::publishDiscoverySwitch(const char *object_id, const char *name
     payload += "}";
 
     build_discovery_topic(topic, sizeof(topic), "switch", mqtt_device_id_, object_id);
+    publishMessage(topic, payload.c_str(), true);
+}
+
+void MqttManager::publishDiscoverySelect(const char *object_id, const char *name,
+                                         const char *value_template,
+                                         const char *const *options,
+                                         size_t option_count,
+                                         const char *icon) {
+    if (!mqtt_connected_) {
+        return;
+    }
+    String payload;
+    payload.reserve(720);
+    payload = "{";
+    payload += "\"name\":\"";
+    append_json_escaped(payload, name);
+    payload += "\",\"unique_id\":\"";
+    append_json_escaped(payload, mqtt_device_id_);
+    payload += "_";
+    append_json_escaped(payload, object_id);
+    payload += "\",\"state_topic\":\"";
+    char topic[kTopicBufferSize];
+    build_state_topic(topic, sizeof(topic), mqtt_base_topic_);
+    append_json_escaped(payload, topic);
+    payload += "\",\"command_topic\":\"";
+    build_command_topic(topic, sizeof(topic), mqtt_base_topic_, object_id);
+    append_json_escaped(payload, topic);
+    payload += "\",\"availability_topic\":\"";
+    build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+    append_json_escaped(payload, topic);
+    payload += "\",\"payload_available\":\"";
+    payload += Config::MQTT_AVAIL_ONLINE;
+    payload += "\",\"payload_not_available\":\"";
+    payload += Config::MQTT_AVAIL_OFFLINE;
+    payload += "\"";
+    append_discovery_object_id(payload, mqtt_base_topic_, object_id);
+    if (value_template && value_template[0] != '\0') {
+        payload += ",\"value_template\":\"";
+        append_json_escaped(payload, value_template);
+        payload += "\"";
+    }
+    payload += ",\"options\":[";
+    for (size_t i = 0; i < option_count; ++i) {
+        if (i > 0) {
+            payload += ",";
+        }
+        payload += "\"";
+        append_json_escaped(payload, options[i]);
+        payload += "\"";
+    }
+    payload += "]";
+    if (icon && icon[0] != '\0') {
+        payload += ",\"icon\":\"";
+        append_json_escaped(payload, icon);
+        payload += "\"";
+    }
+    payload += ",\"device\":{\"identifiers\":[\"";
+    append_json_escaped(payload, mqtt_device_id_);
+    payload += "\"],\"name\":\"";
+    append_json_escaped(payload, mqtt_device_name_);
+    payload += "\",\"manufacturer\":\"21CNCStudio\",\"model\":\"Project Aura\"}";
+    payload += "}";
+
+    build_discovery_topic(topic, sizeof(topic), "select", mqtt_device_id_, object_id);
+    publishMessage(topic, payload.c_str(), true);
+}
+
+void MqttManager::publishDiscoveryNumber(const char *object_id, const char *name,
+                                         const char *value_template,
+                                         int min_value, int max_value, int step_value,
+                                         const char *mode, const char *icon) {
+    if (!mqtt_connected_) {
+        return;
+    }
+    String payload;
+    payload.reserve(720);
+    payload = "{";
+    payload += "\"name\":\"";
+    append_json_escaped(payload, name);
+    payload += "\",\"unique_id\":\"";
+    append_json_escaped(payload, mqtt_device_id_);
+    payload += "_";
+    append_json_escaped(payload, object_id);
+    payload += "\",\"state_topic\":\"";
+    char topic[kTopicBufferSize];
+    build_state_topic(topic, sizeof(topic), mqtt_base_topic_);
+    append_json_escaped(payload, topic);
+    payload += "\",\"command_topic\":\"";
+    build_command_topic(topic, sizeof(topic), mqtt_base_topic_, object_id);
+    append_json_escaped(payload, topic);
+    payload += "\",\"availability_topic\":\"";
+    build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
+    append_json_escaped(payload, topic);
+    payload += "\",\"payload_available\":\"";
+    payload += Config::MQTT_AVAIL_ONLINE;
+    payload += "\",\"payload_not_available\":\"";
+    payload += Config::MQTT_AVAIL_OFFLINE;
+    payload += "\"";
+    append_discovery_object_id(payload, mqtt_base_topic_, object_id);
+    if (value_template && value_template[0] != '\0') {
+        payload += ",\"value_template\":\"";
+        append_json_escaped(payload, value_template);
+        payload += "\"";
+    }
+    payload += ",\"min\":";
+    payload += String(min_value);
+    payload += ",\"max\":";
+    payload += String(max_value);
+    payload += ",\"step\":";
+    payload += String(step_value);
+    if (mode && mode[0] != '\0') {
+        payload += ",\"mode\":\"";
+        append_json_escaped(payload, mode);
+        payload += "\"";
+    }
+    if (icon && icon[0] != '\0') {
+        payload += ",\"icon\":\"";
+        append_json_escaped(payload, icon);
+        payload += "\"";
+    }
+    payload += ",\"device\":{\"identifiers\":[\"";
+    append_json_escaped(payload, mqtt_device_id_);
+    payload += "\"],\"name\":\"";
+    append_json_escaped(payload, mqtt_device_name_);
+    payload += "\",\"manufacturer\":\"21CNCStudio\",\"model\":\"Project Aura\"}";
+    payload += "}";
+
+    build_discovery_topic(topic, sizeof(topic), "number", mqtt_device_id_, object_id);
     publishMessage(topic, payload.c_str(), true);
 }
 
@@ -557,6 +822,7 @@ void MqttManager::publishDiscoveryButton(const char *object_id, const char *name
     build_availability_topic(topic, sizeof(topic), mqtt_base_topic_);
     append_json_escaped(payload, topic);
     payload += "\"";
+    append_discovery_object_id(payload, mqtt_base_topic_, object_id);
     if (icon && icon[0] != '\0') {
         payload += ",\"icon\":\"";
         append_json_escaped(payload, icon);
@@ -573,10 +839,15 @@ void MqttManager::publishDiscoveryButton(const char *object_id, const char *name
     publishMessage(topic, payload.c_str(), true);
 }
 
-void MqttManager::publishDiscovery() {
+void MqttManager::publishDiscovery(const MqttRuntimeSnapshot &runtime) {
     if (!mqtt_discovery_ || mqtt_discovery_sent_ || !mqtt_connected_) {
         return;
     }
+    const auto clear_discovery = [&](const char *component, const char *object_id) {
+        char topic[kTopicBufferSize];
+        build_discovery_topic(topic, sizeof(topic), component, mqtt_device_id_, object_id);
+        publishMessage(topic, "", true);
+    };
     // Remove legacy PM4 discovery entity variant (retained) from older firmware versions.
     char legacy_topic[kTopicBufferSize];
     build_discovery_topic(legacy_topic, sizeof(legacy_topic), "sensor", mqtt_device_id_, "pm4_0");
@@ -622,6 +893,61 @@ void MqttManager::publishDiscovery() {
     publishDiscoverySwitch("night_mode", "Night Mode", "{{ value_json.night_mode }}", "mdi:weather-night");
     publishDiscoverySwitch("alert_blink", "Alert Blink", "{{ value_json.alert_blink }}", "mdi:alarm-light");
     publishDiscoverySwitch("backlight", "Backlight", "{{ value_json.backlight }}", "mdi:television");
+    // Retired ventilation entities from earlier HA experiments.
+    clear_discovery("fan", "fan");
+    clear_discovery("number", "fan_manual_speed");
+    if (runtime.fan.present) {
+        clear_discovery("button", "fan_auto");
+        clear_discovery("button", "fan_manual");
+        clear_discovery("button", "fan_stop");
+        publishDiscoverySwitch("fan_auto", "Ventilation Auto", "{{ value_json.fan_auto }}",
+                               "mdi:fan-auto");
+        publishDiscoverySwitch("fan_manual", "Ventilation Manual",
+                               "{{ value_json.fan_manual_running }}", "mdi:fan");
+        publishDiscoverySwitch("fan_stop", "Ventilation Stop", "{{ value_json.fan_stopped }}",
+                               "mdi:stop-circle-outline");
+        publishDiscoverySelect("fan_mode", "Ventilation Mode",
+                               "{{ value_json.fan_control_mode }}",
+                               kFanModeOptions,
+                               sizeof(kFanModeOptions) / sizeof(kFanModeOptions[0]),
+                               "mdi:fan-cog");
+        publishDiscoveryNumber("fan_manual_percent", "Ventilation Speed",
+                               "{{ value_json.fan_manual_percent }}",
+                               10, 100, 10, "slider", "mdi:fan");
+        publishDiscoverySelect("fan_timer", "Ventilation Timer",
+                               "{{ value_json.fan_timer }}",
+                               kFanTimerOptions,
+                               sizeof(kFanTimerOptions) / sizeof(kFanTimerOptions[0]),
+                               "mdi:timer-outline");
+        publishDiscoverySensor("fan_timer_remaining", "Ventilation Timer Remaining", "",
+                               "", "", "{{ value_json.fan_timer_remaining }}",
+                               "mdi:timer-sand");
+        publishDiscoverySensor("fan_status", "Ventilation Status", "",
+                               "", "", "{{ value_json.fan_status }}", "mdi:fan");
+        publishDiscoverySensor("fan_output_percent", "Ventilation Output", "%",
+                               "", "measurement", "{{ value_json.fan_output_percent }}", "mdi:fan-chevron-down");
+        publishDiscoverySensor("fan_output_mv", "Ventilation Output mV", "mV",
+                               "", "measurement", "{{ value_json.fan_output_mv }}", "mdi:flash");
+        publishDiscoveryBinarySensor("fan_fault", "Ventilation Fault",
+                                     "{{ value_json.fan_fault }}", "problem", "mdi:fan-alert");
+    } else {
+        clear_discovery("fan", "fan");
+        clear_discovery("switch", "fan_auto");
+        clear_discovery("switch", "fan_manual");
+        clear_discovery("switch", "fan_stop");
+        clear_discovery("button", "fan_auto");
+        clear_discovery("button", "fan_manual");
+        clear_discovery("button", "fan_stop");
+        clear_discovery("select", "fan_mode");
+        clear_discovery("number", "fan_manual_percent");
+        clear_discovery("number", "fan_manual_speed");
+        clear_discovery("select", "fan_timer");
+        clear_discovery("sensor", "fan_timer_remaining");
+        clear_discovery("sensor", "fan_status");
+        clear_discovery("sensor", "fan_output_percent");
+        clear_discovery("sensor", "fan_output_mv");
+        clear_discovery("binary_sensor", "fan_fault");
+    }
     publishDiscoveryButton("restart", "Restart", "PRESS", "mdi:restart");
     mqtt_discovery_sent_ = true;
     publishNightModeAvailability();
@@ -644,6 +970,7 @@ void MqttManager::publishState(const MqttRuntimeSnapshot &runtime) {
     const size_t payload_len = MqttPayloadBuilder::buildStatePayload(
         mqtt_state_payload_buf_, sizeof(mqtt_state_payload_buf_),
         runtime.data,
+        runtime.fan,
         runtime.gas_warmup,
         runtime.night_mode,
         runtime.alert_blink,
@@ -820,6 +1147,97 @@ void MqttManager::handleIncomingMessage(const char *topic, const uint8_t *payloa
         if (is_on || is_off) {
             pending_update.backlight_value = is_on;
             pending_update.backlight = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_mode") {
+        FanHaMode mode = FanHaMode::Stopped;
+        if (parse_fan_mode_option(msg, mode)) {
+            pending_update.fan_mode_value = mode;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_auto") {
+        if (payload_is_exact(msg, "AUTO") || is_on) {
+            pending_update.fan_mode_value = FanHaMode::Auto;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        } else if (is_off) {
+            pending_update.fan_mode_value = FanHaMode::Stopped;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_manual") {
+        if (payload_is_exact(msg, "MANUAL") || is_on) {
+            pending_update.fan_mode_value = FanHaMode::Manual;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        } else if (is_off) {
+            pending_update.fan_mode_value = FanHaMode::Stopped;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_stop") {
+        if (payload_is_exact(msg, "STOP") || is_on || is_off) {
+            pending_update.fan_mode_value = FanHaMode::Stopped;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_manual_percent") {
+        uint8_t percent = 0;
+        if (parse_uint8_in_range(msg, 10, 100, percent) && (percent % 10u) == 0u) {
+            pending_update.fan_manual_speed_value = static_cast<uint8_t>(percent / 10u);
+            pending_update.fan_manual_speed = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_manual_speed") {
+        uint8_t speed = 0;
+        if (parse_uint8_in_range(msg, 1, 10, speed)) {
+            pending_update.fan_manual_speed_value = speed;
+            pending_update.fan_manual_speed = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan") {
+        if (is_on) {
+            pending_update.fan_mode_value = FanHaMode::Manual;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        } else if (is_off) {
+            pending_update.fan_mode_value = FanHaMode::Stopped;
+            pending_update.fan_mode = true;
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_percentage") {
+        uint8_t speed = 0;
+        if (parse_uint8_in_range(msg, 0, 100, speed)) {
+            if (speed == 0) {
+                pending_update.fan_mode_value = FanHaMode::Stopped;
+                pending_update.fan_mode = true;
+            } else {
+                uint32_t manual_step = (static_cast<uint32_t>(speed) + 9u) / 10u;
+                if (manual_step < 1u) {
+                    manual_step = 1u;
+                } else if (manual_step > 10u) {
+                    manual_step = 10u;
+                }
+                pending_update.fan_manual_speed_value = static_cast<uint8_t>(manual_step);
+                pending_update.fan_manual_speed = true;
+            }
+            has_pending_update = true;
+        } else if (parse_uint8_in_range(msg, 0, 10, speed)) {
+            if (speed == 0) {
+                pending_update.fan_mode_value = FanHaMode::Stopped;
+                pending_update.fan_mode = true;
+            } else {
+                pending_update.fan_manual_speed_value = speed;
+                pending_update.fan_manual_speed = true;
+            }
+            has_pending_update = true;
+        }
+    } else if (cmd == "fan_timer") {
+        uint32_t timer_seconds = 0;
+        if (parse_fan_timer_seconds(msg, timer_seconds)) {
+            pending_update.fan_timer_seconds = timer_seconds;
+            pending_update.fan_timer = true;
             has_pending_update = true;
         }
     } else if (cmd == "restart") {
@@ -1115,7 +1533,7 @@ void MqttManager::poll(MqttRuntimeState &runtime_state) {
         }
         mqtt_publish_deferred_by_web_ = false;
         if (discovery_due) {
-            publishDiscovery();
+            publishDiscovery(runtime);
         }
     } else {
         mqtt_publish_deferred_by_web_ = false;

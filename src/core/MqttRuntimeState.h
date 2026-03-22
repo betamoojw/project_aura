@@ -8,18 +8,30 @@
 
 #include <atomic>
 
+#ifdef UNIT_TEST
+#include <mutex>
+#else
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#endif
 
 #include "config/AppData.h"
+#include "modules/FanStateSnapshot.h"
 
 struct MqttRuntimeSnapshot {
     SensorData data;
+    FanStateSnapshot fan;
     bool gas_warmup = false;
     bool night_mode = false;
     bool alert_blink = false;
     bool backlight_on = false;
     bool auto_night_enabled = false;
+};
+
+enum class FanHaMode : uint8_t {
+    Auto = 0,
+    Stopped,
+    Manual,
 };
 
 struct MqttPendingCommands {
@@ -29,6 +41,12 @@ struct MqttPendingCommands {
     bool alert_blink_value = false;
     bool backlight = false;
     bool backlight_value = false;
+    bool fan_mode = false;
+    FanHaMode fan_mode_value = FanHaMode::Stopped;
+    bool fan_manual_speed = false;
+    uint8_t fan_manual_speed_value = 1;
+    bool fan_timer = false;
+    uint32_t fan_timer_seconds = 0;
     bool restart = false;
 };
 
@@ -37,6 +55,7 @@ public:
     MqttRuntimeState();
 
     void update(const SensorData &data,
+                const FanStateSnapshot &fan,
                 bool gas_warmup,
                 bool night_mode,
                 bool alert_blink,
@@ -53,9 +72,14 @@ private:
     void lock() const;
     void unlock() const;
 
+#ifdef UNIT_TEST
+    mutable std::mutex mutex_{};
+#else
     mutable StaticSemaphore_t mutex_buffer_{};
     mutable SemaphoreHandle_t mutex_ = nullptr;
+#endif
     MqttRuntimeSnapshot snapshot_{};
     MqttPendingCommands pending_commands_{};
+    std::atomic<bool> publish_after_update_{false};
     std::atomic<bool> publish_requested_{false};
 };

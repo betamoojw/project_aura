@@ -162,6 +162,68 @@ views:
         square: false
         cards:
           - type: tile
+            entity: switch.project_aura_room1_fan_auto
+            name: Auto
+            icon: mdi:fan-auto
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.project_aura_room1_fan_manual
+            name: Manual
+            icon: mdi:fan
+            vertical: false
+            features_position: bottom
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: switch.project_aura_room1_fan_manual
+                state: 'on'
+            card:
+              type: tile
+              entity: number.aura_ventilation_speed
+              name: Ventilation Speed
+              icon: mdi:fan
+              vertical: false
+              features:
+                - type: numeric-input
+              features_position: bottom
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: switch.project_aura_room1_fan_manual
+                state: 'off'
+            card:
+              type: tile
+              entity: sensor.aura_ventilation_output
+              name: Current Output
+              icon: mdi:fan-chevron-down
+              vertical: false
+              features_position: bottom
+          - type: tile
+            entity: select.aura_ventilation_timer
+            name: Ventilation Timer
+            icon: mdi:timer-outline
+            vertical: false
+            features:
+              - type: select-options
+            features_position: bottom
+          - type: tile
+            entity: sensor.project_aura_room1_fan_timer_remaining
+            name: Timer Remaining
+            icon: mdi:timer-sand
+            vertical: false
+            features_position: bottom
+          - type: tile
+            entity: switch.project_aura_room1_fan_stop
+            name: Stop
+            icon: mdi:stop-circle-outline
+            vertical: false
+            features_position: bottom
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: tile
             entity: switch.project_aura_night_mode
             name: Night Mode
             icon: mdi:weather-night
@@ -186,7 +248,10 @@ views:
             vertical: false
             features_position: bottom
             tap_action:
-              action: press
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.project_aura_restart
               confirmation:
                 text: Are you sure you want to restart the Project Aura?
     type: masonry

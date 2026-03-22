@@ -55,6 +55,7 @@ void FanControl::publishSnapshot() {
     if (!lockSync()) {
         return;
     }
+    snapshot_.present = present_;
     snapshot_.available = available_;
     snapshot_.running = running_;
     snapshot_.faulted = faulted_;
@@ -217,6 +218,7 @@ void FanControl::begin(bool auto_mode_preference, bool auto_armed_preference) {
     selected_timer_s_ = 0;
     start_requested_ = false;
     stop_requested_ = false;
+    present_ = false;
     available_ = false;
     faulted_ = false;
     applyStopState(true);
@@ -300,6 +302,7 @@ void FanControl::poll(uint32_t now_ms, const SensorData *sensor_data, bool gas_w
     }
 
     if (!Config::DAC_FEATURE_ENABLED) {
+        present_ = false;
         available_ = false;
         faulted_ = false;
         applyStopState(true);
@@ -618,10 +621,12 @@ void FanControl::applyAutoConfig(const DacAutoConfig &config) {
 FanControl::InitStatus FanControl::tryInitialize(uint32_t now_ms, const char *&failure_reason) {
     failure_reason = nullptr;
     if (!dac_.begin(Config::DAC_I2C_ADDR_DEFAULT)) {
+        present_ = false;
         available_ = false;
         faulted_ = false;
         return InitStatus::Absent;
     }
+    present_ = true;
     if (!dac_.setOutputRange10V()) {
         available_ = false;
         faulted_ = true;
@@ -669,6 +674,7 @@ bool FanControl::applyOutputMillivolts(uint16_t millivolts) {
 
 void FanControl::handleDacFault(const char *reason) {
     LOGW("FanControl", "DAC error: %s", reason ? reason : "unknown");
+    present_ = true;
     available_ = false;
     faulted_ = true;
     applyStopState(false);

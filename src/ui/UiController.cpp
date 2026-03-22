@@ -1814,6 +1814,17 @@ void UiController::mqtt_apply_pending() {
         return;
     }
     bool publish_needed = false;
+    auto persist_dac_auto_state = [&](bool auto_mode, bool auto_armed) -> bool {
+        if (storage.config().dac_auto_mode == auto_mode &&
+            storage.config().dac_auto_armed == auto_armed) {
+            return true;
+        }
+        if (storage.saveDacAutoState(auto_mode, auto_armed)) {
+            return true;
+        }
+        LOGE("UI", "failed to persist DAC auto state from MQTT");
+        return false;
+    };
     if (pending.night_mode) {
         bool prev_night = night_mode;
         set_night_mode_state(pending.night_mode_value, true);
@@ -1843,6 +1854,60 @@ void UiController::mqtt_apply_pending() {
         bool prev_backlight = backlightManager.isOn();
         backlightManager.setOn(pending.backlight_value);
         if (backlightManager.isOn() != prev_backlight) {
+            publish_needed = true;
+        }
+    }
+    FanControl::Mode effective_fan_mode = fanControl.mode();
+    if (pending.fan_timer && Config::isDacTimerPresetSeconds(pending.fan_timer_seconds)) {
+        fanControl.setTimerSeconds(pending.fan_timer_seconds);
+        publish_needed = true;
+    }
+    if (pending.fan_mode) {
+        switch (pending.fan_mode_value) {
+            case FanHaMode::Auto:
+                if (persist_dac_auto_state(true, true)) {
+                    fanControl.requestAutoStart();
+                    effective_fan_mode = FanControl::Mode::Auto;
+                    publish_needed = true;
+                }
+                break;
+            case FanHaMode::Manual:
+                if (persist_dac_auto_state(false, false)) {
+                    if (effective_fan_mode != FanControl::Mode::Manual) {
+                        fanControl.setMode(FanControl::Mode::Manual);
+                        effective_fan_mode = FanControl::Mode::Manual;
+                    }
+                    fanControl.requestStart();
+                    publish_needed = true;
+                }
+                break;
+            case FanHaMode::Stopped:
+            default:
+                if (persist_dac_auto_state(false, false)) {
+                    if (effective_fan_mode != FanControl::Mode::Manual) {
+                        fanControl.setMode(FanControl::Mode::Manual);
+                        effective_fan_mode = FanControl::Mode::Manual;
+                    }
+                    fanControl.requestStop();
+                    publish_needed = true;
+                }
+                break;
+        }
+    }
+    if (pending.fan_manual_speed) {
+        uint32_t step = pending.fan_manual_speed_value;
+        if (step < 1u) {
+            step = 1u;
+        } else if (step > 10u) {
+            step = 10u;
+        }
+        if (persist_dac_auto_state(false, false)) {
+            if (effective_fan_mode != FanControl::Mode::Manual) {
+                fanControl.setMode(FanControl::Mode::Manual);
+                effective_fan_mode = FanControl::Mode::Manual;
+            }
+            fanControl.setManualStep(static_cast<uint8_t>(step));
+            fanControl.requestStart();
             publish_needed = true;
         }
     }
