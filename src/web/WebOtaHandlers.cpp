@@ -21,17 +21,28 @@ namespace {
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
     "\"error_code\":\"OTA_BUSY\",\"ota_busy\":true}";
-constexpr const char kApiPrepareOkJson[] =
-    "{\"success\":true,\"message\":\"Device ready for firmware upload\"}";
-constexpr const char kApiPrepareUnavailableJson[] =
-    "{\"success\":false,\"error\":\"OTA prepare unavailable\","
-    "\"error_code\":\"OTA_PREPARE_UNAVAILABLE\"}";
 constexpr size_t kOtaAbortDrainMaxBytes = 32UL * 1024UL;
 constexpr uint32_t kOtaAbortDrainTimeoutMs = 1500;
 
 void send_ota_busy_json(WebRequest &server) {
     WebResponseUtils::sendNoStoreHeaders(server);
     server.send(503, "application/json", kApiErrorOtaBusyJson);
+}
+
+void send_ota_busy_upload_response(WebRequest &server) {
+    WebResponseUtils::sendNoStoreHeaders(server);
+    const size_t pending_body_bytes = server.pendingRequestBodyBytes();
+    if (pending_body_bytes > 0) {
+        const size_t drained =
+            server.drainPendingRequestBody(kOtaAbortDrainMaxBytes,
+                                           kOtaAbortDrainTimeoutMs);
+        LOGI("OTA", "drained %u/%u pending request bytes before busy response",
+             static_cast<unsigned>(drained),
+             static_cast<unsigned>(pending_body_bytes));
+    }
+    server.sendHeader("Connection", "close");
+    server.send(503, "application/json", kApiErrorOtaBusyJson);
+    server.stopClient();
 }
 
 String ota_error_prefixed(const char *prefix) {
@@ -120,7 +131,7 @@ void cleanup_after_update_response(WebOtaHandlers::Runtime &runtime, bool succes
     if (runtime.restore_wifi_power_save) {
         runtime.restore_wifi_power_save();
     }
-    runtime.ota_state.reset();
+    runtime.ota_state.clearBusy();
 }
 
 void ota_log_abort_summary(WebRequest &server,
@@ -133,7 +144,8 @@ void ota_log_abort_summary(WebRequest &server,
     const bool client_connected = server.clientConnected();
 
     LOGW("OTA",
-         "upload aborted (reason=%s written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms last_chunk_age=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes client_connected=%s wifi_status=%d start_rssi_valid=%s start_rssi=%d current_rssi_valid=%s current_rssi=%d)",
+         "upload aborted (session=%u reason=%s written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms last_chunk_age=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes client_connected=%s wifi_status=%d start_rssi_valid=%s start_rssi=%d current_rssi_valid=%s current_rssi=%d)",
+         static_cast<unsigned>(ota.session_id),
          ota_abort_reason_text(abort_reason),
          static_cast<unsigned>(ota.written_size),
          static_cast<unsigned>(ota.slot_size),
@@ -169,15 +181,39 @@ void handlePrepare(Runtime &runtime, bool ota_busy) {
         send_ota_busy_json(server);
         return;
     }
-    if (!runtime.arm_preflight_ui) {
-        WebResponseUtils::sendNoStoreHeaders(server);
-        server.send(503, "application/json", kApiPrepareUnavailableJson);
-        return;
-    }
 
-    runtime.arm_preflight_ui();
+    size_t expected_size = 0;
+    const bool size_supplied = server.hasArg("ota_size");
+    const bool size_valid = size_supplied ? WebTextUtils::parsePositiveSize(server.arg("ota_size"), expected_size)
+                                          : false;
+    const bool size_known = size_supplied && size_valid;
+
+    const esp_partition_t *target_partition = esp_ota_get_next_update_partition(nullptr);
+    const size_t slot_size = target_partition ? target_partition->size : 0;
+    const bool available = runtime.arm_preflight_ui && runtime.upload_timeout_ms && target_partition;
+    const uint32_t upload_timeout_ms =
+        available && runtime.upload_timeout_ms
+            ? runtime.upload_timeout_ms(size_known ? expected_size : 0)
+            : 0;
+    const WebOtaApiUtils::PrepareResult result =
+        WebOtaApiUtils::buildPrepareResult(available,
+                                           size_supplied,
+                                           size_valid,
+                                           slot_size,
+                                           size_known,
+                                           expected_size,
+                                           upload_timeout_ms);
+
+    ArduinoJson::JsonDocument doc;
+    WebOtaApiUtils::fillPrepareJson(doc.to<ArduinoJson::JsonObject>(), result);
+    String json;
+    serializeJson(doc, json);
+
+    if (result.success) {
+        runtime.arm_preflight_ui();
+    }
     WebResponseUtils::sendNoStoreHeaders(server);
-    server.send(200, "application/json", kApiPrepareOkJson);
+    server.send(result.status_code, "application/json", json);
 }
 
 void handleUpload(Runtime &runtime, bool ota_busy) {
@@ -191,6 +227,7 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
     if (upload.status == WebUploadStatus::Start) {
         if (ota_busy) {
             LOGW("OTA", "reject upload start while OTA is busy");
+            server.rejectUpload();
             return;
         }
         if (runtime.cancel_preflight_ui) {
@@ -251,19 +288,25 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
         }
 
         if (ota.start_rssi_valid) {
-            LOGI("OTA", "upload started (slot=%u, expected=%u, known=%s, timeout=%u ms, rssi=%d dBm)",
+            LOGI("OTA", "upload started (session=%u, slot=%u, expected=%u, known=%s, timeout=%u ms, rssi=%d dBm)",
+                 static_cast<unsigned>(ota.session_id),
                  static_cast<unsigned>(ota.slot_size),
                  static_cast<unsigned>(ota.expected_size),
                  ota.size_known ? "YES" : "NO",
                  static_cast<unsigned>(client_timeout_ms),
                  ota.start_rssi);
         } else {
-            LOGI("OTA", "upload started (slot=%u, expected=%u, known=%s, timeout=%u ms, rssi=n/a)",
+            LOGI("OTA", "upload started (session=%u, slot=%u, expected=%u, known=%s, timeout=%u ms, rssi=n/a)",
+                 static_cast<unsigned>(ota.session_id),
                  static_cast<unsigned>(ota.slot_size),
                  static_cast<unsigned>(ota.expected_size),
                  ota.size_known ? "YES" : "NO",
                  static_cast<unsigned>(client_timeout_ms));
         }
+        return;
+    }
+
+    if (server.uploadRejected()) {
         return;
     }
 
@@ -337,10 +380,11 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
             return;
         }
         runtime.ota_state.markFinalizeDuration(millis() - finalize_start_ms);
-        runtime.ota_state.markSuccess();
+        runtime.ota_state.markSuccess(millis());
         const WebOtaSnapshot complete_ota = runtime.ota_state.snapshot();
         LOGI("OTA",
-             "upload complete, written=%u bytes, total=%u ms, first_chunk_seen=%s, first_chunk=%u ms, finalize=%u ms, chunks=%u, chunk[min/avg/max]=%u/%u/%u bytes",
+             "upload complete (session=%u, written=%u bytes, total=%u ms, first_chunk_seen=%s, first_chunk=%u ms, finalize=%u ms, chunks=%u, chunk[min/avg/max]=%u/%u/%u bytes)",
+             static_cast<unsigned>(complete_ota.session_id),
              static_cast<unsigned>(complete_ota.written_size),
              static_cast<unsigned>(complete_ota.totalDurationMs(millis())),
              complete_ota.first_chunk_seen ? "YES" : "NO",
@@ -368,7 +412,15 @@ void handleUpdate(Runtime &runtime, bool ota_busy) {
     }
 
     WebRequest &server = *runtime.context.server;
+    if (server.uploadRejected()) {
+        send_ota_busy_upload_response(server);
+        return;
+    }
     const WebOtaSnapshot ota = runtime.ota_state.snapshot();
+    if (ota_busy && ota.reboot_pending) {
+        send_ota_busy_json(server);
+        return;
+    }
     if (ota_busy && !ota.success && !ota.upload_seen) {
         send_ota_busy_json(server);
         return;
@@ -406,7 +458,8 @@ void handleUpdate(Runtime &runtime, bool ota_busy) {
 
     if (has_upload) {
         LOGI("OTA",
-             "summary success=%s written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms transfer=%u ms finalize=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes",
+             "summary session=%u success=%s written=%u slot=%u expected=%u known=%s total=%u ms first_chunk_seen=%s first_chunk=%u ms transfer=%u ms finalize=%u ms chunks=%u chunk[min/avg/max]=%u/%u/%u bytes",
+             static_cast<unsigned>(ota.session_id),
              result.success ? "YES" : "NO",
              static_cast<unsigned>(result.written_size),
              static_cast<unsigned>(result.slot_size),
@@ -424,6 +477,7 @@ void handleUpdate(Runtime &runtime, bool ota_busy) {
     }
 
     if (result.success) {
+        runtime.ota_state.markRebootPending();
         LOGI("OTA", "response sent, deferred reboot in %u ms",
              static_cast<unsigned>(runtime.deferred_restart_delay_ms));
         runtime.restart_controller.schedule(millis(), runtime.deferred_restart_delay_ms);

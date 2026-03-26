@@ -7,6 +7,7 @@
 #pragma once
 
 #include "web/WebContext.h"
+#include "web/WebOtaState.h"
 #include "web/WebResponseUtils.h"
 #include "web/WebStreamState.h"
 
@@ -19,7 +20,7 @@ void handleDiagData(WebHandlerContext &context,
                     bool ota_busy,
                     const WebTransferSnapshot &web_stream_snapshot);
 
-void handleStateData(WebHandlerContext &context, bool ota_busy);
+void handleStateData(WebHandlerContext &context, bool ota_busy, const WebOtaSnapshot &ota_snapshot);
 
 void handleEventsData(WebHandlerContext &context, bool ota_busy);
 

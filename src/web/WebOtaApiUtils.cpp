@@ -7,10 +7,13 @@
 #include "web/WebOtaApiUtils.h"
 
 #include <string.h>
+#include <string>
 
 namespace WebOtaApiUtils {
 
 namespace {
+
+constexpr uint32_t kPrepareResponseWaitMarginMs = 30000;
 
 bool error_contains(const String &text, const char *needle) {
     return needle && needle[0] != '\0' && strstr(text.c_str(), needle) != nullptr;
@@ -91,6 +94,14 @@ void classify_failure(Result &result, bool has_upload) {
 
 } // namespace
 
+uint32_t responseWaitTimeoutMs(uint32_t upload_timeout_ms) {
+    const uint64_t wait_ms =
+        static_cast<uint64_t>(upload_timeout_ms) + static_cast<uint64_t>(kPrepareResponseWaitMarginMs);
+    return wait_ms >= static_cast<uint64_t>(UINT32_MAX)
+               ? UINT32_MAX
+               : static_cast<uint32_t>(wait_ms);
+}
+
 Result buildUpdateResult(bool has_upload,
                          bool success,
                          size_t written_size,
@@ -117,6 +128,50 @@ Result buildUpdateResult(bool has_upload,
     return result;
 }
 
+PrepareResult buildPrepareResult(bool available,
+                                 bool size_supplied,
+                                 bool size_valid,
+                                 size_t slot_size,
+                                 bool size_known,
+                                 size_t expected_size,
+                                 uint32_t upload_timeout_ms) {
+    PrepareResult result{};
+    result.slot_size = slot_size;
+    result.size_known = size_known;
+    result.expected_size = size_known ? expected_size : 0;
+    result.upload_timeout_ms = upload_timeout_ms;
+    result.response_wait_ms = responseWaitTimeoutMs(upload_timeout_ms);
+
+    if (!available) {
+        result.status_code = 503;
+        result.error_code = "OTA_PREPARE_UNAVAILABLE";
+        result.error = "OTA prepare unavailable";
+        return result;
+    }
+
+    if (size_supplied && !size_valid) {
+        result.status_code = 400;
+        result.error_code = "INVALID_SIZE";
+        result.error = "Invalid firmware size";
+        return result;
+    }
+
+    if (size_known && expected_size > slot_size) {
+        result.status_code = 413;
+        result.error_code = "IMAGE_TOO_LARGE";
+        result.error = "Firmware too large for OTA slot: ";
+        result.error += std::to_string(expected_size).c_str();
+        result.error += " > ";
+        result.error += std::to_string(slot_size).c_str();
+        return result;
+    }
+
+    result.success = true;
+    result.status_code = 200;
+    result.message = "Device ready for firmware upload";
+    return result;
+}
+
 void fillUpdateJson(ArduinoJson::JsonObject root, const Result &result) {
     root["success"] = result.success;
     root["written"] = static_cast<uint32_t>(result.written_size);
@@ -137,6 +192,28 @@ void fillUpdateJson(ArduinoJson::JsonObject root, const Result &result) {
         root["error"] = result.error;
         root["rebooting"] = false;
     }
+}
+
+void fillPrepareJson(ArduinoJson::JsonObject root, const PrepareResult &result) {
+    root["success"] = result.success;
+    root["slot_size"] = static_cast<uint32_t>(result.slot_size);
+    if (result.size_known) {
+        root["expected"] = static_cast<uint32_t>(result.expected_size);
+    } else {
+        root["expected"] = nullptr;
+    }
+    root["upload_timeout_ms"] = result.upload_timeout_ms;
+    root["response_wait_ms"] = result.response_wait_ms;
+
+    if (result.success) {
+        root["message"] = result.message;
+        return;
+    }
+
+    if (result.error_code.length() > 0) {
+        root["error_code"] = result.error_code;
+    }
+    root["error"] = result.error;
 }
 
 } // namespace WebOtaApiUtils

@@ -72,22 +72,19 @@ uint32_t web_response_wifi_sta_connected_elapsed_ms(void *) {
 }
 
 uint32_t ota_upload_timeout_ms(size_t image_size_bytes) {
-    constexpr uint32_t kMinTimeoutMs = 180000;
-    constexpr uint32_t kMaxTimeoutMs = 900000;
-    constexpr uint32_t kMinUploadBytesPerSec = 20 * 1024;
-    constexpr uint32_t kOverheadMs = 120000;
+    constexpr uint32_t kUnknownSizeTimeoutMs = 15UL * 60UL * 1000UL;
+    constexpr uint32_t kBaseTimeoutMs = 10UL * 60UL * 1000UL;
+    constexpr uint32_t kMaxTimeoutMs = 15UL * 60UL * 1000UL;
+    constexpr size_t kExtraTimeoutStepBytes = 1024UL * 1024UL;
+    constexpr uint32_t kExtraTimeoutStepMs = 60UL * 1000UL;
 
     if (image_size_bytes == 0) {
-        return kMaxTimeoutMs;
+        return kUnknownSizeTimeoutMs;
     }
 
-    const uint64_t transfer_ms =
-        (static_cast<uint64_t>(image_size_bytes) * 1000ULL + kMinUploadBytesPerSec - 1) /
-        kMinUploadBytesPerSec;
-    const uint64_t timeout_ms = transfer_ms + kOverheadMs;
-    if (timeout_ms <= kMinTimeoutMs) {
-        return kMinTimeoutMs;
-    }
+    const uint64_t extra_steps =
+        (static_cast<uint64_t>(image_size_bytes) + kExtraTimeoutStepBytes - 1) / kExtraTimeoutStepBytes;
+    const uint64_t timeout_ms = kBaseTimeoutMs + (extra_steps * kExtraTimeoutStepMs);
     if (timeout_ms >= kMaxTimeoutMs) {
         return kMaxTimeoutMs;
     }
@@ -117,7 +114,7 @@ void ota_cancel_preflight_ui() {
 void ota_restore_wifi_power_save();
 
 void ota_set_error(const String &error) {
-    g_ota_state.setErrorOnce(error);
+    g_ota_state.setErrorOnce(error, millis());
 }
 
 void ota_disable_wifi_power_save_for_upload() {
@@ -199,6 +196,10 @@ bool isOtaBusy() {
            g_restart_controller.is_busy(g_ota_state.isBusy());
 }
 
+bool isOtaStatusBusy(const WebOtaSnapshot &ota_snapshot) {
+    return g_ota_state.isBusy() || ota_snapshot.reboot_pending;
+}
+
 bool consumeRestartRequest() {
     return g_restart_controller.consume_request();
 }
@@ -249,6 +250,11 @@ void pollDeferred() {
     }
 
     g_restart_controller.poll(now_ms);
+    g_ota_state.poll(now_ms);
+}
+
+WebOtaSnapshot otaSnapshot() {
+    return g_ota_state.snapshot();
 }
 
 WebTransferSnapshot streamSnapshot(uint32_t now_ms) {

@@ -102,6 +102,57 @@ void test_web_ota_api_utils_build_update_result_reports_total_deadline_as_timeou
     TEST_ASSERT_EQUAL_STRING("UPLOAD_TIMEOUT", result.error_code.c_str());
 }
 
+void test_web_ota_api_utils_build_prepare_result_reports_success_payload() {
+    const WebOtaApiUtils::PrepareResult result =
+        WebOtaApiUtils::buildPrepareResult(true, true, true, 6553600, true, 3713984, 840000);
+
+    TEST_ASSERT_TRUE(result.success);
+    TEST_ASSERT_EQUAL_INT(200, result.status_code);
+    TEST_ASSERT_EQUAL_UINT32(6553600, static_cast<uint32_t>(result.slot_size));
+    TEST_ASSERT_EQUAL_UINT32(3713984, static_cast<uint32_t>(result.expected_size));
+    TEST_ASSERT_EQUAL_UINT32(840000, result.upload_timeout_ms);
+    TEST_ASSERT_EQUAL_UINT32(870000, result.response_wait_ms);
+    TEST_ASSERT_EQUAL_STRING("Device ready for firmware upload", result.message.c_str());
+
+    ArduinoJson::JsonDocument doc;
+    WebOtaApiUtils::fillPrepareJson(doc.to<ArduinoJson::JsonObject>(), result);
+    TEST_ASSERT_TRUE(doc["success"].as<bool>());
+    TEST_ASSERT_EQUAL_UINT32(6553600, doc["slot_size"].as<uint32_t>());
+    TEST_ASSERT_EQUAL_UINT32(3713984, doc["expected"].as<uint32_t>());
+    TEST_ASSERT_EQUAL_UINT32(840000, doc["upload_timeout_ms"].as<uint32_t>());
+    TEST_ASSERT_EQUAL_UINT32(870000, doc["response_wait_ms"].as<uint32_t>());
+}
+
+void test_web_ota_api_utils_build_prepare_result_rejects_oversized_image() {
+    const WebOtaApiUtils::PrepareResult result =
+        WebOtaApiUtils::buildPrepareResult(true, true, true, 4096, true, 8192, 600000);
+
+    TEST_ASSERT_FALSE(result.success);
+    TEST_ASSERT_EQUAL_INT(413, result.status_code);
+    TEST_ASSERT_EQUAL_STRING("IMAGE_TOO_LARGE", result.error_code.c_str());
+    TEST_ASSERT_EQUAL_STRING("Firmware too large for OTA slot: 8192 > 4096", result.error.c_str());
+}
+
+void test_web_ota_api_utils_build_prepare_result_reports_invalid_size() {
+    const WebOtaApiUtils::PrepareResult result =
+        WebOtaApiUtils::buildPrepareResult(true, true, false, 6553600, false, 0, 900000);
+
+    TEST_ASSERT_FALSE(result.success);
+    TEST_ASSERT_EQUAL_INT(400, result.status_code);
+    TEST_ASSERT_EQUAL_STRING("INVALID_SIZE", result.error_code.c_str());
+    TEST_ASSERT_EQUAL_STRING("Invalid firmware size", result.error.c_str());
+}
+
+void test_web_ota_api_utils_build_prepare_result_reports_unavailable_state() {
+    const WebOtaApiUtils::PrepareResult result =
+        WebOtaApiUtils::buildPrepareResult(false, true, true, 0, true, 1234, 0);
+
+    TEST_ASSERT_FALSE(result.success);
+    TEST_ASSERT_EQUAL_INT(503, result.status_code);
+    TEST_ASSERT_EQUAL_STRING("OTA_PREPARE_UNAVAILABLE", result.error_code.c_str());
+    TEST_ASSERT_EQUAL_STRING("OTA prepare unavailable", result.error.c_str());
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_success_payload);
@@ -111,5 +162,9 @@ int main(int, char **) {
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_interrupt_with_specific_code);
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_client_disconnect_separately);
     RUN_TEST(test_web_ota_api_utils_build_update_result_reports_total_deadline_as_timeout);
+    RUN_TEST(test_web_ota_api_utils_build_prepare_result_reports_success_payload);
+    RUN_TEST(test_web_ota_api_utils_build_prepare_result_rejects_oversized_image);
+    RUN_TEST(test_web_ota_api_utils_build_prepare_result_reports_invalid_size);
+    RUN_TEST(test_web_ota_api_utils_build_prepare_result_reports_unavailable_state);
     return UNITY_END();
 }

@@ -63,6 +63,8 @@ public:
     bool clientConnected() const override { return connected_; }
     void setUploadDeadlineMs(uint32_t) override {}
     void clearUploadDeadline() override {}
+    void rejectUpload() override {}
+    bool uploadRejected() const override { return false; }
     size_t pendingRequestBodyBytes() const override { return 0; }
     size_t drainPendingRequestBody(size_t, uint32_t) override { return 0; }
     void stopClient() override {

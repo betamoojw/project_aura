@@ -50,6 +50,8 @@ public:
     virtual bool clientConnected() const = 0;
     virtual void setUploadDeadlineMs(uint32_t timeout_ms) = 0;
     virtual void clearUploadDeadline() = 0;
+    virtual void rejectUpload() = 0;
+    virtual bool uploadRejected() const = 0;
     virtual size_t pendingRequestBodyBytes() const = 0;
     virtual size_t drainPendingRequestBody(size_t max_bytes, uint32_t max_time_ms) = 0;
     virtual void stopClient() = 0;

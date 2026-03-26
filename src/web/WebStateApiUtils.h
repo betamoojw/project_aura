@@ -12,6 +12,7 @@
 
 #include "config/AppData.h"
 #include "web/WebNetworkUtils.h"
+#include "web/WebOtaState.h"
 #include "web/WebSettingsUtils.h"
 
 namespace WebStateApiUtils {
@@ -25,6 +26,8 @@ struct Payload {
     int64_t time_epoch_s = 0;
     WebNetworkUtils::Snapshot network{};
     WebSettingsUtils::SettingsSnapshot settings{};
+    bool ota_busy = false;
+    WebOtaSnapshot ota{};
     bool ntp_active = false;
     bool ntp_syncing = false;
     bool ntp_error = false;

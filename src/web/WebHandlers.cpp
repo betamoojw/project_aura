@@ -131,8 +131,11 @@ void diag_handle_root() {
 
 void diag_handle_data() {
     with_context([](WebHandlerContext &context) {
+        const WebOtaSnapshot ota_snapshot = WebHandlersSupport::otaSnapshot();
         WebSystemApiHandlers::handleDiagData(
-            context, WebHandlersSupport::isOtaBusy(), WebHandlersSupport::streamSnapshot(millis()));
+            context,
+            WebHandlersSupport::isOtaStatusBusy(ota_snapshot),
+            WebHandlersSupport::streamSnapshot(millis()));
     });
 }
 
@@ -219,7 +222,13 @@ void charts_handle_data() {
 }
 
 void state_handle_data() {
-    with_ota_busy(WebSystemApiHandlers::handleStateData);
+    with_context([](WebHandlerContext &context) {
+        const WebOtaSnapshot ota_snapshot = WebHandlersSupport::otaSnapshot();
+        WebSystemApiHandlers::handleStateData(
+            context,
+            WebHandlersSupport::isOtaStatusBusy(ota_snapshot),
+            ota_snapshot);
+    });
 }
 
 void settings_handle_update() {

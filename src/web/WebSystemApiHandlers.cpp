@@ -96,12 +96,8 @@ void handleDiagData(WebHandlerContext &context,
     context.server->send(200, "application/json", json);
 }
 
-void handleStateData(WebHandlerContext &context, bool ota_busy) {
+void handleStateData(WebHandlerContext &context, bool ota_busy, const WebOtaSnapshot &ota_snapshot) {
     if (!context.server || !context.web_runtime) {
-        return;
-    }
-    if (ota_busy) {
-        send_ota_busy_json(*context.server);
         return;
     }
 
@@ -126,6 +122,8 @@ void handleStateData(WebHandlerContext &context, bool ota_busy) {
     payload.ntp_error = ui_snapshot.ntp_error;
     payload.ntp_last_sync_ms = ui_snapshot.ntp_last_sync_ms;
     payload.dac_available = runtime.fan.available;
+    payload.ota_busy = ota_busy;
+    payload.ota = ota_snapshot;
     payload.firmware = AppVersion::fullVersion();
     payload.build_date = __DATE__;
     payload.build_time = __TIME__;

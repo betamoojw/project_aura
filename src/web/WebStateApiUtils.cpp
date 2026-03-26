@@ -10,15 +10,83 @@
 
 #include "core/MathUtils.h"
 #include "web/WebApiUtils.h"
+#include "web/WebOtaApiUtils.h"
 #include "web/WebJsonUtils.h"
 
 namespace WebStateApiUtils {
+
+namespace {
+
+void fill_ota_json(ArduinoJson::JsonObject root, const Payload &payload) {
+    const WebOtaSnapshot &ota = payload.ota;
+    const uint32_t now_ms = payload.timestamp_ms;
+
+    if (ota.session_id != 0) {
+        root["session_id"] = ota.session_id;
+    } else {
+        root["session_id"] = nullptr;
+    }
+    root["active"] = ota.active;
+    root["reboot_pending"] = ota.reboot_pending;
+    root["written"] = static_cast<uint32_t>(ota.written_size);
+    root["slot_size"] = static_cast<uint32_t>(ota.slot_size);
+    root["chunks"] = ota.chunk_count;
+    root["total_ms"] = ota.totalDurationMs(now_ms);
+    root["transfer_ms"] = ota.transferPhaseMs();
+    if (ota.size_known) {
+        root["expected"] = static_cast<uint32_t>(ota.expected_size);
+    } else {
+        root["expected"] = nullptr;
+    }
+
+    if (ota.active) {
+        root["status"] = "uploading";
+        root["message"] = "Upload in progress";
+        root["success"] = false;
+        root["error"] = nullptr;
+        root["error_code"] = nullptr;
+        return;
+    }
+
+    if (!ota.hasTerminalResult(now_ms)) {
+        root["status"] = payload.ota_busy ? "busy" : "idle";
+        root["message"] = nullptr;
+        root["success"] = false;
+        root["error"] = nullptr;
+        root["error_code"] = nullptr;
+        return;
+    }
+
+    const WebOtaApiUtils::Result result =
+        WebOtaApiUtils::buildUpdateResult(ota.upload_seen,
+                                          ota.success && !ota.hasError(),
+                                          ota.written_size,
+                                          ota.slot_size,
+                                          ota.size_known,
+                                          ota.expected_size,
+                                          ota.error);
+    root["success"] = result.success;
+    if (result.success) {
+        root["status"] = ota.reboot_pending ? "rebooting" : "success";
+        root["message"] = result.message;
+        root["error"] = nullptr;
+        root["error_code"] = nullptr;
+        return;
+    }
+
+    root["status"] = "failed";
+    root["message"] = nullptr;
+    root["error"] = result.error;
+    root["error_code"] = result.error_code;
+}
+
+}  // namespace
 
 void fillJson(ArduinoJson::JsonObject root, const Payload &payload) {
     const SensorData &data = payload.data;
 
     root["success"] = true;
-    root["ota_busy"] = false;
+    root["ota_busy"] = payload.ota_busy;
     root["uptime_s"] = payload.uptime_s;
     root["timestamp_ms"] = payload.timestamp_ms;
     if (payload.has_time_epoch) {
@@ -72,6 +140,9 @@ void fillJson(ArduinoJson::JsonObject root, const Payload &payload) {
 
     ArduinoJson::JsonObject network = root["network"].to<ArduinoJson::JsonObject>();
     WebNetworkUtils::fillStateJson(network, payload.network);
+
+    ArduinoJson::JsonObject ota = root["ota"].to<ArduinoJson::JsonObject>();
+    fill_ota_json(ota, payload);
 
     ArduinoJson::JsonObject system = root["system"].to<ArduinoJson::JsonObject>();
     system["firmware"] = payload.firmware;

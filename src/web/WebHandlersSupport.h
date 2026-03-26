@@ -13,6 +13,7 @@
 #include "web/WebContext.h"
 #include "web/WebDeferredActionsState.h"
 #include "web/WebOtaHandlers.h"
+#include "web/WebOtaState.h"
 #include "web/WebResponseUtils.h"
 #include "web/WebStreamState.h"
 
@@ -32,6 +33,7 @@ void init(WebHandlerContext *context);
 WebHandlerContext *context();
 
 bool isOtaBusy();
+bool isOtaStatusBusy(const WebOtaSnapshot &ota_snapshot);
 bool consumeRestartRequest();
 void requestRestart(uint32_t delay_ms);
 void beginRestartShutdown();
@@ -40,6 +42,7 @@ void noteMqttConnectDeferred();
 void noteMqttPublishDeferred();
 void pollDeferred();
 
+WebOtaSnapshot otaSnapshot();
 WebTransferSnapshot streamSnapshot(uint32_t now_ms);
 WebResponseUtils::StreamContext responseContext();
 WebDeferredActionsState &deferredActions();

@@ -341,6 +341,7 @@ public:
         pending_body_bytes_ = 0;
         upload_deadline_ms_ = 0;
         upload_abort_reason_ = WebUploadAbortReason::None;
+        upload_rejected_ = false;
     }
 
     void reset() {
@@ -352,6 +353,7 @@ public:
         pending_body_bytes_ = 0;
         upload_deadline_ms_ = 0;
         upload_abort_reason_ = WebUploadAbortReason::None;
+        upload_rejected_ = false;
     }
 
     void appendArgsFromQuery() {
@@ -468,6 +470,15 @@ public:
 
     void clearUploadDeadline() override {
         upload_deadline_ms_ = 0;
+    }
+
+    void rejectUpload() override {
+        upload_rejected_ = true;
+        clearUploadDeadline();
+    }
+
+    bool uploadRejected() const override {
+        return upload_rejected_;
     }
 
     size_t pendingRequestBodyBytes() const override {
@@ -616,6 +627,7 @@ private:
     size_t pending_body_bytes_ = 0;
     uint32_t upload_deadline_ms_ = 0;
     WebUploadAbortReason upload_abort_reason_ = WebUploadAbortReason::None;
+    bool upload_rejected_ = false;
 };
 
 EspHttpServerBackend::EspHttpServerBackend(uint16_t port) : port_(port) {
@@ -772,6 +784,10 @@ bool EspHttpServerBackend::prepareRequest(RouteRegistration &route, void *raw_re
                 start.abort_reason = WebUploadAbortReason::None;
                 request_->setUpload(start);
                 route.upload_handler();
+                if (request_->uploadRejected()) {
+                    request_->setPendingBodyBytes(reader.remainingBytesOnSocket());
+                    return true;
+                }
 
                 size_t uploaded_size = 0;
                 const bool stream_ok = reader.streamUntilBoundary(

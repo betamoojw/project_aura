@@ -1545,6 +1545,7 @@ let historyCache = null;
 let refreshBusy = false;
 let refreshTimer = null;
 let otaUploadInFlight = false;
+let otaAwaitingDeviceOutcome = false;
 let otaRestartPending = false;
 let otaRecoveryTimer = null;
 let otaRecoveryActive = false;
@@ -1556,7 +1557,7 @@ const OTA_STALE_STATE_THRESHOLD_S = 45;
 const OTA_RECONNECT_GRACE_MS = 120000;
 const OTA_UPLOAD_FIRST_PROGRESS_TIMEOUT_MS = 30000;
 const OTA_UPLOAD_NO_PROGRESS_TIMEOUT_MS = 90000;
-const OTA_UPLOAD_RESPONSE_TIMEOUT_MS = 60000;
+const OTA_UPLOAD_RESPONSE_TIMEOUT_FALLBACK_MS = 930000;
 let deviceClockRef = null;
 let lastStateOkAtMs = 0;
 let lastStateError = '';
@@ -1723,6 +1724,9 @@ function updateOtaPrecheck(network) {
   if (otaUploadInFlight) {
     cls = 'warn';
     text = 'OTA upload in progress. Live state checks are paused.';
+  } else if (otaAwaitingDeviceOutcome) {
+    cls = 'warn';
+    text = 'Waiting for device OTA status confirmation.';
   } else if (otaRestartPending || reconnectGraceActive) {
     cls = 'warn';
     text = reconnectGraceActive
@@ -1784,6 +1788,10 @@ function updateNetStatusBanner() {
     cls = 'warn';
     text = 'OTA upload in progress';
     meta = 'Keep this tab open until upload completes.';
+  } else if (otaAwaitingDeviceOutcome) {
+    cls = 'warn';
+    text = 'Waiting for device OTA status';
+    meta = 'Browser lost the direct OTA response. Auto-recovery is running.';
   } else if (otaRestartPending) {
     cls = 'warn';
     text = 'Waiting for device reboot';
@@ -1814,7 +1822,8 @@ function updateNetStatusBanner() {
     meta += ' ' + lastStateError;
   }
 
-  const showOtaOverlay = remoteOtaBusy && !otaUploadInFlight && !otaRestartPending;
+  const showOtaOverlay =
+    remoteOtaBusy && !otaUploadInFlight && !otaAwaitingDeviceOutcome && !otaRestartPending;
   setOtaGlobalOverlay(
     showOtaOverlay,
     'Another client is updating firmware. Wait until OTA completes, then this page will recover automatically.'
@@ -1881,11 +1890,16 @@ async function postJson(url, payload) {
   return json;
 }
 
-async function prepareOtaUpload() {
+async function prepareOtaUpload(fileSizeBytes) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
   try {
-    const r = await fetch('/api/ota/prepare', {
+    const params = new URLSearchParams();
+    if (isNum(fileSizeBytes) && fileSizeBytes > 0) {
+      params.set('ota_size', String(Math.trunc(fileSizeBytes)));
+    }
+    const url = params.toString() ? ('/api/ota/prepare?' + params.toString()) : '/api/ota/prepare';
+    const r = await fetch(url, {
       method: 'POST',
       cache: 'no-store',
       signal: controller.signal,
@@ -1899,6 +1913,35 @@ async function prepareOtaUpload() {
       throw new Error('Device did not respond to OTA prepare request.');
     }
     throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function cacheStatePayload(payload) {
+  stateCache = payload;
+  lastStateOkAtMs = Date.now();
+  lastStateError = '';
+  lastStateOtaBusy = !!(payload && payload.ota_busy === true);
+  if (isNum(payload && payload.time_epoch_s)) {
+    deviceClockRef = { epochMs: payload.time_epoch_s * 1000, capturedAtMs: Date.now() };
+  }
+}
+
+async function probeLatestOtaState(timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const r = await fetch('/api/state?probe=1', { cache: 'no-store', signal: controller.signal });
+    if (!r.ok) return null;
+    const payload = await r.json();
+    cacheStatePayload(payload);
+    updateHeaderClock();
+    updateNetStatusBanner();
+    updateOtaPrecheck(safeStateNetwork());
+    return payload;
+  } catch (_) {
+    return null;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -1936,8 +1979,45 @@ function scheduleOtaRecoveryProbe(delayMs) {
     try {
       const r = await fetch('/api/state?probe=1', { cache: 'no-store', signal: controller.signal });
       if (r.ok) {
-        window.location.reload();
-        return;
+        let payload = null;
+        try { payload = await r.json(); } catch (_) {}
+        if (payload) {
+          cacheStatePayload(payload);
+          const ota = payload.ota || {};
+          const otaStatus = typeof ota.status === 'string' ? ota.status : '';
+          if (otaStatus === 'failed') {
+            stopOtaRecoveryWatcher();
+            otaAwaitingDeviceOutcome = false;
+            otaRestartPending = false;
+            otaReconnectGraceUntilMs = 0;
+            const uploadBtn = document.getElementById('otaUploadBtn');
+            const statusEl = document.getElementById('otaStatus');
+            if (uploadBtn) uploadBtn.disabled = false;
+            if (statusEl) {
+              statusEl.textContent = ota.error || 'OTA failed.';
+              statusEl.className = 'ota-status err';
+            }
+            updateNetStatusBanner();
+            updateOtaPrecheck(safeStateNetwork());
+            return;
+          }
+          if (otaStatus === 'uploading') {
+            otaAwaitingDeviceOutcome = true;
+            otaRestartPending = false;
+            updateNetStatusBanner();
+            updateOtaPrecheck(safeStateNetwork());
+          } else if (otaStatus === 'rebooting' || otaStatus === 'success') {
+            otaAwaitingDeviceOutcome = false;
+            otaRestartPending = true;
+            otaReconnectGraceUntilMs = Date.now() + OTA_RECONNECT_GRACE_MS;
+            updateNetStatusBanner();
+            updateOtaPrecheck(safeStateNetwork());
+          }
+          if (!payload.ota_busy && otaStatus !== 'rebooting') {
+            window.location.reload();
+            return;
+          }
+        }
       }
     } catch (_) {
     } finally {
@@ -1956,12 +2036,34 @@ function startOtaRecoveryWatcher() {
   scheduleOtaRecoveryProbe(1200);
 }
 
-function createOtaUploadTimeoutController(xhr) {
+function setOtaAwaitingDeviceOutcome(message) {
+  const statusEl = document.getElementById('otaStatus');
+  const uploadBtn = document.getElementById('otaUploadBtn');
+  otaUploadInFlight = false;
+  otaAwaitingDeviceOutcome = true;
+  otaRestartPending = false;
+  otaReconnectGraceUntilMs = 0;
+  if (uploadBtn) uploadBtn.disabled = true;
+  if (statusEl) {
+    statusEl.textContent =
+      message || 'Browser lost the direct OTA response. Waiting for device status...';
+    statusEl.className = 'ota-status warn';
+  }
+  updateNetStatusBanner();
+  updateOtaPrecheck(safeStateNetwork());
+  startOtaRecoveryWatcher();
+}
+
+function createOtaUploadTimeoutController(xhr, prepareCfg) {
   let phaseTimer = null;
   let abortMessage = '';
   let settled = false;
   let lastLoaded = 0;
   let responseWaitStarted = false;
+  const responseWaitTimeoutMs =
+    (prepareCfg && isNum(prepareCfg.response_wait_ms) && prepareCfg.response_wait_ms > 0)
+      ? Math.trunc(prepareCfg.response_wait_ms)
+      : OTA_UPLOAD_RESPONSE_TIMEOUT_FALLBACK_MS;
 
   function clearPhaseTimer() {
     if (phaseTimer) {
@@ -1994,7 +2096,7 @@ function createOtaUploadTimeoutController(xhr) {
     if (responseWaitStarted) return;
     responseWaitStarted = true;
     scheduleAbort(
-      OTA_UPLOAD_RESPONSE_TIMEOUT_MS,
+      responseWaitTimeoutMs,
       'Device response timed out after upload. Wait for reconnect before retrying.'
     );
   }
@@ -2448,7 +2550,7 @@ function initTimeSyncUI() {
 // ─────────────────────────────────────────────
 function initOtaUI() {
   document.getElementById('otaUploadBtn').addEventListener('click', async () => {
-    if (otaUploadInFlight || otaRestartPending) return;
+    if (otaUploadInFlight || otaAwaitingDeviceOutcome || otaRestartPending) return;
     const fileInput = document.getElementById('otaFile');
     const file = fileInput.files && fileInput.files[0];
     const statusEl = document.getElementById('otaStatus');
@@ -2493,8 +2595,9 @@ function initOtaUI() {
     uploadBtn.disabled = true;
     statusEl.textContent = 'Preparing device for upload...';
     statusEl.className = 'ota-status';
+    let prepareCfg = null;
     try {
-      await prepareOtaUpload();
+      prepareCfg = await prepareOtaUpload(file.size);
     } catch (err) {
       uploadBtn.disabled = false;
       statusEl.textContent =
@@ -2515,7 +2618,7 @@ function initOtaUI() {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/ota', true);
     xhr.timeout = 0;
-    const uploadTimeouts = createOtaUploadTimeoutController(xhr);
+    const uploadTimeouts = createOtaUploadTimeoutController(xhr, prepareCfg);
     let uploadSettled = false;
     let responseWaitAnnounced = false;
 
@@ -2526,11 +2629,64 @@ function initOtaUI() {
       return true;
     };
 
+    const finishUploadStatus = (message, cls) => {
+      otaUploadInFlight = false;
+      otaAwaitingDeviceOutcome = false;
+      otaRestartPending = false;
+      otaReconnectGraceUntilMs = 0;
+      stopOtaRecoveryWatcher();
+      uploadBtn.disabled = false;
+      statusEl.textContent = message;
+      statusEl.className = 'ota-status ' + (cls || 'err');
+      updateNetStatusBanner();
+      updateOtaPrecheck(safeStateNetwork());
+    };
+
+    const finishUploadSuccess = message => {
+      otaUploadInFlight = false;
+      otaAwaitingDeviceOutcome = false;
+      otaRestartPending = true;
+      otaReconnectGraceUntilMs = Date.now() + OTA_RECONNECT_GRACE_MS;
+      uploadBtn.disabled = true;
+      progressEl.style.width = '100%';
+      statusEl.textContent = message || 'Firmware uploaded. Device will reboot.';
+      statusEl.className = 'ota-status ok';
+      fileInput.value = '';
+      updateNetStatusBanner();
+      updateOtaPrecheck(safeStateNetwork());
+      startOtaRecoveryWatcher();
+    };
+
+    const reconcileOtaOutcome = async fallbackMessage => {
+      const payload = await probeLatestOtaState(2500);
+      const ota = payload && payload.ota;
+      const status = ota && typeof ota.status === 'string' ? ota.status : '';
+      if (status === 'rebooting' || status === 'success') {
+        finishUploadSuccess((ota && ota.message) || fallbackMessage);
+        return true;
+      }
+      if (status === 'failed') {
+        finishUploadStatus((ota && ota.error) || fallbackMessage, 'err');
+        return true;
+      }
+      if (status === 'uploading') {
+        setOtaAwaitingDeviceOutcome(
+          'Browser lost the upload response. Device still reports OTA in progress.'
+        );
+        return true;
+      }
+      if (status === 'idle' && responseWaitAnnounced && payload && payload.ota_busy !== true) {
+        window.location.reload();
+        return true;
+      }
+      return false;
+    };
+
     const announceResponseWait = () => {
       if (responseWaitAnnounced) return;
       responseWaitAnnounced = true;
       progressEl.style.width = '100%';
-      statusEl.textContent = 'Firmware sent. Waiting for device response...';
+      statusEl.textContent = 'Browser finished sending file. Waiting for device confirmation...';
       statusEl.className = 'ota-status';
     };
 
@@ -2549,54 +2705,41 @@ function initOtaUI() {
       uploadTimeouts.noteUploadComplete();
       announceResponseWait();
     };
-    const finishUploadFailure = message => {
-      otaUploadInFlight = false;
-      otaRestartPending = false;
-      otaReconnectGraceUntilMs = 0;
-      stopOtaRecoveryWatcher();
-      uploadBtn.disabled = false;
-      statusEl.textContent = message;
-      statusEl.className = 'ota-status err';
-    };
     xhr.onload = () => {
       if (!markUploadSettled()) return;
-      otaUploadInFlight = false;
       let pl = null;
       try { pl = JSON.parse(xhr.responseText || '{}'); } catch (_) {}
       if (xhr.status >= 200 && xhr.status < 300 && pl && pl.success === true) {
-        otaRestartPending = true;
-        otaReconnectGraceUntilMs = Date.now() + OTA_RECONNECT_GRACE_MS;
-        uploadBtn.disabled = true;
-        progressEl.style.width = '100%';
-        statusEl.textContent = pl.message || 'Firmware uploaded. Device will reboot.';
-        statusEl.className = 'ota-status ok';
-        fileInput.value = '';
-        startOtaRecoveryWatcher();
+        finishUploadSuccess(pl.message || 'Firmware uploaded. Device will reboot.');
         return;
       }
-      finishUploadFailure((pl && pl.error) || 'Upload failed (HTTP ' + (xhr.status || 0) + ')');
+      finishUploadStatus((pl && pl.error) || 'Upload failed (HTTP ' + (xhr.status || 0) + ')', 'err');
     };
-    xhr.onerror = () => {
+    xhr.onerror = async () => {
       if (!markUploadSettled()) return;
-      finishUploadFailure('Upload failed. Check device connection and retry.');
+      if (await reconcileOtaOutcome('Firmware uploaded. Device will reboot.')) return;
+      finishUploadStatus('Upload failed. Check device connection and retry.', 'err');
     };
-    xhr.onabort = () => {
+    xhr.onabort = async () => {
       if (!markUploadSettled()) return;
-      finishUploadFailure(
+      const fallbackMessage =
         uploadTimeouts.consumeAbortMessage() ||
-        'Upload was interrupted. Check device connection and retry.'
-      );
+        'Upload was interrupted. Check device connection and retry.';
+      if (await reconcileOtaOutcome('Firmware uploaded. Device will reboot.')) return;
+      finishUploadStatus(fallbackMessage, 'err');
     };
-    xhr.ontimeout = () => {
+    xhr.ontimeout = async () => {
       if (!markUploadSettled()) return;
-      finishUploadFailure('Upload timed out. Retry closer to device or with stronger WiFi.');
+      if (await reconcileOtaOutcome('Firmware uploaded. Device will reboot.')) return;
+      finishUploadStatus('Upload timed out. Retry closer to device or with stronger WiFi.', 'err');
     };
-    xhr.onloadend = () => {
+    xhr.onloadend = async () => {
       if (!markUploadSettled()) return;
-      finishUploadFailure(
+      const fallbackMessage =
         uploadTimeouts.consumeAbortMessage() ||
-        'Upload ended unexpectedly. Check device connection and retry.'
-      );
+        'Upload ended unexpectedly. Check device connection and retry.';
+      if (await reconcileOtaOutcome('Firmware uploaded. Device will reboot.')) return;
+      finishUploadStatus(fallbackMessage, 'err');
     };
     xhr.send(form);
   });
@@ -2606,17 +2749,13 @@ function initOtaUI() {
 // Data refresh
 // ─────────────────────────────────────────────
 async function refreshState() {
-  if (otaUploadInFlight || otaRestartPending) return;
+  if (otaUploadInFlight || otaAwaitingDeviceOutcome || otaRestartPending) return;
   const payload = await getJson('/api/state');
-  stateCache = payload;
-  lastStateOkAtMs = Date.now();
-  lastStateError = '';
-  lastStateOtaBusy = !!(payload && payload.ota_busy === true);
+  cacheStatePayload(payload);
   otaReconnectGraceUntilMs = 0;
 
   // Header clock
-  if (isNum(payload && payload.time_epoch_s)) {
-    deviceClockRef = { epochMs: payload.time_epoch_s * 1000, capturedAtMs: Date.now() };
+  if (deviceClockRef) {
     updateHeaderClock();
   }
 
@@ -2638,7 +2777,7 @@ async function refreshState() {
 }
 
 async function refreshSensorHistory() {
-  if (otaUploadInFlight || otaRestartPending) return;
+  if (otaUploadInFlight || otaAwaitingDeviceOutcome || otaRestartPending) return;
   const payload = await getJson('/api/charts?group=core&window=3h');
   if (!payload || !Array.isArray(payload.timestamps)) return;
   // Extract co2 series into simple row array
@@ -2652,7 +2791,7 @@ async function refreshSensorHistory() {
 }
 
 async function refreshCharts() {
-  if (otaUploadInFlight || otaRestartPending) return;
+  if (otaUploadInFlight || otaAwaitingDeviceOutcome || otaRestartPending) return;
   if (chartsRefreshController) {
     chartsRefreshController.abort();
     chartsRefreshController = null;
@@ -2684,14 +2823,14 @@ async function refreshCharts() {
 }
 
 async function refreshEvents() {
-  if (otaUploadInFlight || otaRestartPending) return;
+  if (otaUploadInFlight || otaAwaitingDeviceOutcome || otaRestartPending) return;
   const payload = await getJson('/api/events');
   renderEvents(payload);
   lastStateError = '';
 }
 
 async function refreshActive() {
-  if (refreshBusy || otaUploadInFlight || otaRestartPending) return;
+  if (refreshBusy || otaUploadInFlight || otaAwaitingDeviceOutcome || otaRestartPending) return;
   refreshBusy = true;
   try { await refreshState(); } catch (error) {
     lastStateOtaBusy = !!(error && (error.code === 'OTA_BUSY' || error.otaBusy === true));
@@ -2794,7 +2933,3 @@ if (!document.hidden) refreshSensorHistory().catch(() => {});
 #include "web/generated/WebTemplatesDashboardApGzip.inc"
 
 } // namespace WebTemplates
-
-
-
-

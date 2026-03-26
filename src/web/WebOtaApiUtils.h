@@ -24,6 +24,19 @@ struct Result {
     String message;
 };
 
+struct PrepareResult {
+    bool success = false;
+    int status_code = 500;
+    size_t slot_size = 0;
+    bool size_known = false;
+    size_t expected_size = 0;
+    uint32_t upload_timeout_ms = 0;
+    uint32_t response_wait_ms = 0;
+    String error_code;
+    String error;
+    String message;
+};
+
 Result buildUpdateResult(bool has_upload,
                          bool success,
                          size_t written_size,
@@ -32,6 +45,17 @@ Result buildUpdateResult(bool has_upload,
                          size_t expected_size,
                          const String &error);
 
+uint32_t responseWaitTimeoutMs(uint32_t upload_timeout_ms);
+
+PrepareResult buildPrepareResult(bool available,
+                                 bool size_supplied,
+                                 bool size_valid,
+                                 size_t slot_size,
+                                 bool size_known,
+                                 size_t expected_size,
+                                 uint32_t upload_timeout_ms);
+
 void fillUpdateJson(ArduinoJson::JsonObject root, const Result &result);
+void fillPrepareJson(ArduinoJson::JsonObject root, const PrepareResult &result);
 
 } // namespace WebOtaApiUtils
