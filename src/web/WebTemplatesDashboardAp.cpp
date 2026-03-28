@@ -1806,7 +1806,7 @@ function updateNetStatusBanner() {
     meta = lastStateError || 'No live data yet.';
   } else if (ageS <= 20) {
     cls = 'ok';
-    text = modeText + ' connected at ' + ip;
+    text = mode === 'sta' ? ('Connected to Wi-Fi: ' + ip) : (modeText + ' connected at ' + ip);
     meta = 'Last update ' + formatSyncAge(ageS) + '.';
   } else if (ageS <= OTA_STALE_STATE_THRESHOLD_S) {
     cls = 'warn';
