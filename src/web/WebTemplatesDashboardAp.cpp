@@ -1775,7 +1775,8 @@ function updateNetStatusBanner() {
   if (!bar || !textEl || !metaEl) return;
 
   const network = safeStateNetwork();
-  const modeText = formatMode(network.mode);
+  const mode = typeof network.mode === 'string' ? network.mode : '';
+  const modeText = formatMode(mode);
   const ip = typeof network.ip === 'string' && network.ip ? network.ip : '--';
   const ageS = secondsSince(lastStateOkAtMs);
   const remoteOtaBusy = !!lastStateOtaBusy;
