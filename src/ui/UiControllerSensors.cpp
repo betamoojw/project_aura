@@ -427,9 +427,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
             }
         }
         safe_label_set_text(objects.label_delta_5, buf);
-        safe_label_set_text(objects.label_delta_5, buf);
     } else {
-        safe_label_set_text_static(objects.label_delta_5, UiText::ValueMissingShort());
         safe_label_set_text_static(objects.label_delta_5, UiText::ValueMissingShort());
     }
 
@@ -450,9 +448,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
             }
         }
         safe_label_set_text(objects.label_delta_26, buf);
-        safe_label_set_text(objects.label_delta_26, buf);
     } else {
-        safe_label_set_text_static(objects.label_delta_26, UiText::ValueMissingShort());
         safe_label_set_text_static(objects.label_delta_26, UiText::ValueMissingShort());
     }
 
@@ -466,8 +462,6 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         : getPressureDeltaColor(pressure_delta_to_msl_hpa(currentData.pressure_delta_24h),
                                 currentData.pressure_delta_24h_valid,
                                 true);
-    set_chip_color(objects.chip_delta_4, delta_3h_color);
-    set_chip_color(objects.chip_delta_25, delta_24h_color);
     set_chip_color(objects.chip_delta_4, delta_3h_color);
     set_chip_color(objects.chip_delta_25, delta_24h_color);
 }

@@ -20,6 +20,18 @@
 
 namespace {
 
+int16_t clampPressureAltitudeM(int value) {
+    const int min_value = static_cast<int>(Config::PRESSURE_ALTITUDE_MIN_M);
+    const int max_value = static_cast<int>(Config::PRESSURE_ALTITUDE_MAX_M);
+    if (value < min_value) {
+        return static_cast<int16_t>(min_value);
+    }
+    if (value > max_value) {
+        return static_cast<int16_t>(max_value);
+    }
+    return static_cast<int16_t>(value);
+}
+
 #ifdef UNIT_TEST
 std::map<std::string, std::vector<uint8_t>> g_blob_store;
 bool g_force_save_failure = false;
@@ -594,7 +606,14 @@ bool StorageManager::loadConfig() {
         readValue(theme, "screen_gradient_direction", loaded.theme.screen_gradient_direction);
     }
 
+    const int16_t clamped_pressure_altitude_m = clampPressureAltitudeM(loaded.pressure_altitude_m);
+    const bool pressure_altitude_clamped = (clamped_pressure_altitude_m != loaded.pressure_altitude_m);
+    loaded.pressure_altitude_m = clamped_pressure_altitude_m;
+
     config_ = loaded;
+    if (pressure_altitude_clamped) {
+        markDirty();
+    }
     config_loaded_ = true;
     return true;
 #else
@@ -639,6 +658,7 @@ bool StorageManager::saveConfigInternal() {
     ui["alert_blink"] = config_.alert_blink;
     ui["asc_enabled"] = config_.asc_enabled;
     ui["pressure_altitude_set"] = config_.pressure_altitude_set;
+    config_.pressure_altitude_m = clampPressureAltitudeM(config_.pressure_altitude_m);
     ui["pressure_altitude_m"] = config_.pressure_altitude_m;
     ui["display_name"] = config_.web_display_name;
     ui["lang"] = static_cast<uint8_t>(config_.language);

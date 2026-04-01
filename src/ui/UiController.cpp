@@ -1735,6 +1735,8 @@ float UiController::pressure_delta_to_msl_hpa(float pressure_delta_hpa) const {
     if (!pressure_altitude_is_set()) {
         return pressure_delta_hpa;
     }
+    // For a fixed station altitude, MSL conversion is a constant scale factor,
+    // so pressure deltas scale by the same factor as absolute pressure.
     return pressure_absolute_to_msl_hpa(pressure_delta_hpa, pressure_altitude_meters());
 }
 
@@ -2718,10 +2720,6 @@ void UiController::init_ui_defaults() {
     time_format_24h_ = storage.config().time_format_24h;
     rtc_detection_saved_mode_ = storage.config().rtc_mode;
     rtc_detection_pending_mode_ = rtc_detection_saved_mode_;
-    storage.config().pressure_altitude_m =
-        constrain(static_cast<int>(storage.config().pressure_altitude_m),
-                  static_cast<int>(Config::PRESSURE_ALTITUDE_MIN_M),
-                  static_cast<int>(Config::PRESSURE_ALTITUDE_MAX_M));
     reset_pressure_altitude_pending();
     pressure_altitude_overlay_open_ = false;
     const bool expected_units_mdy = !temp_units_c;
