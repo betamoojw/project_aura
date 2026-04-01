@@ -1,4 +1,5 @@
 #include <unity.h>
+#include <math.h>
 #include <string.h>
 
 #include "config/AppConfig.h"
@@ -86,6 +87,51 @@ void test_state_payload_buffer_builder_matches_string_payload() {
 
     String string_payload = MqttPayloadBuilder::buildStatePayload(data, false, true, true, false);
     TEST_ASSERT_EQUAL_STRING(string_payload.c_str(), payload);
+}
+
+void test_state_payload_pressure_defaults_to_absolute_without_altitude() {
+    SensorData data{};
+    data.pressure_valid = true;
+    data.pressure = 1009.4f;
+    data.pressure_delta_3h_valid = true;
+    data.pressure_delta_3h = 1.8f;
+
+    String payload = MqttPayloadBuilder::buildStatePayload(
+        data, false, false, false, false, false, 0);
+
+    assert_contains(payload, "\"pressure\":1009.4");
+    assert_contains(payload, "\"pressure_absolute\":1009.4");
+    assert_contains(payload, "\"pressure_delta_3h\":1.8");
+}
+
+void test_state_payload_pressure_uses_msl_and_keeps_absolute_field() {
+    SensorData data{};
+    data.pressure_valid = true;
+    data.pressure = 1000.0f;
+    data.pressure_delta_3h_valid = true;
+    data.pressure_delta_3h = 12.0f;
+    data.pressure_delta_24h_valid = true;
+    data.pressure_delta_24h = -8.0f;
+
+    const int16_t altitude_m = 1000;
+    const float base = 1.0f - (static_cast<float>(altitude_m) / 44330.0f);
+    const float expected_pressure = data.pressure / powf(base, 5.255f);
+    const float expected_delta_3h = data.pressure_delta_3h / powf(base, 5.255f);
+    const float expected_delta_24h = data.pressure_delta_24h / powf(base, 5.255f);
+    char pressure_buf[32];
+    char delta3h_buf[32];
+    char delta24h_buf[32];
+    snprintf(pressure_buf, sizeof(pressure_buf), "\"pressure\":%.1f", expected_pressure);
+    snprintf(delta3h_buf, sizeof(delta3h_buf), "\"pressure_delta_3h\":%.1f", expected_delta_3h);
+    snprintf(delta24h_buf, sizeof(delta24h_buf), "\"pressure_delta_24h\":%.1f", expected_delta_24h);
+
+    String payload = MqttPayloadBuilder::buildStatePayload(
+        data, false, false, false, false, true, altitude_m);
+
+    assert_contains(payload, pressure_buf);
+    assert_contains(payload, "\"pressure_absolute\":1000.0");
+    assert_contains(payload, delta3h_buf);
+    assert_contains(payload, delta24h_buf);
 }
 
 void test_state_payload_includes_aqi_when_computable() {
@@ -244,6 +290,8 @@ int main(int, char **) {
     RUN_TEST(test_state_payload_includes_pm05_pm1_pm4_and_co_null_without_sensor);
     RUN_TEST(test_state_payload_includes_co_when_sensor_present_and_valid);
     RUN_TEST(test_state_payload_buffer_builder_matches_string_payload);
+    RUN_TEST(test_state_payload_pressure_defaults_to_absolute_without_altitude);
+    RUN_TEST(test_state_payload_pressure_uses_msl_and_keeps_absolute_field);
     RUN_TEST(test_state_payload_includes_aqi_when_computable);
     RUN_TEST(test_state_payload_excludes_aqi_when_only_warmup_gas_metrics_exist);
     RUN_TEST(test_state_payload_keeps_aqi_available_during_warmup_when_pm_is_ready);

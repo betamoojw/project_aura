@@ -194,6 +194,37 @@ bool fan_stopped(const FanStateSnapshot &fan) {
     return !fan_auto_enabled(fan) && !fan_manual_running(fan);
 }
 
+bool pressure_altitude_configured(bool pressure_altitude_set) {
+    return pressure_altitude_set;
+}
+
+float pressure_absolute_to_msl_hpa(float pressure_hpa, int altitude_m) {
+    if (!isfinite(pressure_hpa)) {
+        return pressure_hpa;
+    }
+    const float base = 1.0f - (static_cast<float>(altitude_m) / 44330.0f);
+    if (!isfinite(base) || base <= 0.0f) {
+        return pressure_hpa;
+    }
+    const float corrected = pressure_hpa / powf(base, 5.255f);
+    return isfinite(corrected) ? corrected : pressure_hpa;
+}
+
+float pressure_to_publish(float pressure_hpa, bool pressure_altitude_set, int altitude_m) {
+    return pressure_altitude_configured(pressure_altitude_set)
+               ? pressure_absolute_to_msl_hpa(pressure_hpa, altitude_m)
+               : pressure_hpa;
+}
+
+float pressure_delta_to_publish(float pressure_delta_hpa,
+                                bool pressure_altitude_set,
+                                int altitude_m) {
+    // At a fixed altitude, MSL correction is a constant multiplier, so deltas scale the same way.
+    return pressure_altitude_configured(pressure_altitude_set)
+               ? pressure_absolute_to_msl_hpa(pressure_delta_hpa, altitude_m)
+               : pressure_delta_hpa;
+}
+
 const char *fan_control_mode_text(const FanStateSnapshot &fan) {
     if (fan_auto_enabled(fan)) {
         return "Auto";
@@ -431,6 +462,24 @@ String buildStatePayload(const SensorData &data,
                          bool night_mode,
                          bool alert_blink,
                          bool backlight_on) {
+    return buildStatePayload(data,
+                             fan,
+                             gas_warmup,
+                             night_mode,
+                             alert_blink,
+                             backlight_on,
+                             false,
+                             0);
+}
+
+String buildStatePayload(const SensorData &data,
+                         const FanStateSnapshot &fan,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m) {
     char payload[Config::MQTT_BUFFER_SIZE] = {};
     if (buildStatePayload(payload,
                           sizeof(payload),
@@ -439,7 +488,9 @@ String buildStatePayload(const SensorData &data,
                           gas_warmup,
                           night_mode,
                           alert_blink,
-                          backlight_on) == 0) {
+                          backlight_on,
+                          pressure_altitude_set,
+                          pressure_altitude_m) == 0) {
         return String();
     }
     return String(payload);
@@ -455,7 +506,26 @@ String buildStatePayload(const SensorData &data,
                              gas_warmup,
                              night_mode,
                              alert_blink,
-                             backlight_on);
+                             backlight_on,
+                             false,
+                             0);
+}
+
+String buildStatePayload(const SensorData &data,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m) {
+    return buildStatePayload(data,
+                             FanStateSnapshot{},
+                             gas_warmup,
+                             night_mode,
+                             alert_blink,
+                             backlight_on,
+                             pressure_altitude_set,
+                             pressure_altitude_m);
 }
 
 size_t buildStatePayload(char *out,
@@ -466,6 +536,28 @@ size_t buildStatePayload(char *out,
                          bool night_mode,
                          bool alert_blink,
                          bool backlight_on) {
+    return buildStatePayload(out,
+                             out_size,
+                             data,
+                             fan,
+                             gas_warmup,
+                             night_mode,
+                             alert_blink,
+                             backlight_on,
+                             false,
+                             0);
+}
+
+size_t buildStatePayload(char *out,
+                         size_t out_size,
+                         const SensorData &data,
+                         const FanStateSnapshot &fan,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m) {
     BufferWriter payload(out, out_size);
     if (!payload.appendf("{")) {
         return 0;
@@ -527,6 +619,16 @@ size_t buildStatePayload(char *out,
         ah_valid = isfinite(ah_gm3);
     }
     const AirQualityEngine::Result aqi = AirQualityEngine::evaluate(data, gas_warmup);
+    const float pressure_published =
+        pressure_to_publish(data.pressure, pressure_altitude_set, pressure_altitude_m);
+    const float pressure_delta_3h_published =
+        pressure_delta_to_publish(data.pressure_delta_3h,
+                                  pressure_altitude_set,
+                                  pressure_altitude_m);
+    const float pressure_delta_24h_published =
+        pressure_delta_to_publish(data.pressure_delta_24h,
+                                  pressure_altitude_set,
+                                  pressure_altitude_m);
 
     if (!add_float("temp", data.temp_valid, data.temperature, 1) ||
         !add_float("humidity", data.hum_valid, data.humidity, 1) ||
@@ -561,9 +663,10 @@ size_t buildStatePayload(char *out,
         !add_float("pm4", data.pm4_valid, data.pm4, 1) ||
         !add_float("pm25", data.pm25_valid, data.pm25, 1) ||
         !add_float("pm10", data.pm10_valid, data.pm10, 1) ||
-        !add_float("pressure", data.pressure_valid, data.pressure, 1) ||
-        !add_float("pressure_delta_3h", data.pressure_delta_3h_valid, data.pressure_delta_3h, 1) ||
-        !add_float("pressure_delta_24h", data.pressure_delta_24h_valid, data.pressure_delta_24h, 1) ||
+        !add_float("pressure", data.pressure_valid, pressure_published, 1) ||
+        !add_float("pressure_absolute", data.pressure_valid, data.pressure, 1) ||
+        !add_float("pressure_delta_3h", data.pressure_delta_3h_valid, pressure_delta_3h_published, 1) ||
+        !add_float("pressure_delta_24h", data.pressure_delta_24h_valid, pressure_delta_24h_published, 1) ||
         !add_bool("fan_present", fan.present) ||
         !add_bool("fan_available", fan.available) ||
         !add_bool("fan_running", fan.running) ||
@@ -606,7 +709,30 @@ size_t buildStatePayload(char *out,
                              gas_warmup,
                              night_mode,
                              alert_blink,
-                             backlight_on);
+                             backlight_on,
+                             false,
+                             0);
+}
+
+size_t buildStatePayload(char *out,
+                         size_t out_size,
+                         const SensorData &data,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m) {
+    return buildStatePayload(out,
+                             out_size,
+                             data,
+                             FanStateSnapshot{},
+                             gas_warmup,
+                             night_mode,
+                             alert_blink,
+                             backlight_on,
+                             pressure_altitude_set,
+                             pressure_altitude_m);
 }
 
 } // namespace MqttPayloadBuilder

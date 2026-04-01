@@ -53,10 +53,48 @@ String buildStatePayload(const SensorData &data,
                          bool backlight_on);
 
 String buildStatePayload(const SensorData &data,
+                         const FanStateSnapshot &fan,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m);
+
+String buildStatePayload(const SensorData &data,
                          bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,
                          bool backlight_on);
+
+String buildStatePayload(const SensorData &data,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m);
+
+size_t buildStatePayload(char *out,
+                         size_t out_size,
+                         const SensorData &data,
+                         const FanStateSnapshot &fan,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m);
+
+size_t buildStatePayload(char *out,
+                         size_t out_size,
+                         const SensorData &data,
+                         bool gas_warmup,
+                         bool night_mode,
+                         bool alert_blink,
+                         bool backlight_on,
+                         bool pressure_altitude_set,
+                         int16_t pressure_altitude_m);
 
 } // namespace MqttPayloadBuilder
 

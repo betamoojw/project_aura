@@ -946,6 +946,9 @@ void MqttManager::publishDiscovery(const MqttRuntimeSnapshot &runtime) {
                            "pm10", "measurement", "{{ value_json.pm10 }}", "");
     publishDiscoverySensor("pressure", "Pressure", "hPa",
                            "pressure", "measurement", "{{ value_json.pressure }}", "");
+    publishDiscoverySensor("pressure_absolute", "Pressure Absolute", "hPa",
+                           "pressure", "measurement",
+                           "{{ value_json.pressure_absolute }}", "mdi:gauge");
     publishDiscoverySensor("pressure_delta_3h", "Pressure Delta 3h", "hPa",
                            "", "measurement", "{{ value_json.pressure_delta_3h }}", "mdi:trending-up");
     publishDiscoverySensor("pressure_delta_24h", "Pressure Delta 24h", "hPa",
@@ -1028,6 +1031,10 @@ void MqttManager::publishState(const MqttRuntimeSnapshot &runtime) {
     if (!mqtt_connected_) {
         return;
     }
+    const bool pressure_altitude_set =
+        storage_ ? storage_->config().pressure_altitude_set : false;
+    const int16_t pressure_altitude_m =
+        storage_ ? storage_->config().pressure_altitude_m : 0;
     const size_t payload_len = MqttPayloadBuilder::buildStatePayload(
         mqtt_state_payload_buf_, sizeof(mqtt_state_payload_buf_),
         runtime.data,
@@ -1035,7 +1042,9 @@ void MqttManager::publishState(const MqttRuntimeSnapshot &runtime) {
         runtime.gas_warmup,
         runtime.night_mode,
         runtime.alert_blink,
-        runtime.backlight_on);
+        runtime.backlight_on,
+        pressure_altitude_set,
+        pressure_altitude_m);
     if (payload_len == 0) {
         Logger::log(Logger::Warn, "MQTT", "state payload build failed");
         return;
