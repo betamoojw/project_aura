@@ -194,7 +194,7 @@ void format_clock_time_label(const tm &local_tm,
     if (display_hour == 0) {
         display_hour = 12;
     }
-    snprintf(time_buf, time_buf_size, "%02d:%02d", display_hour, local_tm.tm_min);
+    snprintf(time_buf, time_buf_size, "%d:%02d", display_hour, local_tm.tm_min);
     if (ampm_buf && ampm_buf_size > 0) {
         snprintf(ampm_buf, ampm_buf_size, "%s", local_tm.tm_hour >= 12 ? "PM" : "AM");
     }

@@ -2174,7 +2174,7 @@ function updateHeaderClock() {
   const timeLocale = settings.timeFormat24h ? (settings.tempUnit === 'f' ? 'en-US' : 'en-GB') : 'en-US';
   document.getElementById('headerTime').textContent = now.toLocaleTimeString(
     timeLocale,
-    { hour:'2-digit', minute:'2-digit', hour12:!settings.timeFormat24h }
+    { hour: settings.timeFormat24h ? '2-digit' : 'numeric', minute:'2-digit', hour12:!settings.timeFormat24h }
   );
   document.getElementById('headerDate').textContent = now.toLocaleDateString(
     settings.tempUnit === 'f' ? 'en-US' : 'en-GB',
