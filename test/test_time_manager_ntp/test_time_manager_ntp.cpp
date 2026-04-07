@@ -103,6 +103,22 @@ void test_time_manager_set_timezone_index_persists_name_and_index() {
     TEST_ASSERT_EQUAL_INT(new_york_index, storage.config().tz_index);
 }
 
+void test_time_manager_supports_brisbane_without_dst() {
+    StorageManager storage;
+    storage.begin();
+    storage.config().tz_name = "Australia/Brisbane";
+
+    TimeManager manager;
+    manager.begin(storage);
+
+    TEST_ASSERT_EQUAL_STRING("Australia/Brisbane", manager.getTimezone().name);
+    TEST_ASSERT_EQUAL_INT(10 * 60, manager.getTimezone().offset_min);
+    TEST_ASSERT_EQUAL_STRING("Australia/Brisbane", storage.config().tz_name.c_str());
+
+    TEST_ASSERT_TRUE(manager.updateWifiState(true, true));
+    TEST_ASSERT_EQUAL_STRING("AEST-10", SntpMock::lastTimezone());
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_time_manager_ntp_uses_default_public_servers_when_custom_server_is_empty);
@@ -111,5 +127,6 @@ int main(int, char **) {
     RUN_TEST(test_time_manager_prefers_timezone_name_over_legacy_index);
     RUN_TEST(test_time_manager_migrates_legacy_timezone_index_to_name);
     RUN_TEST(test_time_manager_set_timezone_index_persists_name_and_index);
+    RUN_TEST(test_time_manager_supports_brisbane_without_dst);
     return UNITY_END();
 }

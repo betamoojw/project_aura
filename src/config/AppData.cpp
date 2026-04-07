@@ -38,6 +38,7 @@ const TimeZoneEntry kTimeZones[] = {
     { "Asia/Singapore", 8 * 60, nullptr },
     { "Asia/Tokyo", 9 * 60, nullptr },
     { "Australia/Adelaide", 9 * 60 + 30, "ACST-9:30ACDT,M10.1.0,M4.1.0/3" },
+    { "Australia/Brisbane", 10 * 60, "AEST-10" },
     { "Australia/Sydney", 10 * 60, "AEST-10AEDT,M10.1.0,M4.1.0/3" },
     { "Pacific/Noumea", 11 * 60, nullptr },
     { "Pacific/Auckland", 12 * 60, "NZST-12NZDT,M9.5.0,M4.1.0/3" },
