@@ -237,5 +237,3 @@ int main(int, char **) {
     RUN_TEST(test_real_sfa3x_clears_sfa40_warmup_after_timeout);
     return UNITY_END();
 }
-
-

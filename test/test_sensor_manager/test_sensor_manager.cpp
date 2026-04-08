@@ -445,4 +445,3 @@ int main(int, char **) {
     RUN_TEST(test_sensor_manager_stale_resets_temp_warning_state);
     return UNITY_END();
 }
-
