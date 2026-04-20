@@ -83,6 +83,7 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.card_temp_pro, UiController::on_card_temp_event_cb, LV_EVENT_CLICKED},
         {objects.card_voc_pro, UiController::on_card_voc_event_cb, LV_EVENT_CLICKED},
         {objects.card_nox_pro, UiController::on_card_nox_event_cb, LV_EVENT_CLICKED},
+        {objects.card_voc_nox, UiController::on_card_voc_nox_event_cb, LV_EVENT_CLICKED},
         {objects.card_hcho_pro, UiController::on_card_hcho_event_cb, LV_EVENT_CLICKED},
         {objects.card_co2_pro, UiController::on_card_co2_event_cb, LV_EVENT_CLICKED},
         {objects.card_hum_pro, UiController::on_card_hum_event_cb, LV_EVENT_CLICKED},

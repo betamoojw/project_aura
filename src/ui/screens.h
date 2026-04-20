@@ -165,6 +165,14 @@ typedef struct _objects_t {
     lv_obj_t *label_pm1_value;
     lv_obj_t *dot_pm1;
     lv_obj_t *label_pm10_unit;
+    lv_obj_t *card_voc_nox;
+    lv_obj_t *label_nox_value_2;
+    lv_obj_t *label_voc_title_2;
+    lv_obj_t *label_nox_title_2;
+    lv_obj_t *label_voc_value_2;
+    lv_obj_t *dot_nox_2;
+    lv_obj_t *dot_voc_2;
+    lv_obj_t *line_3;
     lv_obj_t *background_1;
     lv_obj_t *container_temp_offset;
     lv_obj_t *label_temp_offset_title;

@@ -62,6 +62,8 @@ void UiController::update_main_texts() {
     if (objects.label_co_warmup) safe_label_set_text(objects.label_co_warmup, UiText::LabelWarmup());
     if (objects.label_voc_unit_1) safe_label_set_text(objects.label_voc_unit_1, UiText::UnitIndex());
     if (objects.label_nox_unit_1) safe_label_set_text(objects.label_nox_unit_1, UiText::UnitIndex());
+    if (objects.label_voc_title_2) safe_label_set_text(objects.label_voc_title_2, "VOC:");
+    if (objects.label_nox_title_2) safe_label_set_text(objects.label_nox_title_2, "NOx:");
 }
 
 void UiController::update_sensor_info_texts() {

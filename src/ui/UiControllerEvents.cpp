@@ -162,6 +162,7 @@ void UiController::on_voc_reset_event_cb(lv_event_t *e) { if (instance_) instanc
 void UiController::on_card_temp_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_temp_event(e); }
 void UiController::on_card_voc_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_voc_event(e); }
 void UiController::on_card_nox_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_nox_event(e); }
+void UiController::on_card_voc_nox_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_voc_nox_event(e); }
 void UiController::on_card_hcho_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_hcho_event(e); }
 void UiController::on_card_co2_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_co2_event(e); }
 void UiController::on_card_hum_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_hum_event(e); }
@@ -838,7 +839,39 @@ void UiController::on_card_nox_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    if (currentData.nh3_sensor_present) {
+        // NH3 reuses the NOx card slot, but its dedicated info page is not implemented yet.
+        return;
+    }
     info_sensor = INFO_NOX;
+    restore_sensor_info_selection();
+    pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+}
+
+void UiController::on_card_voc_nox_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+
+    lv_obj_t *target = lv_event_get_target(e);
+    if (!target) {
+        return;
+    }
+
+    InfoSensor next_sensor = INFO_VOC;
+    lv_indev_t *indev = lv_indev_get_act();
+    if (indev) {
+        lv_point_t point{};
+        lv_indev_get_point(indev, &point);
+        lv_area_t coords{};
+        lv_obj_get_coords(target, &coords);
+        const lv_coord_t rel_y = point.y - coords.y1;
+        if (rel_y >= lv_obj_get_height(target) / 2) {
+            next_sensor = INFO_NOX;
+        }
+    }
+
+    info_sensor = next_sensor;
     restore_sensor_info_selection();
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
 }

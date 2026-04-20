@@ -1564,6 +1564,15 @@ lv_color_t UiController::getNOxColor(int nox) {
     return color_red();
 }
 
+lv_color_t UiController::getNH3Color(float nh3_ppm, bool valid) {
+    // Temporary UI-only thresholds until NH3-specific limits are defined.
+    if (!valid || !isfinite(nh3_ppm) || nh3_ppm < 0.0f) return color_inactive();
+    if (nh3_ppm <= 25.0f) return color_green();
+    if (nh3_ppm <= 50.0f) return color_yellow();
+    if (nh3_ppm <= 75.0f) return color_orange();
+    return color_red();
+}
+
 lv_color_t UiController::getHCHOColor(float hcho_ppb, bool valid) {
     if (!valid || !isfinite(hcho_ppb) || hcho_ppb < 0.0f) return color_inactive();
     if (hcho_ppb < AQ_HCHO_GREEN_MAX_PPB) return color_green();
@@ -2467,7 +2476,9 @@ void UiController::update_led_indicators() {
     set_indicator_visible(objects.dot_pm10_pro);
     set_indicator_visible(objects.dot_pm1);
     set_indicator_visible(objects.dot_voc_1);
+    set_indicator_visible(objects.dot_voc_2);
     set_indicator_visible(objects.dot_nox_1);
+    set_indicator_visible(objects.dot_nox_2);
     set_indicator_visible(objects.dot_hcho_1);
     set_indicator_visible(objects.dot_co);
     set_indicator_visible(objects.dot_mr);

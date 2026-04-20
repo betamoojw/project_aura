@@ -68,6 +68,8 @@ void fillStateJson(ArduinoJson::JsonObject root, const StatePayload &payload) {
     sensors["co2_valid"] = sensor_snapshot.co2_valid;
     sensors["co_ppm"] = sensor_snapshot.co_ppm;
     sensors["co_valid"] = sensor_snapshot.co_valid;
+    sensors["nh3_ppm"] = sensor_snapshot.nh3_ppm;
+    sensors["nh3_valid"] = sensor_snapshot.nh3_valid;
     sensors["pm05"] = sensor_snapshot.pm05;
     sensors["pm05_valid"] = sensor_snapshot.pm05_valid;
     sensors["pm1"] = sensor_snapshot.pm1;

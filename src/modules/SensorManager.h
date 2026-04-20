@@ -12,6 +12,7 @@
 #include "drivers/Bmp580.h"
 #include "drivers/Dps310.h"
 #include "drivers/Sen0466.h"
+#include "drivers/Sen0469.h"
 #include "drivers/Sen66.h"
 #include "drivers/Sfa3x.h"
 
@@ -49,6 +50,9 @@ public:
     bool isCoPresent() const { return sen0466_.isPresent(); }
     bool isCoValid() const { return sen0466_.isDataValid(); }
     bool isCoWarmupActive() const { return sen0466_.isWarmupActive(); }
+    bool isNh3Present() const { return sen0469_.isPresent(); }
+    bool isNh3Valid() const { return sen0469_.isDataValid(); }
+    bool isNh3WarmupActive() const { return sen0469_.isWarmupActive(); }
     bool isPressureOk() const;
     PressureSensorType pressureSensorType() const { return pressure_sensor_; }
     const char *pressureSensorLabel() const;
@@ -76,6 +80,7 @@ private:
     Dps310 dps310_;
     Sfa3x sfa3x_;
     Sen0466 sen0466_;
+    Sen0469 sen0469_;
     Sen66 sen66_;
     bool warmup_active_last_ = false;
     bool sfa_warmup_active_last_ = false;

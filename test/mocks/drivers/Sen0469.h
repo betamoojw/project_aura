@@ -2,21 +2,21 @@
 
 #include "Arduino.h"
 
-struct Sen0466TestState {
+struct Sen0469TestState {
     bool present = false;
     bool start_ok = false;
     bool start_called = false;
     bool data_valid = false;
     bool warmup = false;
     bool invalidate_called = false;
-    float co_ppm = 0.0f;
+    float nh3_ppm = 0.0f;
     uint32_t last_data_ms = 0;
 };
 
-class Sen0466 {
+class Sen0469 {
 public:
-    static Sen0466TestState &state() {
-        static Sen0466TestState instance;
+    static Sen0469TestState &state() {
+        static Sen0469TestState instance;
         return instance;
     }
 
@@ -26,7 +26,7 @@ public:
         state().present = state().start_ok;
         if (!state().present) {
             state().data_valid = false;
-            state().co_ppm = 0.0f;
+            state().nh3_ppm = 0.0f;
             state().warmup = false;
         }
         return state().start_ok;
@@ -35,9 +35,9 @@ public:
     bool isPresent() const { return state().present; }
     bool isDataValid() const { return state().data_valid; }
     bool isWarmupActive() const { return state().warmup; }
-    float coPpm() const { return state().co_ppm; }
-    const char *label() const { return "SEN0466 CO"; }
-    uint8_t address() const { return 0x74; }
+    float nh3Ppm() const { return state().nh3_ppm; }
+    const char *label() const { return "SEN0469 NH3"; }
+    uint8_t address() const { return 0x75; }
     uint32_t lastDataMs() const { return state().last_data_ms; }
     void invalidate() {
         state().invalidate_called = true;

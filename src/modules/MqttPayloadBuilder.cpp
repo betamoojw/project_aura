@@ -642,6 +642,10 @@ size_t buildStatePayload(char *out,
                           data.co_valid &&
                           isfinite(data.co_ppm) &&
                           data.co_ppm >= 0.0f;
+    const bool nh3_valid = data.nh3_sensor_present &&
+                           data.nh3_valid &&
+                           isfinite(data.nh3_ppm) &&
+                           data.nh3_ppm >= 0.0f;
     const bool voc_publish_valid = !gas_warmup && data.voc_valid;
     const bool nox_publish_valid = !gas_warmup && data.nox_valid;
     const bool fan_output_valid = fan.present && fan.output_known;
@@ -655,6 +659,7 @@ size_t buildStatePayload(char *out,
                                sizeof(fan_timer_remaining_text),
                                fan_timer_remaining);
     if (!add_float("co", co_valid, data.co_ppm, 1) ||
+        !add_float("nh3", nh3_valid, data.nh3_ppm, 1) ||
         !add_int("voc_index", voc_publish_valid, data.voc_index) ||
         !add_int("nox_index", nox_publish_valid, data.nox_index) ||
         !add_float("hcho", data.hcho_valid, data.hcho, 1) ||

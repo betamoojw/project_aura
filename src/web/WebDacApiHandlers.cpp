@@ -61,6 +61,8 @@ void handleState(WebHandlerContext &context, bool ota_busy, const char *ota_busy
     payload.sensors.co2_valid = data.co2_valid;
     payload.sensors.co_ppm = data.co_ppm;
     payload.sensors.co_valid = data.co_valid && data.co_sensor_present;
+    payload.sensors.nh3_ppm = data.nh3_ppm;
+    payload.sensors.nh3_valid = data.nh3_valid && data.nh3_sensor_present;
     payload.sensors.pm05 = data.pm05;
     payload.sensors.pm05_valid = data.pm05_valid;
     payload.sensors.pm1 = data.pm1;

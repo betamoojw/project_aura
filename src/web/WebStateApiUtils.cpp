@@ -113,8 +113,11 @@ void fillJson(ArduinoJson::JsonObject root, const Payload &payload) {
                                    data.nox_index);
     WebJsonUtils::jsonSetFloatOrNull(sensors, "hcho", data.hcho_valid, data.hcho);
     WebJsonUtils::jsonSetFloatOrNull(sensors, "co", data.co_valid && data.co_sensor_present, data.co_ppm);
+    WebJsonUtils::jsonSetFloatOrNull(sensors, "nh3", data.nh3_valid && data.nh3_sensor_present, data.nh3_ppm);
     sensors["co_sensor_present"] = data.co_sensor_present;
     sensors["co_warmup"] = data.co_warmup;
+    sensors["nh3_sensor_present"] = data.nh3_sensor_present;
+    sensors["nh3_warmup"] = data.nh3_warmup;
     sensors["gas_warmup"] = payload.gas_warmup;
 
     ArduinoJson::JsonObject derived = root["derived"].to<ArduinoJson::JsonObject>();

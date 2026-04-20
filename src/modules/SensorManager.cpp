@@ -35,42 +35,72 @@ int clampi(int value, int min_value, int max_value) {
     return value;
 }
 
-bool sync_co_fields(SensorData &data, const Sen0466 &co_sensor) {
-    bool co_present = co_sensor.isPresent();
-    bool co_warmup = co_sensor.isWarmupActive();
-    bool co_valid = co_sensor.isDataValid();
-    float co_ppm = co_sensor.coPpm();
-
-    if (!co_present) {
-        co_warmup = false;
-        co_valid = false;
-        co_ppm = 0.0f;
-    } else if (!co_valid || !isfinite(co_ppm) || co_ppm < Config::SEN0466_CO_MIN_PPM) {
-        co_valid = false;
-        co_ppm = 0.0f;
-    } else if (co_ppm > Config::SEN0466_CO_MAX_PPM) {
-        co_ppm = Config::SEN0466_CO_MAX_PPM;
+bool sync_ppm_sensor_fields(bool sensor_present,
+                            bool sensor_warmup,
+                            bool sensor_valid,
+                            float sensor_ppm,
+                            float min_ppm,
+                            float max_ppm,
+                            bool &present_field,
+                            bool &warmup_field,
+                            bool &valid_field,
+                            float &ppm_field) {
+    if (!sensor_present) {
+        sensor_warmup = false;
+        sensor_valid = false;
+        sensor_ppm = 0.0f;
+    } else if (!sensor_valid || !isfinite(sensor_ppm) || sensor_ppm < min_ppm) {
+        sensor_valid = false;
+        sensor_ppm = 0.0f;
+    } else if (sensor_ppm > max_ppm) {
+        sensor_ppm = max_ppm;
     }
 
     bool changed = false;
-    if (data.co_sensor_present != co_present) {
-        data.co_sensor_present = co_present;
+    if (present_field != sensor_present) {
+        present_field = sensor_present;
         changed = true;
     }
-    if (data.co_warmup != co_warmup) {
-        data.co_warmup = co_warmup;
+    if (warmup_field != sensor_warmup) {
+        warmup_field = sensor_warmup;
         changed = true;
     }
-    if (data.co_valid != co_valid) {
-        data.co_valid = co_valid;
+    if (valid_field != sensor_valid) {
+        valid_field = sensor_valid;
         changed = true;
     }
-    if (!isfinite(data.co_ppm) || fabsf(data.co_ppm - co_ppm) > 0.01f) {
-        data.co_ppm = co_ppm;
+    if (!isfinite(ppm_field) || fabsf(ppm_field - sensor_ppm) > 0.01f) {
+        ppm_field = sensor_ppm;
         changed = true;
     }
 
     return changed;
+}
+
+bool sync_co_fields(SensorData &data, const Sen0466 &co_sensor) {
+    return sync_ppm_sensor_fields(co_sensor.isPresent(),
+                                  co_sensor.isWarmupActive(),
+                                  co_sensor.isDataValid(),
+                                  co_sensor.coPpm(),
+                                  Config::SEN0466_CO_MIN_PPM,
+                                  Config::SEN0466_CO_MAX_PPM,
+                                  data.co_sensor_present,
+                                  data.co_warmup,
+                                  data.co_valid,
+                                  data.co_ppm);
+}
+
+bool sync_nh3_fields(SensorData &data, const Sen0469 &nh3_sensor) {
+    return sync_ppm_sensor_fields(nh3_sensor.isPresent(),
+                                  nh3_sensor.isWarmupActive(),
+                                  nh3_sensor.isDataValid(),
+                                  nh3_sensor.nh3Ppm(),
+                                  Config::SEN0469_NH3_MIN_PPM,
+                                  Config::SEN0469_NH3_MAX_PPM,
+                                  data.nh3_sensor_present,
+                                  data.nh3_warmup,
+                                  data.nh3_valid,
+                                  data.nh3_ppm);
 }
 
 bool apply_sanity_filters(SensorData &data) {
@@ -566,10 +596,20 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
 
     sen0466_.begin();
     if (sen0466_.start()) {
-        Logger::log(Logger::Info, "Sensors", "SEN0466 CO OK at 0x%02X",
-                    static_cast<unsigned>(Config::SEN0466_ADDR));
+        Logger::log(Logger::Info, "Sensors", "%s OK at 0x%02X",
+                    sen0466_.label(),
+                    static_cast<unsigned>(sen0466_.address()));
     } else {
-        LOGI("Sensors", "SEN0466 CO not installed");
+        Logger::log(Logger::Info, "Sensors", "%s not installed", sen0466_.label());
+    }
+
+    sen0469_.begin();
+    if (sen0469_.start()) {
+        Logger::log(Logger::Info, "Sensors", "%s OK at 0x%02X",
+                    sen0469_.label(),
+                    static_cast<unsigned>(sen0469_.address()));
+    } else {
+        Logger::log(Logger::Info, "Sensors", "%s not installed", sen0469_.label());
     }
 
     sen66_.scheduleRetry(Config::SEN66_STARTUP_GRACE_MS);
@@ -606,6 +646,7 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
     }
 
     sen0466_.poll();
+    sen0469_.poll();
 
     float pressure_hpa = 0.0f;
     float temperature_c = 0.0f;
@@ -690,6 +731,9 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
     }
 
     if (sync_co_fields(data, sen0466_)) {
+        result.data_changed = true;
+    }
+    if (sync_nh3_fields(data, sen0469_)) {
         result.data_changed = true;
     }
 

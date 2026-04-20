@@ -34,6 +34,8 @@ struct SensorSnapshot {
     bool co2_valid = false;
     float co_ppm = 0.0f;
     bool co_valid = false;
+    float nh3_ppm = 0.0f;
+    bool nh3_valid = false;
     float pm05 = 0.0f;
     bool pm05_valid = false;
     float pm1 = 0.0f;

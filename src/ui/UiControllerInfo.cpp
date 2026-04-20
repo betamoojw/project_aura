@@ -556,13 +556,7 @@ void UiController::restore_sensor_info_selection() {
             if (objects.label_sensor_info_title) {
                 safe_label_set_text(objects.label_sensor_info_title, "NOx");
             }
-            const char *unit = nullptr;
-            if (objects.label_nox_unit_1) {
-                unit = lv_label_get_text(objects.label_nox_unit_1);
-            } else {
-                unit = UiText::UnitIndex();
-            }
-            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            safe_label_set_text(objects.label_sensor_info_unit, UiText::UnitIndex());
             set_nox_info_mode(nox_graph_mode_);
             update_sensor_info_ui();
             break;

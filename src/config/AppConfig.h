@@ -114,11 +114,13 @@ namespace Config {
     constexpr uint16_t SFA40_CMD_STOP = 0x50D2;
     constexpr uint16_t SFA40_CMD_READ_VALUES = 0xE06D;
     constexpr uint16_t SFA40_CMD_ID = 0x02CE;
+    constexpr uint8_t DFR_GAS_CMD_CHANGE_MODE = 0x78;
+    constexpr uint8_t DFR_GAS_CMD_READ_GAS = 0x86;
+    constexpr uint8_t DFR_GAS_MODE_PASSIVE = 0x04;
     constexpr uint8_t SEN0466_ADDR = 0x74;
-    constexpr uint8_t SEN0466_CMD_CHANGE_MODE = 0x78;
-    constexpr uint8_t SEN0466_CMD_READ_GAS = 0x86;
-    constexpr uint8_t SEN0466_MODE_PASSIVE = 0x04;
     constexpr uint8_t SEN0466_GAS_TYPE_CO = 0x04;
+    constexpr uint8_t SEN0469_ADDR = 0x75;
+    constexpr uint8_t SEN0469_GAS_TYPE_NH3 = 0x02;
     constexpr uint8_t PCF8523_ADDR = 0x68;
     constexpr uint8_t PCF8523_REG_CONTROL_1 = 0x00;
     constexpr uint8_t PCF8523_REG_CONTROL_2 = 0x01;
@@ -262,16 +264,16 @@ namespace Config {
     constexpr uint32_t SFA3X_POLL_MS = 3000;
     constexpr uint32_t SFA3X_STALE_MS = 10000;
     constexpr uint32_t SFA40_WARMUP_MS = 300000;
-    constexpr uint32_t SEN0466_CMD_DELAY_MS = 10;
-    constexpr uint32_t SEN0466_POLL_MS = 3000;
-    constexpr uint32_t SEN0466_STALE_MS = 18000;
-    constexpr uint32_t SEN0466_RETRY_MS = 5000;
-    constexpr uint8_t SEN0466_MAX_START_ATTEMPTS = 3;
-    constexpr uint32_t SEN0466_I2C_TIMEOUT_MS = 15;
-    constexpr uint32_t SEN0466_FAIL_COOLDOWN_MS = 30UL * 1000UL;
-    constexpr uint8_t SEN0466_MAX_COOLDOWN_RECOVERY_FAILS = 3;
-    constexpr uint32_t SEN0466_WARMUP_MS = 300UL * 1000UL;
-    constexpr uint8_t SEN0466_MAX_FAILS = 3;
+    constexpr uint32_t DFR_GAS_CMD_DELAY_MS = 10;
+    constexpr uint32_t DFR_GAS_POLL_MS = 3000;
+    constexpr uint32_t DFR_GAS_STALE_MS = 18000;
+    constexpr uint32_t DFR_GAS_RETRY_MS = 5000;
+    constexpr uint8_t DFR_GAS_MAX_START_ATTEMPTS = 3;
+    constexpr uint32_t DFR_GAS_I2C_TIMEOUT_MS = 15;
+    constexpr uint32_t DFR_GAS_FAIL_COOLDOWN_MS = 30UL * 1000UL;
+    constexpr uint8_t DFR_GAS_MAX_COOLDOWN_RECOVERY_FAILS = 3;
+    constexpr uint32_t DFR_GAS_WARMUP_MS = 300UL * 1000UL;
+    constexpr uint8_t DFR_GAS_MAX_FAILS = 3;
     // Sensor sanity filter ranges (hard limits from datasheets).
     constexpr float SEN66_TEMP_MIN_C = -10.0f;
     constexpr float SEN66_TEMP_MAX_C = 60.0f;
@@ -299,6 +301,8 @@ namespace Config {
     constexpr float SFA3X_HCHO_MAX_PPB = 1000.0f;
     constexpr float SEN0466_CO_MIN_PPM = 0.0f;
     constexpr float SEN0466_CO_MAX_PPM = 1000.0f;
+    constexpr float SEN0469_NH3_MIN_PPM = 0.0f;
+    constexpr float SEN0469_NH3_MAX_PPM = 100.0f;
 
     // Shared air-quality thresholds used by auto-demand logic and UI diagnostics.
     constexpr float AQ_CO2_GREEN_MAX_PPM = 800.0f;

@@ -927,6 +927,8 @@ void MqttManager::publishDiscovery(const MqttRuntimeSnapshot &runtime) {
                            "", "", "{{ value_json.main_issue }}", "mdi:alert-circle-outline");
     publishDiscoverySensor("co", "CO", "ppm",
                            "carbon_monoxide", "measurement", "{{ value_json.co }}", "mdi:molecule-co");
+    publishDiscoverySensor("nh3", "NH3", "ppm",
+                           "", "measurement", "{{ value_json.nh3 }}", "mdi:molecule");
     publishDiscoverySensor("voc_index", "VOC Index", "index",
                            "", "measurement", "{{ value_json.voc_index }}", "mdi:blur");
     publishDiscoverySensor("nox_index", "NOx Index", "index",

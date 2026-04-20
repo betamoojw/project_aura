@@ -27,6 +27,21 @@ bool has_valid_co_sensor_data(const SensorData &data) {
            data.co_ppm >= 0.0f;
 }
 
+bool has_nh3_sensor_data(const SensorData &data) {
+    return data.nh3_sensor_present;
+}
+
+bool has_valid_nh3_sensor_data(const SensorData &data) {
+    return data.nh3_sensor_present &&
+           data.nh3_valid &&
+           isfinite(data.nh3_ppm) &&
+           data.nh3_ppm >= 0.0f;
+}
+
+float get_nh3_ppm_value(const SensorData &data) {
+    return data.nh3_ppm;
+}
+
 float get_co_ppm_value(const SensorData &data) {
     return data.co_ppm;
 }
@@ -244,6 +259,18 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         set_dot_color(objects.dot_pm1, alert_color_for_mode(pm1_col));
     }
 
+    const bool nh3_sensor_present = has_nh3_sensor_data(currentData);
+    const bool nh3_available = has_valid_nh3_sensor_data(currentData);
+    const bool nh3_warmup = nh3_sensor_present && currentData.nh3_warmup;
+    // With NH3 connected, keep VOC and NOx visible together and reuse the standalone NOx slot for NH3.
+    const bool show_voc_nox_combo = nh3_sensor_present;
+    set_visible(objects.card_voc_pro, !show_voc_nox_combo);
+    set_visible(objects.card_voc_nox, show_voc_nox_combo);
+    if (objects.card_nox_pro) {
+        show_voc_nox_combo ? lv_obj_clear_flag(objects.card_nox_pro, LV_OBJ_FLAG_CLICKABLE)
+                           : lv_obj_add_flag(objects.card_nox_pro, LV_OBJ_FLAG_CLICKABLE);
+    }
+
     if (currentData.voc_valid) {
         snprintf(buf, sizeof(buf), "%d", currentData.voc_index);
         safe_label_set_text(objects.label_voc_value_1, buf);
@@ -266,27 +293,73 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
                                     : (currentData.voc_valid ? getVOCColor(currentData.voc_index) : color_inactive());
     set_dot_color(objects.dot_voc_1, alert_color_for_mode(voc_col));
 
-    if (currentData.nox_valid) {
-        snprintf(buf, sizeof(buf), "%d", currentData.nox_index);
-        safe_label_set_text(objects.label_nox_value_1, buf);
-    } else {
-        safe_label_set_text_static(objects.label_nox_value_1, UiText::ValueMissing());
-    }
-    if (objects.label_nox_warmup_1) {
-        gas_warmup ? lv_obj_clear_flag(objects.label_nox_warmup_1, LV_OBJ_FLAG_HIDDEN)
-                   : lv_obj_add_flag(objects.label_nox_warmup_1, LV_OBJ_FLAG_HIDDEN);
-    }
-    if (objects.label_nox_value_1) {
-        gas_warmup ? lv_obj_add_flag(objects.label_nox_value_1, LV_OBJ_FLAG_HIDDEN)
-                   : lv_obj_clear_flag(objects.label_nox_value_1, LV_OBJ_FLAG_HIDDEN);
-    }
-    if (objects.label_nox_unit_1) {
-        gas_warmup ? lv_obj_add_flag(objects.label_nox_unit_1, LV_OBJ_FLAG_HIDDEN)
-                   : lv_obj_clear_flag(objects.label_nox_unit_1, LV_OBJ_FLAG_HIDDEN);
-    }
     lv_color_t nox_col = gas_warmup ? color_blue()
                                     : (currentData.nox_valid ? getNOxColor(currentData.nox_index) : color_inactive());
-    set_dot_color(objects.dot_nox_1, alert_color_for_mode(nox_col));
+
+    if (objects.label_voc_value_2) {
+        if (gas_warmup) {
+            safe_label_set_text(objects.label_voc_value_2, "---");
+        } else if (currentData.voc_valid) {
+            snprintf(buf, sizeof(buf), "%d", currentData.voc_index);
+            safe_label_set_text(objects.label_voc_value_2, buf);
+        } else {
+            safe_label_set_text_static(objects.label_voc_value_2, UiText::ValueMissingShort());
+        }
+    }
+    if (objects.label_nox_value_2) {
+        if (gas_warmup) {
+            safe_label_set_text(objects.label_nox_value_2, "---");
+        } else if (currentData.nox_valid) {
+            snprintf(buf, sizeof(buf), "%d", currentData.nox_index);
+            safe_label_set_text(objects.label_nox_value_2, buf);
+        } else {
+            safe_label_set_text_static(objects.label_nox_value_2, UiText::ValueMissingShort());
+        }
+    }
+    if (objects.dot_voc_2) {
+        set_dot_color(objects.dot_voc_2, alert_color_for_mode(voc_col));
+    }
+    if (objects.dot_nox_2) {
+        set_dot_color(objects.dot_nox_2, alert_color_for_mode(nox_col));
+    }
+
+    const bool nox_card_is_nh3 = nh3_sensor_present;
+    const bool nox_card_warmup = nox_card_is_nh3 ? nh3_warmup : gas_warmup;
+    const lv_color_t nox_card_col = nox_card_is_nh3
+        ? (nh3_warmup ? color_blue() : getNH3Color(currentData.nh3_ppm, nh3_available))
+        : nox_col;
+    if (objects.label_nox_title_1) {
+        safe_label_set_text_static(objects.label_nox_title_1, nox_card_is_nh3 ? "NH3" : "NOx");
+    }
+    if (objects.label_nox_unit_1) {
+        safe_label_set_text_static(objects.label_nox_unit_1, nox_card_is_nh3 ? "ppm" : UiText::UnitIndex());
+        nox_card_warmup ? lv_obj_add_flag(objects.label_nox_unit_1, LV_OBJ_FLAG_HIDDEN)
+                        : lv_obj_clear_flag(objects.label_nox_unit_1, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (objects.label_nox_warmup_1) {
+        nox_card_warmup ? lv_obj_clear_flag(objects.label_nox_warmup_1, LV_OBJ_FLAG_HIDDEN)
+                        : lv_obj_add_flag(objects.label_nox_warmup_1, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (objects.label_nox_value_1) {
+        nox_card_warmup ? lv_obj_add_flag(objects.label_nox_value_1, LV_OBJ_FLAG_HIDDEN)
+                        : lv_obj_clear_flag(objects.label_nox_value_1, LV_OBJ_FLAG_HIDDEN);
+        if (nox_card_is_nh3) {
+            if (nh3_available) {
+                snprintf(buf, sizeof(buf), "%.0f", get_nh3_ppm_value(currentData));
+                safe_label_set_text(objects.label_nox_value_1, buf);
+            } else {
+                safe_label_set_text_static(objects.label_nox_value_1, UiText::ValueMissing());
+            }
+        } else if (currentData.nox_valid) {
+            snprintf(buf, sizeof(buf), "%d", currentData.nox_index);
+            safe_label_set_text(objects.label_nox_value_1, buf);
+        } else {
+            safe_label_set_text_static(objects.label_nox_value_1, UiText::ValueMissing());
+        }
+    }
+    if (objects.dot_nox_1) {
+        set_dot_color(objects.dot_nox_1, alert_color_for_mode(nox_card_col));
+    }
 
     const bool hcho_warmup = sensorManager.isSfaWarmupActive();
     const bool hcho_available = currentData.hcho_valid;

@@ -4,12 +4,16 @@
 // Want to use this code in a commercial product while keeping modifications proprietary?
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
-#pragma once
-#include "drivers/DfrMultiGasSensor.h"
+#include "drivers/Sen0469.h"
 
-class Sen0466 : public DfrMultiGasSensor {
-public:
-    Sen0466();
+#include "config/AppConfig.h"
 
-    float coPpm() const { return ppm(); }
-};
+Sen0469::Sen0469()
+    : DfrMultiGasSensor({
+          "SEN0469",
+          "SEN0469 NH3",
+          Config::SEN0469_ADDR,
+          Config::SEN0469_GAS_TYPE_NH3,
+          Config::SEN0469_NH3_MIN_PPM,
+          Config::SEN0469_NH3_MAX_PPM,
+      }) {}

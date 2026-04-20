@@ -5,11 +5,12 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #pragma once
+
 #include "drivers/DfrMultiGasSensor.h"
 
-class Sen0466 : public DfrMultiGasSensor {
+class Sen0469 : public DfrMultiGasSensor {
 public:
-    Sen0466();
+    Sen0469();
 
-    float coPpm() const { return ppm(); }
+    float nh3Ppm() const { return ppm(); }
 };
