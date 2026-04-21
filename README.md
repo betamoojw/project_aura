@@ -7,9 +7,6 @@
 [![YouTube Demo](https://img.shields.io/badge/YouTube-Demo-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
 [![YouTube Review](https://img.shields.io/badge/YouTube-Review-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=1pzBqcmbWl8)
 
-Support this project: back the crowdfunding to get detailed build instructions, 3D-printable enclosure models, and wiring guides at:
-https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
-
 Project Aura is an open-source ESP32-S3 air-quality station built for makers who want a polished,
 reliable device rather than a bare sensor board. It combines a touch-friendly LVGL UI, a full local
 web dashboard with browser OTA updates, a Wi-Fi setup portal, optional 0-10V fan control, and MQTT
@@ -17,7 +14,16 @@ with Home Assistant discovery.
 
 This repository contains the firmware source code and configuration needed to flash and customize the device.
 
+> **Support the project:** back the crowdfunding to get detailed build instructions, 3D-printable enclosure models, and wiring guides at https://makerworld.com/en/crowdfunding/159-project-aura-make-the-invisible-visible
+
 **Join the community:** [GitHub Discussions](https://github.com/21cncstudio/project_aura/discussions)
+
+## TL;DR
+- **What it is:** a finished air-quality monitor (touchscreen + web dashboard + Home Assistant), not a bare sensor breakout.
+- **Minimum BOM:** ESP32-S3-Touch-LCD-4.3 + Sensirion SEN66 + 5V power. Everything else is optional.
+- **Skill level:** solder-free assembly using Grove/QT cables, but the connector pin order is custom — read the wiring notice.
+- **Software:** PlatformIO + Arduino-ESP32 3.1.1; flash firmware **and** LittleFS image (web/UI assets), then onboard Wi-Fi.
+- **Works without internet:** AP setup mode and the local dashboard are fully offline.
 
 ## Table of Contents
 - [Videos](#videos)
@@ -25,7 +31,6 @@ This repository contains the firmware source code and configuration needed to fl
 - [Gallery](#gallery)
 - [UI Screens](#ui-screens)
 - [Web Dashboard](#web-dashboard)
-- [Network Requirements](#network-requirements)
 - [Hardware and BOM](#hardware-and-bom)
 - [Assembly and Wiring Notice](#assembly-and-wiring-notice)
 - [Pin Configuration](#pin-configuration)
@@ -34,29 +39,38 @@ This repository contains the firmware source code and configuration needed to fl
 - [Build and Flash](#build-and-flash-platformio)
 - [Configuration](#configuration)
 - [MQTT + Home Assistant](#mqtt--home-assistant)
+- [Network Requirements](#network-requirements)
 - [Contributing](#contributing)
-- [AI Assistance](#ai-assistance)
 - [License and Commercial Use](#license-and-commercial-use)
 - [Tests](#tests)
 - [Repo Layout](#repo-layout)
+- [AI Assistance](#ai-assistance)
 
 ## Videos
 Watch the demo:
-[![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/maxresdefault.jpg)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
+[![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/hqdefault.jpg)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
 
 Also watch the hands-on review:
 [Project Aura review on YouTube](https://www.youtube.com/watch?v=1pzBqcmbWl8)
 
 ## Highlights
-- Professional telemetry: PM0.5/PM1/PM2.5/PM4/PM10, CO, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO, plus optional NH3/SO2/NO2/H2S/O3 sensing.
-- No soldering required: designed for easy assembly using Grove/QT connectors.
-- Smooth LVGL UI with night mode, custom themes, and status indicators.
-- Integrated web dashboard at `/dashboard` with live state, charts, events, settings sync, DAC page, and OTA firmware update.
-- Easy setup: Wi-Fi AP onboarding + mDNS access (`http://<hostname>.local`).
-- Home Assistant ready: automatic MQTT discovery and ready-to-use dashboard code.
-- Optional DAC control (GP8403, 0-10V): manual levels/timer plus automatic demand mode from air-quality thresholds.
-- Hardware autodetect: PCF8523/DS3231 RTC plus BMP58x/BMP3xx/DPS310 pressure support.
-- Robust Safe Boot: automatic rollback to the last-known-good config after crashes.
+
+**Telemetry**
+- Particulate: PM0.5 / PM1 / PM2.5 / PM4 / PM10
+- Gases: CO, CO2, VOC, NOx, HCHO, plus one optional electrochemical gas (NH3, SO2, NO2, H2S, or O3)
+- Climate: temperature, humidity, absolute humidity (AH), pressure
+
+**UI and integration**
+- Smooth LVGL UI with night mode, custom themes, and status indicators
+- Integrated web dashboard at `/dashboard`: live state, charts, events, settings sync, DAC page, OTA firmware update
+- Easy setup: Wi-Fi AP onboarding + mDNS access (`http://<hostname>.local`)
+- Home Assistant ready: automatic MQTT discovery and ready-to-use dashboard YAML
+
+**Hardware**
+- No soldering required: designed for easy assembly using Grove/QT connectors
+- Optional DAC control (GP8403, 0-10V): manual levels/timer plus automatic demand mode from air-quality thresholds
+- Hardware autodetect: PCF8523/DS3231 RTC plus BMP58x/BMP3xx/DPS310 pressure
+- Robust Safe Boot: automatic rollback to the last-known-good config after crashes
 
 ![Project Aura device](docs/assets/device-hero.jpg)
 
@@ -96,20 +110,6 @@ Useful API routes used by the dashboard:
 - `POST /api/settings`
 - `POST /api/ota`
 
-## Network Requirements
-- AP setup mode (`http://192.168.4.1`) is local-only and works without internet.
-- STA mode dashboard (`http://<hostname>.local/dashboard` or `http://<ip>/dashboard`) requires the client and Aura to be in the same L2/L3 network path.
-- If mDNS (`.local`) is blocked on your network, use direct IP from the device screen or router DHCP table.
-- Avoid guest networks, client isolation, or VLAN rules that block peer-to-peer LAN traffic.
-- Required local traffic:
-  - HTTP: TCP `80` to Aura
-  - mDNS: UDP `5353` multicast (only for `.local` hostname discovery)
-- During OTA, keep one active client tab/session to reduce transfer failures.
-
-Quick diagnostics for support:
-- `GET /api/state` should return live JSON with `network.mode`, `network.ip`, and sensor payload.
-- `GET /api/diag` (available in AP setup mode) shows Wi-Fi state, IP/hostname, heap, OTA busy state, and recent warnings/errors.
-
 ## Hardware and BOM
 Project Aura is designed around high-quality components to ensure accuracy. If you are sourcing parts yourself,
 look for these specific modules for the reference build:
@@ -118,21 +118,18 @@ look for these specific modules for the reference build:
 | :--- | :--- |
 | Core Board | [Waveshare ESP32-S3-Touch-LCD-4.3 (800x480)](https://www.waveshare.com/esp32-s3-touch-lcd-4.3.htm?&aff_id=144793) |
 | Main Sensor | Sensirion SEN66 (via Adafruit breakout) |
-| Carbon Monoxide (CO) | [DFRobot Gravity: Factory Calibrated Electrochemical CO Sensor (0-1000 ppm, I2C & UART), SEN0466](https://www.dfrobot.com/product-2508.html?tracking=aJ5V32) (optional) |
-| Formaldehyde | Sensirion SFA30 (Grove interface) or [DFRobot Gravity: SFA40 Formaldehyde (HCHO) Sensor (0-1000 ppb, High Accuracy +/-20 ppb), SEN0661](https://www.dfrobot.com/product-3020.html?tracking=aJ5V32) (optional) |
-| Optional DFR Gas Slot | One supported DFRobot electrochemical gas sensor at a time on the shared optional slot: [SEN0469 NH3](https://www.dfrobot.com/product-2513.html?tracking=aJ5V32), [SEN0470 SO2](https://www.dfrobot.com/product-2514.html?tracking=aJ5V32), [SEN0471 NO2](https://www.dfrobot.com/product-2515.html?tracking=aJ5V32), [SEN0467 H2S](https://www.dfrobot.com/product-2511.html?tracking=aJ5V32), or [SEN0472 O3](https://www.dfrobot.com/product-2516.html?tracking=aJ5V32) (optional) |
-| Pressure | Adafruit BMP580 or DPS310 (recommended) |
-| RTC | Adafruit PCF8523 (recommended) |
-| DAC Output | [DFRobot Gravity: 2-Channel I2C DAC Module (0-10V), DFR0971](https://www.dfrobot.com/product-2613.html?tracking=aJ5V32) (optional, VOUT0 used) |
+| Carbon Monoxide (CO) | [DFRobot SEN0466 — Factory Calibrated Electrochemical CO (0-1000 ppm, I2C & UART)](https://www.dfrobot.com/product-2508.html?tracking=aJ5V32) (optional) |
+| Formaldehyde (HCHO) | Sensirion SFA30 (0-1000 ppb) **or** SFA40 — both autodetected. SFA40 available as the [DFRobot SEN0661 breakout](https://www.dfrobot.com/product-3020.html?tracking=aJ5V32) (optional) |
+| Optional DFR Gas Slot | One DFRobot electrochemical sensor at a time: [SEN0469 NH3](https://www.dfrobot.com/product-2513.html?tracking=aJ5V32), [SEN0470 SO2](https://www.dfrobot.com/product-2514.html?tracking=aJ5V32), [SEN0471 NO2](https://www.dfrobot.com/product-2515.html?tracking=aJ5V32), [SEN0467 H2S](https://www.dfrobot.com/product-2511.html?tracking=aJ5V32), or [SEN0472 O3](https://www.dfrobot.com/product-2516.html?tracking=aJ5V32). Set the module's I2C address to `0x75` per the [DFRobot wiki](https://wiki.dfrobot.com/sen0465/docs/21907) (optional) |
+| Pressure | Adafruit BMP580 or DPS310. Firmware autodetects BMP580/581, BMP585, BMP388, BMP390, and DPS310 (recommended) |
+| RTC | Adafruit PCF8523. Firmware autodetects PCF8523 and DS3231; a manual RTC override is also available (recommended) |
+| DAC Output | [DFRobot GP8403 2-Channel I2C DAC (0-10V), DFR0971](https://www.dfrobot.com/product-2613.html?tracking=aJ5V32) — VOUT0 used (optional) |
 
-Affiliate note: the Waveshare board link above is an affiliate link and helps support Project Aura at no extra cost.
-
-Pressure note: the reference BOM uses BMP580 or DPS310. Firmware auto-detects BMP580/581, BMP585, BMP388, BMP390, and DPS310.
-RTC note: the reference BOM uses PCF8523. Firmware auto-detects PCF8523 and DS3231, and also provides a manual RTC override mode.
-Sensor note: both the Sensirion SFA30 and the DFRobot Gravity SFA40 are supported for HCHO monitoring. Aura auto-detects the compatible SFA3x variant at boot and handles SFA40 warmup/startup behavior automatically.
-CO note: the SEN0466 is optional. If not detected at boot, CO is marked unavailable and PM1 telemetry remains active.
-Optional DFR gas note: Aura also supports one optional DFRobot electrochemical gas sensor on the shared slot at a time. Supported variants are NH3, SO2, NO2, H2S, and O3. The firmware auto-detects the installed gas type and exposes the matching local UI and MQTT/Home Assistant entities. Use I2C address `0x75` for this slot.
-Note: SEN66 gas indices (VOC/NOx) require about 5 minutes of warmup for reliable readings; the UI shows WARMUP during this period.
+**Notes**
+- SEN66 VOC/NOx require about 5 minutes of warmup for reliable readings; the UI shows WARMUP during this period.
+- If the CO sensor (SEN0466) is not detected at boot, CO is marked unavailable and the rest of the telemetry stays active.
+- Aura auto-detects which DFR gas variant is installed on the optional slot and exposes the matching local UI and MQTT/Home Assistant entities.
+- Affiliate disclosure: the Waveshare and DFRobot links above are affiliate links and help support Project Aura at no extra cost.
 
 Recommended retailers: Mouser, DigiKey, LCSC, Adafruit, Seeed Studio, [Waveshare (core board)](https://www.waveshare.com/esp32-s3-touch-lcd-4.3.htm?&aff_id=144793).
 
@@ -150,7 +147,7 @@ DIY: verify pinouts against the pin table below before powering on to avoid dama
 | :--- | :--- | :--- |
 | 3V3 | 3V3 | Power for external I2C sensors |
 | GND | GND | Common ground |
-| I2C SDA | GPIO 8 | Shared bus: SEN66, SFA30/SFA40, SEN0466, optional DFR gas slot (NH3/SO2/NO2/H2S/O3), BMP58x/BMP3xx/DPS310, PCF8523/DS3231, GP8403 |
+| I2C SDA | GPIO 8 | Shared bus for all sensors and the DAC (see BOM) |
 | I2C SCL | GPIO 9 | Shared bus |
 
 Display and touch are integrated on the board; no external wiring is needed for them.
@@ -229,11 +226,13 @@ Built with Arduino ESP32 core 3.1.1 (ESP-IDF 5.3.x).
 ```powershell
 git clone https://github.com/21cncstudio/project_aura.git
 cd project_aura
-pio run -e project_aura
-pio run -e project_aura -t upload
-pio run -e project_aura -t uploadfs
-pio device monitor -b 115200
+pio run -e project_aura                  # build firmware
+pio run -e project_aura -t upload        # flash firmware
+pio run -e project_aura -t uploadfs      # flash LittleFS image (web/UI assets)
+pio device monitor -b 115200             # serial monitor
 ```
+
+> **Note:** `uploadfs` is required at least once on a fresh device. Without it the web dashboard and translations will be missing. Re-run it whenever assets in `data/` change.
 
 ## Configuration
 1. Wi-Fi setup:
@@ -250,10 +249,11 @@ pio device monitor -b 115200
    Setup guide: `docs/home_assistant/README.md`.
 
 Optional compile-time defaults belong in `include/secrets.h`, which is ignored by git.
-Copy and edit:
+Copy and edit (Windows / Unix):
 
 ```text
-copy include/secrets.h.example include/secrets.h
+copy include\secrets.h.example include\secrets.h    # Windows
+cp    include/secrets.h.example include/secrets.h    # macOS / Linux
 ```
 
 ## MQTT + Home Assistant
@@ -267,15 +267,25 @@ MQTT stays idle until configured and enabled.
 
 ![Home Assistant dashboard](docs/assets/ha-dashboard.jpg)
 
+## Network Requirements
+- AP setup mode (`http://192.168.4.1`) is local-only and works without internet.
+- STA mode dashboard (`http://<hostname>.local/dashboard` or `http://<ip>/dashboard`) requires the client and Aura to be in the same L2/L3 network path.
+- If mDNS (`.local`) is blocked on your network, use the direct IP from the device screen or router DHCP table.
+- Avoid guest networks, client isolation, or VLAN rules that block peer-to-peer LAN traffic.
+- Required local traffic:
+  - HTTP: TCP `80` to Aura
+  - mDNS: UDP `5353` multicast (only for `.local` hostname discovery)
+- During OTA, keep one active client tab/session to reduce transfer failures.
+
+Quick diagnostics for support:
+- `GET /api/state` should return live JSON with `network.mode`, `network.ip`, and sensor payload.
+- `GET /api/diag` (available in AP setup mode) shows Wi-Fi state, IP/hostname, heap, OTA busy state, and recent warnings/errors.
+
 ## Contributing
 Contributions are welcome! Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for details on the process for submitting pull requests and the Contributor License Agreement (CLA).
 
 Found a bug? Open an Issue: https://github.com/21cncstudio/project_aura/issues
 Have a question? Ask in Discussions: https://github.com/21cncstudio/project_aura/discussions
-
-## AI Assistance
-Parts of this project are developed with AI-assisted workflows.
-Primary coding assistance is provided by GPT-5 Codex in a local developer workspace.
 
 ## License and Commercial Use
 - Firmware in this repository is licensed under GPL-3.0-or-later (see `LICENSE`).
@@ -293,3 +303,7 @@ See `TESTING.md` for native host tests and `scripts/run_tests.ps1`.
 - `src/ui/` LVGL screens, assets, controllers
 - `src/web/` HTML templates and handlers
 - `test/` native tests and mocks
+
+## AI Assistance
+Parts of this project are developed with AI-assisted workflows.
+Primary coding assistance is provided by GPT-5 Codex in a local developer workspace.

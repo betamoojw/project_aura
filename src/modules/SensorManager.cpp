@@ -666,7 +666,7 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
 
     optional_gas_.begin();
     if (optional_gas_.start()) {
-        Logger::log(Logger::Info, "Sensors", "%s slot OK at 0x%02X",
+        Logger::log(Logger::Info, "Sensors", "%s slot detected at 0x%02X, validating gas type",
                     optional_gas_.label(),
                     static_cast<unsigned>(optional_gas_.address()));
     } else {
