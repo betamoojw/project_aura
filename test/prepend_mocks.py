@@ -4,10 +4,17 @@ import os
 
 project_dir = env["PROJECT_DIR"]
 mocks_path = os.path.join(project_dir, "test", "mocks")
+prefer_real_headers = env["PIOENV"] == "native_test_sfa40_driver"
+prefer_real_headers = prefer_real_headers or env["PIOENV"] == "native_test_sfa30_driver"
 
-# Put mocks first so they win over real headers in src/.
-env.PrependUnique(CPPFLAGS=[f"-I{mocks_path}"])
-env.PrependUnique(CPPPATH=[mocks_path])
+# Most native tests rely on mock headers shadowing src/, but the dedicated
+# SFA40 driver test needs the real driver headers while still seeing shared
+# Arduino/I2C mocks.
+if prefer_real_headers:
+    env.AppendUnique(CPPPATH=[mocks_path])
+else:
+    env.PrependUnique(CPPFLAGS=[f"-I{mocks_path}"])
+    env.PrependUnique(CPPPATH=[mocks_path])
 
 # Ensure mock sources are compiled for unit tests.
 env.AppendUnique(

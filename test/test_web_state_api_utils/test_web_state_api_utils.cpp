@@ -141,6 +141,17 @@ void test_web_state_api_utils_hides_reactive_gas_metrics_during_warmup() {
     TEST_ASSERT_TRUE(doc["sensors"]["nox"].isNull());
 }
 
+void test_web_state_api_utils_hides_hcho_when_only_raw_sample_exists_from_sfa40_warmup_model() {
+    WebStateApiUtils::Payload payload{};
+    payload.data.hcho_valid = false;
+    payload.data.hcho = 27.4f;
+
+    ArduinoJson::JsonDocument doc;
+    WebStateApiUtils::fillJson(doc.to<ArduinoJson::JsonObject>(), payload);
+
+    TEST_ASSERT_TRUE(doc["sensors"]["hcho"].isNull());
+}
+
 void test_web_state_api_utils_reports_failed_ota_with_device_error_code() {
     WebStateApiUtils::Payload payload{};
     payload.timestamp_ms = 5000;
@@ -170,6 +181,7 @@ int main(int, char **) {
     RUN_TEST(test_web_state_api_utils_fill_json_populates_sensor_network_and_settings_fields);
     RUN_TEST(test_web_state_api_utils_fill_json_sets_nulls_when_values_are_unavailable);
     RUN_TEST(test_web_state_api_utils_hides_reactive_gas_metrics_during_warmup);
+    RUN_TEST(test_web_state_api_utils_hides_hcho_when_only_raw_sample_exists_from_sfa40_warmup_model);
     RUN_TEST(test_web_state_api_utils_reports_failed_ota_with_device_error_code);
     return UNITY_END();
 }

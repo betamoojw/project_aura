@@ -183,12 +183,15 @@ esp_err_t i2c_master_write_to_device(i2c_port_t,
                                      const uint8_t *write_buffer,
                                      size_t write_size,
                                      TickType_t) {
-    if (!device(addr).present || !write_buffer || write_size < 2) {
+    if (!device(addr).present || !write_buffer || write_size == 0) {
         return ESP_FAIL;
     }
     const uint8_t reg = write_buffer[0];
     if (device(addr).write_fail[reg]) {
         return ESP_FAIL;
+    }
+    if (write_size == 1) {
+        return ESP_OK;
     }
     for (size_t i = 1; i < write_size; ++i) {
         device(addr).regs[static_cast<uint8_t>(reg + i - 1)] = write_buffer[i];

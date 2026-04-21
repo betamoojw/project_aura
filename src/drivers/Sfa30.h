@@ -5,16 +5,11 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #pragma once
+
 #include <Arduino.h>
 
-class Sfa3x {
+class Sfa30 {
 public:
-    enum class Variant : uint8_t {
-        Unknown = 0,
-        Sfa30,
-        Sfa40,
-    };
-
     enum class Status : uint8_t {
         Absent = 0,
         Ok,
@@ -22,6 +17,7 @@ public:
     };
 
     bool begin();
+    bool probe();
     void start();
     void stop();
     bool readData(float &hcho_ppb);
@@ -31,9 +27,8 @@ public:
     bool isPresent() const { return status_ != Status::Absent; }
     bool hasFault() const { return status_ == Status::Fault; }
     Status status() const { return status_; }
-    Variant variant() const { return variant_; }
-    bool isWarmupActive() const { return warmup_active_; }
-    const char *label() const;
+    bool isWarmupActive() const;
+    const char *label() const { return "SFA30"; }
     uint32_t lastDataMs() const { return last_data_ms_; }
     bool takeNewData(float &hcho_ppb);
     void invalidate();
@@ -41,36 +36,33 @@ public:
 private:
     enum class ErrorCause : uint8_t {
         None = 0,
+        DetectSensor,
         WarmRestartStop,
         StartCommand,
         ReadCommand,
         ReadBytes,
         ReadCrc,
-        ReadStatus,
     };
 
+    bool detectSensor();
     bool readWords(uint16_t cmd, uint16_t *out, size_t words, uint32_t delay_ms);
-    void detectVariant();
-    void refreshWarmupState(uint32_t now_ms);
-    bool ensureIdleBeforeDetect();
+    bool ensureIdleBeforeStart();
     bool pingAddress();
     bool writeCmd(uint16_t cmd);
     bool readBytes(uint8_t *buf, size_t len);
-    bool ensureIdleBeforeStart();
     const char *errorCauseLabel() const;
 
     bool ok_ = false;
     bool measuring_ = false;
     bool measurement_state_unknown_ = false;
+    bool warmup_active_ = false;
     bool data_valid_ = false;
     bool has_new_data_ = false;
     float last_hcho_ppb_ = 0.0f;
     uint32_t last_poll_ms_ = 0;
+    uint32_t warmup_deadline_ms_ = 0;
     uint32_t last_data_ms_ = 0;
-    uint32_t warmup_started_ms_ = 0;
     uint8_t fail_count_ = 0;
-    Variant variant_ = Variant::Unknown;
     Status status_ = Status::Absent;
     ErrorCause last_error_cause_ = ErrorCause::None;
-    bool warmup_active_ = false;
 };

@@ -8,6 +8,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include "core/BootState.h"
 #include "core/Logger.h"
 #include "config/AppConfig.h"
 #include "modules/PressureHistory.h"
@@ -103,7 +104,7 @@ bool sync_nh3_fields(SensorData &data, const Sen0469 &nh3_sensor) {
                                   data.nh3_ppm);
 }
 
-bool apply_sanity_filters(SensorData &data) {
+bool apply_sanity_filters(SensorData &data, float hcho_min_ppb, float hcho_max_ppb) {
     bool changed = false;
 
     if (data.temp_valid &&
@@ -230,7 +231,7 @@ bool apply_sanity_filters(SensorData &data) {
             data.hcho = 0.0f;
             changed = true;
         } else {
-            float clamped = clampf(data.hcho, Config::SFA3X_HCHO_MIN_PPB, Config::SFA3X_HCHO_MAX_PPB);
+            float clamped = clampf(data.hcho, hcho_min_ppb, hcho_max_ppb);
             if (clamped != data.hcho) {
                 data.hcho = clamped;
                 changed = true;
@@ -574,25 +575,55 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
         }
     }
 
-    sfa3x_.begin();
-    sfa3x_.start();
-    switch (sfa3x_.status()) {
-        case Sfa3x::Status::Ok:
-            if (sfa3x_.isWarmupActive()) {
-                Logger::log(Logger::Info, "Sensors", "%s starting", sfa3x_.label());
-            } else {
-                Logger::log(Logger::Info, "Sensors", "%s OK", sfa3x_.label());
+    hcho_sensor_type_ = HCHO_SENSOR_NONE;
+    const bool hcho_warm_restart = (boot_reset_reason != ESP_RST_POWERON);
+    bool sfa30_identified = false;
+    sfa30_.begin();
+    sfa40_.begin();
+
+    if (hcho_warm_restart) {
+        sfa30_identified = sfa30_.probe();
+        if (sfa30_identified) {
+            sfa30_.start();
+            if (sfa30_.status() == Sfa30::Status::Ok) {
+                hcho_sensor_type_ = HCHO_SENSOR_SFA30;
+                Logger::log(Logger::Info, "Sensors", "%s OK", sfa30_.label());
             }
-            break;
-        case Sfa3x::Status::Absent:
-            Logger::log(Logger::Info, "Sensors", "%s not installed", sfa3x_.label());
-            break;
-        case Sfa3x::Status::Fault:
-            Logger::log(Logger::Warn, "Sensors", "%s init failed", sfa3x_.label());
-            break;
+        }
     }
-    sfa_warmup_active_last_ = sfa3x_.isWarmupActive();
-    sfa_status_last_ = sfa3x_.status();
+
+    if (hcho_sensor_type_ == HCHO_SENSOR_NONE && !sfa30_identified) {
+        sfa40_.start();
+        if (sfa40_.status() == Sfa40::Status::Ok) {
+            hcho_sensor_type_ = HCHO_SENSOR_SFA40;
+            if (sfa40_.isWarmupActive()) {
+                Logger::log(Logger::Info, "Sensors", "%s starting", sfa40_.label());
+            } else {
+                Logger::log(Logger::Info, "Sensors", "%s OK", sfa40_.label());
+            }
+        }
+    }
+
+    if (hcho_sensor_type_ == HCHO_SENSOR_NONE && !sfa30_identified) {
+        if (sfa40_.status() == Sfa40::Status::Absent || sfa40_.shouldFallbackToSfa30()) {
+            sfa30_.start();
+            if (sfa30_.status() == Sfa30::Status::Ok) {
+                hcho_sensor_type_ = HCHO_SENSOR_SFA30;
+                Logger::log(Logger::Info, "Sensors", "%s OK", sfa30_.label());
+            }
+        }
+    }
+
+    if (hcho_sensor_type_ == HCHO_SENSOR_NONE) {
+        const bool any_fault =
+            (sfa40_.status() == Sfa40::Status::Fault) ||
+            (sfa30_.status() == Sfa30::Status::Fault);
+        Logger::log(any_fault ? Logger::Warn : Logger::Info,
+                    "Sensors",
+                    any_fault ? "HCHO sensor init failed" : "HCHO sensor not installed");
+    }
+    sfa_warmup_active_last_ = currentHchoWarmupActive();
+    sfa_status_last_ = currentHchoStatus();
 
     sen0466_.begin();
     if (sen0466_.start()) {
@@ -630,18 +661,31 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
     }
     sen66_.saveVocState(storage);
 
-    sfa3x_.poll();
-    const bool sfa_warmup_now = sfa3x_.isWarmupActive();
-    const SfaStatus sfa_status_now = sfa3x_.status();
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA40) {
+        sfa40_.poll();
+    } else if (hcho_sensor_type_ == HCHO_SENSOR_SFA30) {
+        sfa30_.poll();
+    }
+    const bool sfa_warmup_now = currentHchoWarmupActive();
+    const SfaStatus sfa_status_now = currentHchoStatus();
     if (sfa_warmup_now != sfa_warmup_active_last_ || sfa_status_now != sfa_status_last_) {
         sfa_warmup_active_last_ = sfa_warmup_now;
         sfa_status_last_ = sfa_status_now;
         result.data_changed = true;
     }
+    if (sfa_status_now == SfaStatus::Fault && data.hcho_valid) {
+        data.hcho_valid = false;
+        currentHchoInvalidate();
+        result.data_changed = true;
+    }
+    if (sfa_warmup_now && data.hcho_valid) {
+        data.hcho_valid = false;
+        result.data_changed = true;
+    }
     float hcho_ppb = 0.0f;
-    if (sfa3x_.takeNewData(hcho_ppb)) {
+    if (currentHchoTakeNewData(hcho_ppb)) {
         data.hcho = hcho_ppb;
-        data.hcho_valid = true;
+        data.hcho_valid = !sfa_warmup_now;
         result.data_changed = true;
     }
 
@@ -743,15 +787,15 @@ SensorManager::PollResult SensorManager::poll(SensorData &data,
             result.data_changed = true;
         }
     }
-    uint32_t sfa_last_ms = sfa3x_.lastDataMs();
+    uint32_t sfa_last_ms = currentHchoLastDataMs();
     if (data.hcho_valid && sfa_last_ms != 0 &&
         (now - sfa_last_ms > Config::SFA3X_STALE_MS)) {
         data.hcho_valid = false;
-        sfa3x_.invalidate();
+        currentHchoInvalidate();
         result.data_changed = true;
     }
 
-    if (apply_sanity_filters(data)) {
+    if (apply_sanity_filters(data, currentHchoMinPpb(), currentHchoMaxPpb())) {
         result.data_changed = true;
     }
     log_soft_warnings(data, warmup_now);
@@ -770,6 +814,69 @@ bool SensorManager::isPressureOk() const {
         return dps310_.isOk();
     }
     return false;
+}
+
+SensorManager::SfaStatus SensorManager::currentHchoStatus() const {
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA40) {
+        return sfa40_.status();
+    }
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA30) {
+        return static_cast<SfaStatus>(sfa30_.status());
+    }
+    if (sfa40_.status() == Sfa40::Status::Fault || sfa30_.status() == Sfa30::Status::Fault) {
+        return SfaStatus::Fault;
+    }
+    return SfaStatus::Absent;
+}
+
+bool SensorManager::currentHchoWarmupActive() const {
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA40) {
+        return sfa40_.isWarmupActive();
+    }
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA30) {
+        return sfa30_.isWarmupActive();
+    }
+    return false;
+}
+
+bool SensorManager::currentHchoTakeNewData(float &hcho_ppb) {
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA40) {
+        return sfa40_.takeNewData(hcho_ppb);
+    }
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA30) {
+        return sfa30_.takeNewData(hcho_ppb);
+    }
+    return false;
+}
+
+void SensorManager::currentHchoInvalidate() {
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA40) {
+        sfa40_.invalidate();
+    } else if (hcho_sensor_type_ == HCHO_SENSOR_SFA30) {
+        sfa30_.invalidate();
+    }
+}
+
+uint32_t SensorManager::currentHchoLastDataMs() const {
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA40) {
+        return sfa40_.lastDataMs();
+    }
+    if (hcho_sensor_type_ == HCHO_SENSOR_SFA30) {
+        return sfa30_.lastDataMs();
+    }
+    return 0;
+}
+
+float SensorManager::currentHchoMinPpb() const {
+    return hcho_sensor_type_ == HCHO_SENSOR_SFA30
+               ? Config::SFA30_HCHO_MIN_PPB
+               : Config::SFA40_HCHO_MIN_PPB;
+}
+
+float SensorManager::currentHchoMaxPpb() const {
+    return hcho_sensor_type_ == HCHO_SENSOR_SFA30
+               ? Config::SFA30_HCHO_MAX_PPB
+               : Config::SFA40_HCHO_MAX_PPB;
 }
 
 const char *SensorManager::pressureSensorLabel() const {

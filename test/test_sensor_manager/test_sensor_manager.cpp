@@ -4,6 +4,7 @@
 #include "ArduinoMock.h"
 #include "TimeMock.h"
 #include "config/AppConfig.h"
+#include "core/BootState.h"
 #include "core/Logger.h"
 #include "modules/PressureHistory.h"
 #include "modules/SensorManager.h"
@@ -13,7 +14,10 @@
 #include "drivers/Dps310.h"
 #include "drivers/Sen0466.h"
 #include "drivers/Sen66.h"
-#include "drivers/Sfa3x.h"
+#include "drivers/Sfa30.h"
+#include "drivers/Sfa40.h"
+
+esp_reset_reason_t boot_reset_reason = ESP_RST_POWERON;
 
 static void resetDriverStates() {
     Bmp3xx::state() = Bmp3xxTestState();
@@ -22,7 +26,8 @@ static void resetDriverStates() {
     Bmp580::variant_state() = Bmp580::Variant::BMP580_581;
     Sen66::state() = Sen66TestState();
     Dps310::state() = Dps310TestState();
-    Sfa3x::state() = Sfa3xTestState();
+    Sfa30::state() = Sfa30TestState();
+    Sfa40::state() = Sfa40TestState();
     Sen0466::state() = Sen0466TestState();
 }
 
@@ -34,6 +39,7 @@ void setUp() {
     Logger::setSerialOutputEnabled(false);
     Logger::setSensorsSerialOutputEnabled(false);
     Logger::resetRecentForTest();
+    boot_reset_reason = ESP_RST_POWERON;
     resetDriverStates();
 }
 
@@ -77,7 +83,7 @@ void test_sensor_manager_poll_updates_data() {
     sen.poll_data.hum_valid = true;
     sen.poll_data.humidity = 40.0f;
 
-    auto &sfa = Sfa3x::state();
+    auto &sfa = Sfa40::state();
     sfa.has_new_data = true;
     sfa.hcho_ppb = 12.3f;
 
@@ -251,8 +257,8 @@ void test_sensor_manager_sfa_absent_is_not_fault() {
     SensorManager manager;
     SensorData data;
 
-    auto &sfa = Sfa3x::state();
-    sfa.status = Sfa3x::Status::Absent;
+    auto &sfa = Sfa40::state();
+    sfa.status = Sfa40::Status::Absent;
 
     manager.begin(storage, 0.0f, 0.0f);
 
@@ -265,13 +271,116 @@ void test_sensor_manager_sfa_absent_is_not_fault() {
     TEST_ASSERT_FALSE(result.data_changed);
 }
 
+void test_sensor_manager_falls_back_to_sfa30_when_sfa40_probe_is_rejected() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    auto &sfa40 = Sfa40::state();
+    sfa40.status = Sfa40::Status::Fault;
+    sfa40.fallback_to_sfa30 = true;
+
+    auto &sfa30 = Sfa30::state();
+    sfa30.status = Sfa30::Status::Ok;
+    sfa30.has_new_data = true;
+    sfa30.hcho_ppb = 14.2f;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    TEST_ASSERT_TRUE(manager.isSfaPresent());
+    TEST_ASSERT_TRUE(manager.isSfaOk());
+    TEST_ASSERT_FALSE(manager.hasSfaFault());
+    TEST_ASSERT_FALSE(manager.isSfaWarmupActive());
+
+    SensorManager::PollResult result =
+        manager.poll(data, storage, history, true);
+    TEST_ASSERT_TRUE(result.data_changed);
+    TEST_ASSERT_TRUE(data.hcho_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 14.2f, data.hcho);
+}
+
+void test_sensor_manager_warm_restart_prefers_confirmed_sfa30_before_sfa40() {
+    StorageManager storage;
+    storage.begin();
+    SensorManager manager;
+
+    boot_reset_reason = ESP_RST_SW;
+
+    auto &sfa30 = Sfa30::state();
+    sfa30.probe_ok = true;
+    sfa30.status = Sfa30::Status::Ok;
+
+    auto &sfa40 = Sfa40::state();
+    sfa40.status = Sfa40::Status::Ok;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    TEST_ASSERT_TRUE(sfa30.probe_called);
+    TEST_ASSERT_TRUE(sfa30.start_called);
+    TEST_ASSERT_FALSE(sfa40.start_called);
+    TEST_ASSERT_TRUE(manager.isSfaPresent());
+    TEST_ASSERT_TRUE(manager.isSfaOk());
+}
+
+void test_sensor_manager_warm_restart_tries_sfa40_when_sfa30_probe_does_not_confirm() {
+    StorageManager storage;
+    storage.begin();
+    SensorManager manager;
+
+    boot_reset_reason = ESP_RST_SW;
+
+    auto &sfa30 = Sfa30::state();
+    sfa30.probe_ok = false;
+    sfa30.status = Sfa30::Status::Fault;
+
+    auto &sfa40 = Sfa40::state();
+    sfa40.status = Sfa40::Status::Ok;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    TEST_ASSERT_TRUE(sfa30.probe_called);
+    TEST_ASSERT_FALSE(sfa30.start_called);
+    TEST_ASSERT_TRUE(sfa40.start_called);
+    TEST_ASSERT_TRUE(manager.isSfaPresent());
+    TEST_ASSERT_TRUE(manager.isSfaOk());
+}
+
+void test_sensor_manager_sfa30_warmup_keeps_new_hcho_data_invalid() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    boot_reset_reason = ESP_RST_SW;
+
+    auto &sfa30 = Sfa30::state();
+    sfa30.probe_ok = true;
+    sfa30.status = Sfa30::Status::Ok;
+    sfa30.warmup_active = true;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    sfa30.has_new_data = true;
+    sfa30.hcho_ppb = 0.0f;
+    SensorManager::PollResult result =
+        manager.poll(data, storage, history, true);
+
+    TEST_ASSERT_TRUE(manager.isSfaWarmupActive());
+    TEST_ASSERT_TRUE(result.data_changed);
+    TEST_ASSERT_FALSE(data.hcho_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, data.hcho);
+}
+
 void test_sensor_manager_sfa_fault_is_reported() {
     StorageManager storage;
     storage.begin();
     SensorManager manager;
 
-    auto &sfa = Sfa3x::state();
-    sfa.status = Sfa3x::Status::Fault;
+    auto &sfa = Sfa40::state();
+    sfa.status = Sfa40::Status::Fault;
 
     manager.begin(storage, 0.0f, 0.0f);
 
@@ -287,8 +396,8 @@ void test_sensor_manager_sfa_state_change_marks_data_changed() {
     SensorManager manager;
     SensorData data;
 
-    auto &sfa = Sfa3x::state();
-    sfa.status = Sfa3x::Status::Ok;
+    auto &sfa = Sfa40::state();
+    sfa.status = Sfa40::Status::Ok;
     sfa.warmup_active = false;
 
     manager.begin(storage, 0.0f, 0.0f);
@@ -303,10 +412,111 @@ void test_sensor_manager_sfa_state_change_marks_data_changed() {
     TEST_ASSERT_TRUE(second.data_changed);
 
     sfa.warmup_active = false;
-    sfa.status = Sfa3x::Status::Fault;
+    sfa.status = Sfa40::Status::Fault;
     SensorManager::PollResult third =
         manager.poll(data, storage, history, true);
     TEST_ASSERT_TRUE(third.data_changed);
+}
+
+void test_sensor_manager_sfa_fault_invalidates_previous_hcho_value() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    auto &sfa = Sfa40::state();
+    sfa.status = Sfa40::Status::Ok;
+    sfa.warmup_active = false;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    sfa.has_new_data = true;
+    sfa.hcho_ppb = 18.4f;
+    SensorManager::PollResult first =
+        manager.poll(data, storage, history, true);
+    TEST_ASSERT_TRUE(first.data_changed);
+    TEST_ASSERT_TRUE(data.hcho_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 18.4f, data.hcho);
+
+    sfa.status = Sfa40::Status::Fault;
+    sfa.has_new_data = false;
+    SensorManager::PollResult second =
+        manager.poll(data, storage, history, true);
+    TEST_ASSERT_TRUE(second.data_changed);
+    TEST_ASSERT_FALSE(data.hcho_valid);
+    TEST_ASSERT_TRUE(sfa.invalidate_called);
+}
+
+void test_sensor_manager_sfa_warmup_keeps_new_hcho_data_invalid() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    auto &sfa = Sfa40::state();
+    sfa.status = Sfa40::Status::Ok;
+    sfa.warmup_active = true;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    sfa.has_new_data = true;
+    sfa.hcho_ppb = 22.7f;
+    SensorManager::PollResult result =
+        manager.poll(data, storage, history, true);
+    TEST_ASSERT_TRUE(result.data_changed);
+    TEST_ASSERT_FALSE(data.hcho_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 22.7f, data.hcho);
+}
+
+void test_sensor_manager_sfa_warmup_invalidates_previous_hcho_value() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    auto &sfa = Sfa40::state();
+    sfa.status = Sfa40::Status::Ok;
+    sfa.warmup_active = false;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    sfa.has_new_data = true;
+    sfa.hcho_ppb = 19.1f;
+    SensorManager::PollResult first =
+        manager.poll(data, storage, history, true);
+    TEST_ASSERT_TRUE(first.data_changed);
+    TEST_ASSERT_TRUE(data.hcho_valid);
+
+    sfa.warmup_active = true;
+    sfa.has_new_data = false;
+    SensorManager::PollResult second =
+        manager.poll(data, storage, history, true);
+    TEST_ASSERT_TRUE(second.data_changed);
+    TEST_ASSERT_FALSE(data.hcho_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 19.1f, data.hcho);
+}
+
+void test_sensor_manager_clamps_hcho_to_sfa40_max_range() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    data.hcho_valid = true;
+    data.hcho = Config::SFA40_HCHO_MAX_PPB + 500.0f;
+
+    SensorManager::PollResult result =
+        manager.poll(data, storage, history, true);
+
+    TEST_ASSERT_TRUE(result.data_changed);
+    TEST_ASSERT_TRUE(data.hcho_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, Config::SFA40_HCHO_MAX_PPB, data.hcho);
 }
 
 void test_sensor_manager_bmp58x_label_reports_bmp580_581_family() {
@@ -435,8 +645,16 @@ int main(int, char **) {
     RUN_TEST(test_sensor_manager_pm1_invalid_resets_stale_value);
     RUN_TEST(test_sensor_manager_without_co_sensor_keeps_pm1_and_clears_co);
     RUN_TEST(test_sensor_manager_sfa_absent_is_not_fault);
+    RUN_TEST(test_sensor_manager_falls_back_to_sfa30_when_sfa40_probe_is_rejected);
+    RUN_TEST(test_sensor_manager_warm_restart_prefers_confirmed_sfa30_before_sfa40);
+    RUN_TEST(test_sensor_manager_warm_restart_tries_sfa40_when_sfa30_probe_does_not_confirm);
+    RUN_TEST(test_sensor_manager_sfa30_warmup_keeps_new_hcho_data_invalid);
     RUN_TEST(test_sensor_manager_sfa_fault_is_reported);
     RUN_TEST(test_sensor_manager_sfa_state_change_marks_data_changed);
+    RUN_TEST(test_sensor_manager_sfa_fault_invalidates_previous_hcho_value);
+    RUN_TEST(test_sensor_manager_sfa_warmup_keeps_new_hcho_data_invalid);
+    RUN_TEST(test_sensor_manager_sfa_warmup_invalidates_previous_hcho_value);
+    RUN_TEST(test_sensor_manager_clamps_hcho_to_sfa40_max_range);
     RUN_TEST(test_sensor_manager_bmp58x_label_reports_bmp580_581_family);
     RUN_TEST(test_sensor_manager_bmp58x_label_reports_bmp585);
     RUN_TEST(test_sensor_manager_bmp3xx_label_reports_bmp388);

@@ -172,6 +172,19 @@ void test_state_payload_keeps_aqi_available_during_warmup_when_pm_is_ready() {
     assert_contains(payload, "\"aqi\":50");
 }
 
+void test_state_payload_hides_hcho_when_only_raw_sample_exists_from_sfa40_warmup_model() {
+    SensorData data{};
+    data.hcho_valid = false;
+    data.hcho = 27.4f;
+    data.pm25_valid = true;
+    data.pm25 = Config::AQ_PM25_YELLOW_MAX_UGM3;
+
+    String payload = MqttPayloadBuilder::buildStatePayload(data, false, false, false, false);
+
+    assert_contains(payload, "\"hcho\":null");
+    assert_contains(payload, "\"aqi\":50");
+}
+
 void test_state_payload_includes_summary_fields_for_air_status_and_issue() {
     SensorData data{};
     data.co2_valid = true;
@@ -295,6 +308,7 @@ int main(int, char **) {
     RUN_TEST(test_state_payload_includes_aqi_when_computable);
     RUN_TEST(test_state_payload_excludes_aqi_when_only_warmup_gas_metrics_exist);
     RUN_TEST(test_state_payload_keeps_aqi_available_during_warmup_when_pm_is_ready);
+    RUN_TEST(test_state_payload_hides_hcho_when_only_raw_sample_exists_from_sfa40_warmup_model);
     RUN_TEST(test_state_payload_includes_summary_fields_for_air_status_and_issue);
     RUN_TEST(test_state_payload_reports_no_issue_when_air_is_good);
     RUN_TEST(test_state_payload_includes_fan_fields_when_present);

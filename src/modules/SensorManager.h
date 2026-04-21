@@ -14,14 +14,15 @@
 #include "drivers/Sen0466.h"
 #include "drivers/Sen0469.h"
 #include "drivers/Sen66.h"
-#include "drivers/Sfa3x.h"
+#include "drivers/Sfa30.h"
+#include "drivers/Sfa40.h"
 
 class StorageManager;
 class PressureHistory;
 
 class SensorManager {
 public:
-    using SfaStatus = Sfa3x::Status;
+    using SfaStatus = Sfa40::Status;
 
     struct PollResult {
         bool data_changed = false;
@@ -33,6 +34,11 @@ public:
         PRESSURE_BMP58X,
         PRESSURE_BMP3XX
     };
+    enum HchoSensorType : uint8_t {
+        HCHO_SENSOR_NONE = 0,
+        HCHO_SENSOR_SFA30,
+        HCHO_SENSOR_SFA40
+    };
 
     void begin(StorageManager &storage, float temp_offset, float hum_offset);
     PollResult poll(SensorData &data, StorageManager &storage, PressureHistory &pressure_history,
@@ -42,11 +48,11 @@ public:
     bool isOk() const { return sen66_.isOk(); }
     bool isBusy() const { return sen66_.isBusy(); }
     bool isDpsOk() const { return isPressureOk(); }
-    bool isSfaOk() const { return sfa3x_.isOk(); }
-    bool isSfaPresent() const { return sfa3x_.isPresent(); }
-    bool hasSfaFault() const { return sfa3x_.hasFault(); }
-    bool isSfaWarmupActive() const { return sfa3x_.isWarmupActive(); }
-    SfaStatus sfaStatus() const { return sfa3x_.status(); }
+    bool isSfaOk() const { return currentHchoStatus() == SfaStatus::Ok; }
+    bool isSfaPresent() const { return currentHchoStatus() != SfaStatus::Absent; }
+    bool hasSfaFault() const { return currentHchoStatus() == SfaStatus::Fault; }
+    bool isSfaWarmupActive() const { return currentHchoWarmupActive(); }
+    SfaStatus sfaStatus() const { return currentHchoStatus(); }
     bool isCoPresent() const { return sen0466_.isPresent(); }
     bool isCoValid() const { return sen0466_.isDataValid(); }
     bool isCoWarmupActive() const { return sen0466_.isWarmupActive(); }
@@ -75,13 +81,23 @@ public:
     void clearVocState(StorageManager &storage);
 
 private:
+    SfaStatus currentHchoStatus() const;
+    bool currentHchoWarmupActive() const;
+    bool currentHchoTakeNewData(float &hcho_ppb);
+    void currentHchoInvalidate();
+    uint32_t currentHchoLastDataMs() const;
+    float currentHchoMinPpb() const;
+    float currentHchoMaxPpb() const;
+
     Bmp3xx bmp3xx_;
     Bmp580 bmp580_;
     Dps310 dps310_;
-    Sfa3x sfa3x_;
+    Sfa30 sfa30_;
+    Sfa40 sfa40_;
     Sen0466 sen0466_;
     Sen0469 sen0469_;
     Sen66 sen66_;
+    HchoSensorType hcho_sensor_type_ = HCHO_SENSOR_NONE;
     bool warmup_active_last_ = false;
     bool sfa_warmup_active_last_ = false;
     SfaStatus sfa_status_last_ = SfaStatus::Absent;
