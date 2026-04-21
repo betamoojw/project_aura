@@ -1,4 +1,5 @@
 #include <unity.h>
+#include <cstring>
 
 #include "ArduinoMock.h"
 #include "I2cMock.h"
@@ -16,6 +17,17 @@ void encodeWordWithCrc(uint16_t word, uint8_t *dst) {
     dst[0] = static_cast<uint8_t>(word >> 8);
     dst[1] = static_cast<uint8_t>(word & 0xFF);
     dst[2] = I2C::crc8(dst, 2);
+}
+
+bool recentContainsMessagePrefix(const char *prefix) {
+    Logger::RecentEntry recent[16];
+    const size_t count = Logger::copyRecent(recent, sizeof(recent) / sizeof(recent[0]));
+    for (size_t i = 0; i < count; ++i) {
+        if (strncmp(recent[i].message, prefix, strlen(prefix)) == 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 } // namespace
@@ -302,6 +314,31 @@ void test_real_sfa40_marks_fault_when_id_returns_zero_serial() {
     TEST_ASSERT_FALSE(sfa.isWarmupActive());
     TEST_ASSERT_EQUAL(static_cast<int>(Sfa40::Status::Fault),
                       static_cast<int>(sfa.status()));
+}
+
+void test_real_sfa40_expected_probe_reject_does_not_emit_detect_warning() {
+    uint8_t serial_data[9];
+
+    encodeWordWithCrc(0x1234, &serial_data[0]);
+    encodeWordWithCrc(0x5678, &serial_data[3]);
+    encodeWordWithCrc(0x9ABC, &serial_data[6]);
+    serial_data[8] ^= 0xFF;  // break CRC to simulate non-SFA40 probe rejection
+
+    I2cMock::setDevicePresent(Config::SFA3X_ADDR, true);
+    I2cMock::setCommandRead(Config::SFA3X_ADDR,
+                            Config::SFA40_CMD_ID,
+                            serial_data,
+                            sizeof(serial_data));
+
+    Sfa40 sfa;
+
+    TEST_ASSERT_TRUE(sfa.begin());
+    Logger::resetRecentForTest();
+    sfa.start();
+
+    TEST_ASSERT_TRUE(sfa.hasFault());
+    TEST_ASSERT_TRUE(sfa.shouldFallbackToSfa30());
+    TEST_ASSERT_FALSE(recentContainsMessagePrefix("detect failed ("));
 }
 
 void test_real_sfa40_keeps_starting_state_while_status_not_ready() {
@@ -601,6 +638,7 @@ int main(int, char **) {
     RUN_TEST(test_real_sfa40_waits_startup_delay_across_millis_wraparound);
     RUN_TEST(test_real_sfa40_marks_fault_when_id_read_fails);
     RUN_TEST(test_real_sfa40_marks_fault_when_id_returns_zero_serial);
+    RUN_TEST(test_real_sfa40_expected_probe_reject_does_not_emit_detect_warning);
     RUN_TEST(test_real_sfa40_keeps_starting_state_while_status_not_ready);
     RUN_TEST(test_real_sfa40_returns_data_but_keeps_warmup_until_within_spec);
     RUN_TEST(test_real_sfa40_marks_fault_for_undocumented_status_10_combination);

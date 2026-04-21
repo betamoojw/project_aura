@@ -54,8 +54,9 @@ bool BootHelpers::isCrashReset(esp_reset_reason_t reason) {
 bool BootHelpers::recoverI2CBus(gpio_num_t sda, gpio_num_t scl) {
     gpio_set_direction(sda, GPIO_MODE_INPUT_OUTPUT_OD);
     gpio_set_direction(scl, GPIO_MODE_INPUT_OUTPUT_OD);
-    gpio_set_pull_mode(sda, GPIO_PULLUP_ONLY);
-    gpio_set_pull_mode(scl, GPIO_PULLUP_ONLY);
+    // Leave the bus floating here so recovery uses only hardware pull-ups.
+    gpio_set_pull_mode(sda, GPIO_FLOATING);
+    gpio_set_pull_mode(scl, GPIO_FLOATING);
     gpio_set_level(sda, 1);
     gpio_set_level(scl, 1);
     delayMicroseconds(5);
@@ -84,8 +85,8 @@ bool BootHelpers::recoverI2CBus(gpio_num_t sda, gpio_num_t scl) {
     bool ok = (gpio_get_level(sda) == 1 && gpio_get_level(scl) == 1);
     gpio_set_direction(sda, GPIO_MODE_INPUT);
     gpio_set_direction(scl, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(sda, GPIO_PULLUP_ONLY);
-    gpio_set_pull_mode(scl, GPIO_PULLUP_ONLY);
+    gpio_set_pull_mode(sda, GPIO_FLOATING);
+    gpio_set_pull_mode(scl, GPIO_FLOATING);
     return ok;
 }
 

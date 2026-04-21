@@ -59,7 +59,12 @@ void Sfa40::start() {
     if (!ensureIdleBeforeDetect()) {
         ok_ = false;
         status_ = Status::Fault;
-        LOGW(label(), "detect pre-stop failed (%s)", errorCauseLabel());
+        // A warm-restart stop failure can be an expected probe rejection when
+        // the device on 0x5D is actually SFA30. SensorManager decides whether
+        // to fall back, so avoid surfacing this as a user-facing warning here.
+        if (!shouldFallbackToSfa30()) {
+            LOGW(label(), "detect pre-stop failed (%s)", errorCauseLabel());
+        }
         return;
     }
 
@@ -67,7 +72,12 @@ void Sfa40::start() {
         ok_ = false;
         status_ = Status::Fault;
         warmup_active_ = false;
-        LOGW(label(), "detect failed (%s)", errorCauseLabel());
+        // Read/CRC/detect mismatches are expected while probing SFA40 on a
+        // board that actually has SFA30 installed. Keep the fallback path
+        // silent and let SensorManager report the final selected sensor.
+        if (!shouldFallbackToSfa30()) {
+            LOGW(label(), "detect failed (%s)", errorCauseLabel());
+        }
         return;
     }
 
