@@ -48,7 +48,7 @@ Also watch the hands-on review:
 [Project Aura review on YouTube](https://www.youtube.com/watch?v=1pzBqcmbWl8)
 
 ## Highlights
-- Professional telemetry: PM0.5/PM1/PM2.5/PM4/PM10, CO, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO.
+- Professional telemetry: PM0.5/PM1/PM2.5/PM4/PM10, CO, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO, plus optional NH3/SO2/NO2/H2S/O3 sensing.
 - No soldering required: designed for easy assembly using Grove/QT connectors.
 - Smooth LVGL UI with night mode, custom themes, and status indicators.
 - Integrated web dashboard at `/dashboard` with live state, charts, events, settings sync, DAC page, and OTA firmware update.
@@ -120,6 +120,7 @@ look for these specific modules for the reference build:
 | Main Sensor | Sensirion SEN66 (via Adafruit breakout) |
 | Carbon Monoxide (CO) | [DFRobot Gravity: Factory Calibrated Electrochemical CO Sensor (0-1000 ppm, I2C & UART), SEN0466](https://www.dfrobot.com/product-2508.html?tracking=aJ5V32) (optional) |
 | Formaldehyde | Sensirion SFA30 (Grove interface) or [DFRobot Gravity: SFA40 Formaldehyde (HCHO) Sensor (0-1000 ppb, High Accuracy +/-20 ppb), SEN0661](https://www.dfrobot.com/product-3020.html?tracking=aJ5V32) (optional) |
+| Optional DFR Gas Slot | One supported DFRobot electrochemical gas sensor at a time on the shared optional slot: [SEN0469 NH3](https://www.dfrobot.com/product-2513.html?tracking=aJ5V32), [SEN0470 SO2](https://www.dfrobot.com/product-2514.html?tracking=aJ5V32), [SEN0471 NO2](https://www.dfrobot.com/product-2515.html?tracking=aJ5V32), [SEN0467 H2S](https://www.dfrobot.com/product-2511.html?tracking=aJ5V32), or [SEN0472 O3](https://www.dfrobot.com/product-2516.html?tracking=aJ5V32) (optional) |
 | Pressure | Adafruit BMP580 or DPS310 (recommended) |
 | RTC | Adafruit PCF8523 (recommended) |
 | DAC Output | [DFRobot Gravity: 2-Channel I2C DAC Module (0-10V), DFR0971](https://www.dfrobot.com/product-2613.html?tracking=aJ5V32) (optional, VOUT0 used) |
@@ -130,6 +131,7 @@ Pressure note: the reference BOM uses BMP580 or DPS310. Firmware auto-detects BM
 RTC note: the reference BOM uses PCF8523. Firmware auto-detects PCF8523 and DS3231, and also provides a manual RTC override mode.
 Sensor note: both the Sensirion SFA30 and the DFRobot Gravity SFA40 are supported for HCHO monitoring. Aura auto-detects the compatible SFA3x variant at boot and handles SFA40 warmup/startup behavior automatically.
 CO note: the SEN0466 is optional. If not detected at boot, CO is marked unavailable and PM1 telemetry remains active.
+Optional DFR gas note: Aura also supports one optional DFRobot electrochemical gas sensor on the shared slot at a time. Supported variants are NH3, SO2, NO2, H2S, and O3. The firmware auto-detects the installed gas type and exposes the matching local UI and MQTT/Home Assistant entities. Use I2C address `0x75` for this slot.
 Note: SEN66 gas indices (VOC/NOx) require about 5 minutes of warmup for reliable readings; the UI shows WARMUP during this period.
 
 Recommended retailers: Mouser, DigiKey, LCSC, Adafruit, Seeed Studio, [Waveshare (core board)](https://www.waveshare.com/esp32-s3-touch-lcd-4.3.htm?&aff_id=144793).
@@ -148,7 +150,7 @@ DIY: verify pinouts against the pin table below before powering on to avoid dama
 | :--- | :--- | :--- |
 | 3V3 | 3V3 | Power for external I2C sensors |
 | GND | GND | Common ground |
-| I2C SDA | GPIO 8 | Shared bus: SEN66, SFA30/SFA40, SEN0466, BMP58x/BMP3xx/DPS310, PCF8523/DS3231, GP8403 |
+| I2C SDA | GPIO 8 | Shared bus: SEN66, SFA30/SFA40, SEN0466, optional DFR gas slot (NH3/SO2/NO2/H2S/O3), BMP58x/BMP3xx/DPS310, PCF8523/DS3231, GP8403 |
 | I2C SCL | GPIO 9 | Shared bus |
 
 Display and touch are integrated on the board; no external wiring is needed for them.
@@ -171,7 +173,7 @@ Data flow and responsibilities are intentionally split into small managers:
 ```mermaid
 graph TD
     subgraph Hardware
-        Sensors[Sensors<br/>SEN66, SFA30/SFA40, SEN0466, BMP58x/BMP3xx/DPS310]
+        Sensors[Sensors<br/>SEN66, SFA30/SFA40, SEN0466, optional DFR gas, BMP58x/BMP3xx/DPS310]
         Touch[Touch<br/>GT911]
         RTC[RTC<br/>PCF8523 or DS3231]
         DAC[DAC<br/>GP8403]
@@ -259,7 +261,7 @@ copy include/secrets.h.example include/secrets.h
 - Availability topic: `<base>/status`
 - Commands: `<base>/command/*` (night_mode, alert_blink, backlight, restart)
 - Home Assistant discovery: `homeassistant/*/config`
-- Discovery payload includes dedicated sensors for `CO` (`co`) and `PM0.5` (`pm05`).
+- Discovery payload includes dedicated sensors for `CO` (`co`), `PM0.5` (`pm05`), and the optional DFR gas slot (`nh3`, `so2`, `no2`, `h2s`, `o3`, plus generic optional gas state/type sensors as applicable).
 
 MQTT stays idle until configured and enabled.
 
