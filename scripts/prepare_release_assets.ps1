@@ -185,6 +185,7 @@ $baseUrl = "https://github.com/$Repo/releases/download/$Tag"
 $manifestFull = [ordered]@{
   name = "Project Aura"
   version = $displayVersion
+  # ESP Web Tools: skip the Improv provisioning wait because Aura uses its own setup flow.
   new_install_improv_wait_time = 0
   builds = @(
     [ordered]@{
@@ -202,6 +203,7 @@ $manifestFull = [ordered]@{
 $manifestUpdate = [ordered]@{
   name = "Project Aura"
   version = $displayVersion
+  # ESP Web Tools: skip the Improv provisioning wait because Aura uses its own setup flow.
   new_install_improv_wait_time = 0
   new_install_prompt_erase = $true
   builds = @(

@@ -81,7 +81,8 @@ bool rtcTimeLooksUnset(bool time_valid, bool osc_stop, time_t epoch) {
     return osc_stop && (!time_valid || epoch <= Config::TIME_VALID_EPOCH);
 }
 
-// Preserve configs that only have the pre-name numeric timezone index.
+// Frozen compatibility list for configs saved before named timezones.
+// Do not reorder or insert here; update kTimeZones independently.
 const char *legacyTimezoneNameFromIndex(int index) {
     static const char *const kLegacyTimeZoneNames[] = {
         "Etc/GMT+12",
